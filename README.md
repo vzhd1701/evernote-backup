@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/evernote-backup?label=version)](https://pypi.python.org/pypi/evernote-backup)
 [![Python Version](https://img.shields.io/pypi/pyversions/evernote-backup.svg)](https://pypi.org/project/evernote-backup/)
-[![Tests Status](https://github.com/vzhd1701/evernote-backup/workflows/tests/badge.svg?branch=master&event=push)](https://github.com/vzhd1701/evernote-backup/actions?query=workflow%3Atests+branch%3Amaster+event%3Apush)
+[![tests](https://github.com/vzhd1701/evernote-backup/actions/workflows/test.yml/badge.svg)](https://github.com/vzhd1701/evernote-backup/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/vzhd1701/evernote-backup/branch/master/graph/badge.svg)](https://codecov.io/gh/vzhd1701/evernote-backup)
 
 Backup your notes & notebooks from Evernote locally and export them at any time!
