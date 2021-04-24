@@ -1,0 +1,77 @@
+# See https://pre-commit.com/ for usage and config
+# pre-commit install
+# need commit-msg hook for commitzen
+# pre-commit install --hook-type commit-msg
+
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+    -   id: check-vcs-permalinks
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+    -   id: mixed-line-ending
+    -   id: check-toml
+    -   id: check-yaml
+    -   id: no-commit-to-branch
+
+-   repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.3  # Use the ref you want to point at
+    hooks:
+    -   id: mdformat
+    #    additional_dependencies:
+    #    - mdformat-gfm
+
+-   repo: https://github.com/commitizen-tools/commitizen
+    rev: v2.17.2
+    hooks:
+    -   id: commitizen
+        stages: [commit-msg]
+
+-   repo: local
+    hooks:
+    -   id: isort
+        name: isort
+        stages: [commit]
+        language: system
+        entry: poetry run isort
+        types: [python]
+
+    -   id: black
+        name: black
+        stages: [commit]
+        language: system
+        entry: poetry run black
+        types: [python]
+
+    -   id: flakehell
+        name: flakehell
+        stages: [commit]
+        language: system
+        entry: poetry run flakehell lint
+        types: [python]
+
+    -   id: pytest
+        name: pytest
+        stages: [commit]
+        language: system
+        entry: poetry run pytest
+        types: [python]
+        pass_filenames: false
+
+    -   id: pytest-cov
+        name: pytest
+        stages: [push]
+        language: system
+        entry: poetry run pytest --cov-fail-under=100 --cov=evernote_backup tests/
+        types: [python]
+        pass_filenames: false
+
+  #  - id: mypy
+  #    name: mypy
+  #    stages: [commit]
+  #    language: system
+  #    entry: poetry run mypy
+  #    types: [python]
+  #    require_serial: true
