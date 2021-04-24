@@ -8,8 +8,8 @@ version = "1.0.0"
 description = "Backup & export Evernote notes and notebooks."
 authors = ["vzhd1701 <vzhd1701@gmail.com>"]
 readme = "README.md"
+include = ["CHANGELOG.md"]
 license = "MIT"
-homepage = "https://github.com/vzhd1701/evernote-backup"
 repository = "https://github.com/vzhd1701/evernote-backup"
 keywords = ["evernote", "yinxiang", "backup", "export", "enex"]
 classifiers = [
@@ -25,6 +25,9 @@ classifiers = [
     "Topic :: Terminals",
     "Topic :: Utilities",
 ]
+
+[tool.poetry.urls]
+"Changelog" = "https://github.com/vzhd1701/evernote-backup/blob/master/CHANGELOG.md"
 
 [tool.poetry.scripts]
 evernote-backup = "evernote_backup.cli:main"
