@@ -5,15 +5,6 @@ from evernote_backup.cli_app_util import ProgramTerminatedError
 
 
 @pytest.fixture()
-def mock_output_to_terminal(mocker):
-    click_mock = mocker.patch("evernote_backup.cli_app_util.is_output_to_terminal")
-    click_mock.is_tty = True
-    click_mock.side_effect = lambda *a, **kw: click_mock.is_tty
-
-    return click_mock
-
-
-@pytest.fixture()
 def mock_click_prompt(mocker):
     click_mock = mocker.patch("evernote_backup.cli_app_util.click.prompt")
     click_mock.fake_input = None
@@ -228,3 +219,54 @@ def test_password_login_two_factor_silent_error(
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
     assert "requires user input" in str(excinfo.value)
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_login_silent_error(
+    cli_invoker, fake_storage, mock_evernote_client, mock_output_to_terminal
+):
+    mock_output_to_terminal.is_tty = False
+
+    with pytest.raises(ProgramTerminatedError) as excinfo:
+        cli_invoker("reauth", "-d", "fake_db", "--oauth")
+    assert "requires user input" in str(excinfo.value)
+
+
+@pytest.mark.usefixtures("mock_oauth_http_server")
+@pytest.mark.usefixtures("mock_output_to_terminal")
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_login(
+    cli_invoker, fake_storage, mock_evernote_client, mock_oauth_client, mocker
+):
+    mocker.patch("evernote_backup.cli_app_util.click.echo")
+    mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
+
+    cli_invoker("reauth", "-d", "fake_db", "--oauth")
+
+    assert mock_launch.called_once_with(
+        "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
+    )
+    assert (
+        fake_storage.config.get_config_value("auth_token")
+        == mock_oauth_client.fake_token
+    )
+
+
+@pytest.mark.usefixtures("mock_oauth_http_server")
+@pytest.mark.usefixtures("mock_output_to_terminal")
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_login__declined_error(
+    cli_invoker, fake_storage, mock_evernote_client, mock_oauth_client, mocker
+):
+    del mock_oauth_client.fake_callback_response["oauth_verifier"]
+
+    mocker.patch("evernote_backup.cli_app_util.click.echo")
+    mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
+
+    with pytest.raises(ProgramTerminatedError) as excinfo:
+        cli_invoker("reauth", "-d", "fake_db", "--oauth")
+    assert "declined" in str(excinfo.value)
+
+    assert mock_launch.called_once_with(
+        "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
+    )

@@ -30,11 +30,24 @@ opt_password = click.option(
     help="Account password.",
 )
 
+opt_oauth = click.option(
+    "--oauth",
+    is_flag=True,
+    help=(
+        "OAuth login flow."
+        " Use this if you signed up for Evernote with Google or Apple account."
+        " (Ignores '--user' and '--password' when used."
+        " Doesn't work for Yinxiang.)"
+    ),
+)
+
 opt_token = click.option(
     "--token",
     "-t",
-    help="Manually provide authentication token to use with Evernote API."
-    " (advanced option, ignores '--user' and '--password' when used)",
+    help=(
+        "Manually provide authentication token to use with Evernote API."
+        " (Advanced option, ignores '--user', '--password' and '--oauth' when used.)"
+    ),
 )
 
 opt_database = click.option(
@@ -84,7 +97,7 @@ def cli(quiet):
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_token)
+@group_options(opt_user, opt_password, opt_oauth, opt_token)
 @click.option(
     "--force",
     is_flag=True,
@@ -97,13 +110,14 @@ def cli(quiet):
     type=click.Choice(["evernote", "evernote:sandbox", "china", "china:sandbox"]),
     help="API backend to connect to. If you are using Yinxiang, select 'china'.",
 )
-def init_db(database, user, password, token, force, backend):
+def init_db(database, user, password, oauth, token, force, backend):
     """Initialize storage & log in to Evernote."""
 
     cli_app.init_db(
         database=database,
         auth_user=user,
         auth_password=password,
+        auth_is_oauth=oauth,
         auth_token=token,
         force=force,
         backend=backend,
@@ -151,14 +165,15 @@ click.password_option()
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_token)
-def reauth(database, user, password, token):
+@group_options(opt_user, opt_password, opt_oauth, opt_token)
+def reauth(database, user, password, oauth, token):
     """Refresh login to Evernote, run when token expires."""
 
     cli_app.reauth(
         database=database,
         auth_user=user,
         auth_password=password,
+        auth_is_oauth=oauth,
         auth_token=token,
     )
 

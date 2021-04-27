@@ -6,8 +6,13 @@ from datetime import datetime as dt
 
 import click
 
-from evernote_backup.config import API_DATA
+from evernote_backup.config import API_DATA, API_DATA_OAUTH
 from evernote_backup.evernote_client import EvernoteClientAuth
+from evernote_backup.evernote_client_oauth import (
+    EvernoteOAuthCallbackHandler,
+    EvernoteOAuthClient,
+    OAuthDeclinedError,
+)
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import EvernoteAuthError
 from evernote_backup.note_storage import SqliteStorage
@@ -104,6 +109,16 @@ def get_auth_client(backend):
     )
 
 
+def get_oauth_client(backend):
+    key, secret = unscramble(API_DATA_OAUTH)
+
+    return EvernoteOAuthClient(
+        consumer_key=key,
+        consumer_secret=secret,
+        backend=backend,
+    )
+
+
 def prompt_credentials(user, password):
     if not is_output_to_terminal() and not all([user, password]):
         raise ProgramTerminatedError("--user and --password are required!")
@@ -127,11 +142,48 @@ def prompt_ota(delivery_hint):
     return click.prompt(f"Enter one-time code{one_time_hint}")
 
 
-def get_auth_token(auth_user, auth_password, backend):
-    auth_user, auth_password = prompt_credentials(auth_user, auth_password)
-
+def get_auth_token(auth_user, auth_password, auth_is_oauth, backend):
     logger.info("Logging in to Evernote...")
 
+    if auth_is_oauth:
+        return evernote_login_oauth(backend)
+
+    auth_user, auth_password = prompt_credentials(auth_user, auth_password)
+
+    return evernote_login_password(auth_user, auth_password, backend)
+
+
+def evernote_login_oauth(backend):
+    if not is_output_to_terminal():
+        raise ProgramTerminatedError("OAuth requires user input!")
+
+    if backend.startswith("china"):
+        raise ProgramTerminatedError(
+            "OAuth is not supported to log in to Yinxiang!\n"
+            "You will have to reset your Evernote account password"
+            " and use your credentials to log in."
+        )
+
+    oauth_client = get_oauth_client(backend)
+
+    oauth_handler = EvernoteOAuthCallbackHandler(oauth_client)
+
+    oauth_url = oauth_handler.get_oauth_url()
+
+    click.echo(
+        f"Opening authorization page...\n"
+        f"If it didn't open automatically, please copy this URL into your browser:\n"
+        f"{oauth_url}"
+    )
+    click.launch(oauth_url)
+
+    try:
+        return oauth_handler.wait_for_token()
+    except OAuthDeclinedError:
+        raise ProgramTerminatedError("Authorization declined!")
+
+
+def evernote_login_password(auth_user, auth_password, backend):
     auth_client = get_auth_client(backend)
 
     try:

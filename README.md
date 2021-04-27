@@ -46,7 +46,9 @@ Successfully initialized database for user!
 
 By default, it will prompt you to enter your account credentials. You can provide them beforehand with `--user` and `--password` options.
 
-If you want to connect to **Yinxiang** instead of Evernote, use `--backend china` option.
+If you log in to Evernote with Google or Apple accounts, you must use the `--oauth` option.
+
+To connect to **Yinxiang** instead of Evernote, use `--backend china` option. Unfortunately, OAuth is not supported for **Yinxiang** yet.
 
 ### Step 2. Downloading Evernote data
 
@@ -106,5 +108,6 @@ In case your auth token that you initialized your database with expires, you hav
 ## Dependencies
 
 - `evernote3` - to access Evernote API
+- `oauth2` - to perform OAuth authentication
 - `xmltodict` - to convert Evernote internal representation of notes into XML
 - `click` - to create a CLI interface

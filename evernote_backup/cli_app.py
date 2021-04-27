@@ -16,9 +16,11 @@ from evernote_backup.note_synchronizer import NoteSynchronizer, WrongAuthUserErr
 logger = logging.getLogger(__name__)
 
 
-def init_db(database, auth_user, auth_password, auth_token, force, backend):
+def init_db(
+    database, auth_user, auth_password, auth_is_oauth, auth_token, force, backend
+):
     if not auth_token:
-        auth_token = get_auth_token(auth_user, auth_password, backend)
+        auth_token = get_auth_token(auth_user, auth_password, auth_is_oauth, backend)
 
     note_client = get_sync_client(auth_token, backend)
 
@@ -44,13 +46,13 @@ def init_db(database, auth_user, auth_password, auth_token, force, backend):
     logger.info(f"Successfully initialized database for {new_user}!")
 
 
-def reauth(database, auth_user, auth_password, auth_token):
+def reauth(database, auth_user, auth_password, auth_is_oauth, auth_token):
     storage = get_storage(database)
 
     backend = storage.config.get_config_value("backend")
 
     if not auth_token:
-        auth_token = get_auth_token(auth_user, auth_password, backend)
+        auth_token = get_auth_token(auth_user, auth_password, auth_is_oauth, backend)
 
     note_client = get_sync_client(auth_token, backend)
 

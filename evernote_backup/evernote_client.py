@@ -26,7 +26,11 @@ def raise_auth_error(exception):
         },
         EDAMErrorCode.AUTH_EXPIRED: {
             "authenticationToken": "Authentication token expired or revoked!",
-            "password": "Password login disabled. Password reset required!",
+            "password": (
+                "Password login disabled. Password reset required!\n"
+                "Most probably, you log in to Evernote with Google or Apple account."
+                " Use --oauth option to log in."
+            ),
         },
     }
 
@@ -78,7 +82,7 @@ class EvernoteClient(object):
 
     @property
     def user_store(self):
-        user_store_uri = self._get_endpoint("/edam/user")
+        user_store_uri = self._get_endpoint("edam/user")
         return Store(
             client_class=ClientV2,
             store_url=user_store_uri,
@@ -105,7 +109,7 @@ class EvernoteClient(object):
         return self._user
 
     def _get_endpoint(self, path=""):
-        return f"https://{self.service_host}{path}"
+        return f"https://{self.service_host}/{path}"
 
 
 class EvernoteClientAuth(EvernoteClient):

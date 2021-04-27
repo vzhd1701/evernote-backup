@@ -1,4 +1,5 @@
 import sqlite3
+import urllib.parse
 from unittest.mock import MagicMock
 
 import pytest
@@ -181,6 +182,7 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
         database="fake_db",
         auth_user=None,
         auth_password=None,
+        auth_is_oauth=False,
         auth_token=fake_token,
         force=False,
         backend="evernote",
@@ -200,3 +202,59 @@ def mock_formatter(mocker):
 @pytest.fixture()
 def fake_token():
     return "S=1:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
+
+
+@pytest.fixture
+def mock_oauth_client(mocker):
+    oauth_mock = mocker.patch("evernote_backup.evernote_client_oauth.oauth2")
+
+    oauth_mock.fake_oauth_token_id = "fake_app.FFF"
+    oauth_mock.fake_oauth_secret = "FFF1"
+    oauth_mock.fake_request_url = (
+        f"oauth_token={oauth_mock.fake_oauth_token_id}&"
+        f"oauth_token_secret={oauth_mock.fake_oauth_secret}&"
+        f"oauth_callback_confirmed=true"
+    ).encode()
+
+    oauth_mock.fake_callback_response = {
+        "oauth_token": oauth_mock.fake_oauth_token_id,
+        "oauth_verifier": "FFF2",
+        "sandbox_lnb": "false",
+    }
+
+    oauth_mock.fake_token = "S=s100:U=fff:E=ffff:C=ffff:P=100:A=appname:V=2:H=ffffff"
+
+    def fake_request(url, method):
+        if method == "POST":
+            response = urllib.parse.urlencode(
+                {"oauth_token": oauth_mock.fake_token}
+            ).encode()
+        else:
+            response = oauth_mock.fake_request_url
+
+        return (None, response)
+
+    oauth_mock.Client().request.side_effect = fake_request
+
+    return oauth_mock
+
+
+@pytest.fixture
+def mock_oauth_http_server(mock_oauth_client, mocker):
+    mock_server = mocker.patch(
+        "evernote_backup.evernote_client_oauth.StoppableHTTPServer"
+    )
+
+    def callback_setter():
+        mock_server().callback_response = mock_oauth_client.fake_callback_response
+
+    mock_server().run.side_effect = callback_setter
+
+
+@pytest.fixture()
+def mock_output_to_terminal(mocker):
+    click_mock = mocker.patch("evernote_backup.cli_app_util.is_output_to_terminal")
+    click_mock.is_tty = True
+    click_mock.side_effect = lambda *a, **kw: click_mock.is_tty
+
+    return click_mock
