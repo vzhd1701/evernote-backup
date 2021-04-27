@@ -3,7 +3,6 @@ from evernote.edam.type.ttypes import Note as RawNote
 from evernote.edam.type.ttypes import Notebook as RawNoteBook
 
 from evernote_backup.note_storage import Note, NoteBook, SqliteStorage, initialize_db
-from tests.utils import fake_storage, mock_formatter
 
 
 def test_database_file_missing():

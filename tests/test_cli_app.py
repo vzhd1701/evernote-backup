@@ -5,7 +5,6 @@ import pytest
 
 from evernote_backup import cli as cli_module
 from evernote_backup.cli_app_util import ProgramTerminatedError, get_progress_output
-from tests.utils import cli_invoker
 
 
 @pytest.mark.parametrize(

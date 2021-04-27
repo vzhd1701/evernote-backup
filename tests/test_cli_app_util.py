@@ -1,9 +1,10 @@
+import base64
+
 import pytest
 from evernote.edam.error.ttypes import EDAMUserException
 
 from evernote_backup import cli_app_util
 from evernote_backup.cli_app_util import ProgramTerminatedError
-from tests.utils import mock_evernote_client
 
 
 def test_get_sync_client_token_expired_error(mock_evernote_client):
@@ -27,3 +28,12 @@ def test_get_sync_client_unexpected_error(mock_evernote_client):
 
     with pytest.raises(EDAMUserException):
         cli_app_util.get_sync_client("fake_token", "evernote")
+
+
+def test_unscrambler():
+    test_data = base64.b64encode(b":8:<2&00000")
+    expected = ["12345", "54321"]
+
+    result_data = cli_app_util.unscramble(test_data)
+
+    assert result_data == expected

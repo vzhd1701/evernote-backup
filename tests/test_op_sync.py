@@ -7,13 +7,6 @@ from evernote.edam.type.ttypes import Tag as RawTag
 
 from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.note_storage import Note, NoteBook
-from tests.utils import (
-    cli_invoker,
-    fake_init_db,
-    fake_storage,
-    mock_evernote_client,
-    mock_formatter,
-)
 
 
 @pytest.mark.usefixtures("fake_init_db")

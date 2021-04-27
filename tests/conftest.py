@@ -176,12 +176,12 @@ def fake_storage(monkeypatch):
 
 
 @pytest.fixture()
-def fake_init_db(fake_storage, mock_evernote_client):
+def fake_init_db(fake_storage, fake_token, mock_evernote_client):
     cli_app.init_db(
         database="fake_db",
         auth_user=None,
         auth_password=None,
-        auth_token=FAKE_TOKEN,
+        auth_token=fake_token,
         force=False,
         backend="evernote",
     )
@@ -197,4 +197,6 @@ def mock_formatter(mocker):
     return fake_values
 
 
-FAKE_TOKEN = "S=1:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
+@pytest.fixture()
+def fake_token():
+    return "S=1:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"

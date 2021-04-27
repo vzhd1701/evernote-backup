@@ -2,13 +2,6 @@ import pytest
 from evernote.edam.error.ttypes import EDAMUserException
 
 from evernote_backup.cli_app_util import ProgramTerminatedError
-from tests.utils import (
-    FAKE_TOKEN,
-    cli_invoker,
-    fake_init_db,
-    fake_storage,
-    mock_evernote_client,
-)
 
 
 @pytest.fixture()
@@ -60,9 +53,9 @@ def test_no_username_error(fake_storage, cli_invoker):
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
-def test_no_database_error(cli_invoker):
+def test_no_database_error(cli_invoker, fake_token):
     with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "--database", "fake_db", "--token", FAKE_TOKEN)
+        cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
     assert "Initialize database first!" in excinfo.value.args[0]
 
 
@@ -90,12 +83,12 @@ def test_password_login_unexpected_error(
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_password_login_bad_token_error(
-    cli_invoker, fake_storage, mock_evernote_client
+    cli_invoker, fake_storage, mock_evernote_client, fake_token
 ):
     mock_evernote_client.fake_is_token_bad = True
 
     with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db", "-t", FAKE_TOKEN)
+        cli_invoker("reauth", "-d", "fake_db", "-t", fake_token)
     assert "Wrong token format!" in str(excinfo.value)
 
 
@@ -198,11 +191,11 @@ def test_password_login_two_factor_hint(
 @pytest.mark.usefixtures("mock_output_to_terminal")
 @pytest.mark.usefixtures("fake_init_db")
 def test_password_login_two_factor_bad_ota_error(
-    cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt
+    cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt, fake_token
 ):
     mock_click_prompt.fake_input = "123"
     mock_evernote_client.fake_twofactor_req = True
-    mock_evernote_client.fake_auth_token = FAKE_TOKEN
+    mock_evernote_client.fake_auth_token = fake_token
     mock_evernote_client.fake_auth_invalid_ota = True
 
     with pytest.raises(ProgramTerminatedError) as excinfo:

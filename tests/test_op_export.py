@@ -3,7 +3,6 @@ from evernote.edam.type.ttypes import Note as RawNote
 from evernote.edam.type.ttypes import Notebook as RawNoteBook
 
 from evernote_backup.cli_app_util import ProgramTerminatedError
-from tests.utils import cli_invoker, fake_storage, mock_evernote_client, mock_formatter
 
 
 def test_export_empty_db(cli_invoker, fake_storage, tmp_path):
