@@ -16,10 +16,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Get tag
-        id: tag
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
-
       - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
         uses: actions/setup-python@v2
         with:

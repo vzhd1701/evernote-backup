@@ -1,6 +1,15 @@
 name: tests
 
-on: [push]
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '*.*'
+    paths-ignore:
+      - "*.md"
+      - ".pre-commit-config.yaml"
+      - "tox.ini"
 
 jobs:
   test:
@@ -44,3 +53,5 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
+        if: matrix.python-version == '3.9'
+        #if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
