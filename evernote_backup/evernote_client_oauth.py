@@ -5,6 +5,7 @@ from urllib.parse import parse_qsl, quote, urlparse
 
 import oauth2
 
+from evernote_backup.config import OAUTH_LOCAL_PORT
 from evernote_backup.evernote_client import EvernoteClient
 
 
@@ -52,7 +53,7 @@ class EvernoteOAuthCallbackHandler(object):
         self.client = oauth_client
 
         self.server_host = "localhost"
-        self.server_port = 10500
+        self.server_port = OAUTH_LOCAL_PORT
         self.oauth_token = None
 
     def get_oauth_url(self):

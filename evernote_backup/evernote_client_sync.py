@@ -1,5 +1,6 @@
 from evernote.edam.notestore import NoteStore
 
+from evernote_backup.config import SYNC_CHUNK_MAX_RESULTS
 from evernote_backup.evernote_client import EvernoteClient
 from evernote_backup.evernote_client_util import network_retry
 
@@ -31,7 +32,7 @@ class EvernoteClientSync(EvernoteClient):
             includeExpunged=True,
         )
 
-        max_results = 200
+        max_results = SYNC_CHUNK_MAX_RESULTS
 
         while True:
             chunk = self.note_store.getFilteredSyncChunk(

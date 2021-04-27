@@ -7,6 +7,7 @@ from concurrent import futures
 from click import progressbar
 
 from evernote_backup.cli_app_util import get_progress_output
+from evernote_backup.config import SYNC_MAX_DOWNLOAD_WORKERS
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 
 logger = logging.getLogger(__name__)
@@ -125,7 +126,9 @@ class NoteSynchronizer(object):
             self._count_expunged_notes += len(expunged_notes)
 
     def _download_scheduled_notes(self, notes_to_sync):
-        with futures.ThreadPoolExecutor(max_workers=5) as executor:
+        with futures.ThreadPoolExecutor(
+            max_workers=SYNC_MAX_DOWNLOAD_WORKERS
+        ) as executor:
             note_worker = NoteClientWorker(
                 self.note_client.token,
                 self.note_client.backend,

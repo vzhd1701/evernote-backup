@@ -4,6 +4,7 @@ import pytest
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import TTransport
 
+from evernote_backup.config import NETWORK_ERROR_RETRY_COUNT
 from evernote_backup.evernote_client import ClientV2, Store
 from evernote_backup.evernote_client_classes import (
     authenticateLongSessionV2_args,
@@ -59,7 +60,7 @@ def test_network_retry(mocker):
 
     with pytest.raises(ConnectionError):
         test_error_function()
-    assert call_count == 50
+    assert call_count == NETWORK_ERROR_RETRY_COUNT
 
 
 def test_authenticateLongSessionV2_request_write(mocker):
