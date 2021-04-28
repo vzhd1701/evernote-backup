@@ -78,9 +78,7 @@ def test_init_db_touch_token(cli_invoker, mocker):
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
-def test_oauth_login_china_error(
-    cli_invoker, fake_storage, mock_evernote_client, mock_output_to_terminal
-):
+def test_oauth_login_china_error(cli_invoker, fake_storage, mock_evernote_client):
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_invoker("init-db", "-d", "fake_db", "--oauth", "--backend", "china")
     assert "Yinxiang" in str(excinfo.value)

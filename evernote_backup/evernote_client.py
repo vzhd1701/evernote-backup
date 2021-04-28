@@ -72,7 +72,6 @@ class EvernoteClient(object):
 
         self._user = None
 
-    @network_retry
     def verify_token(self):
         try:
             self.user_store.getUser()
@@ -91,7 +90,6 @@ class EvernoteClient(object):
         )
 
     @property
-    @network_retry
     def note_store(self):
         note_store_uri = self.user_store.getNoteStoreUrl()
         return Store(
@@ -102,7 +100,6 @@ class EvernoteClient(object):
         )
 
     @property
-    @network_retry
     def user(self):
         if self._user is None:
             self._user = self.user_store.getUser().username
@@ -125,7 +122,6 @@ class EvernoteClientAuth(EvernoteClient):
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
 
-    @network_retry
     def login(self, username, password):
         try:
             return self.user_store.authenticateLongSessionV2(
@@ -143,7 +139,6 @@ class EvernoteClientAuth(EvernoteClient):
             raise_auth_error(e)
             raise
 
-    @network_retry
     def two_factor_auth(self, auth_token, ota_code):
         try:
             return self.user_store.completeTwoFactorAuthentication(
@@ -173,17 +168,22 @@ class Store(object):  # pragma: no cover
                     **kwargs,
                 )
 
+            targetMethod_retry = network_retry(targetMethod)
+
             org_args = inspect.getfullargspec(targetMethod).args
             if len(org_args) == len(args) + 1:
-                return targetMethod(*args, **kwargs)
+                return targetMethod_retry(*args, **kwargs)
             elif self.token and "authenticationToken" in org_args:
                 skip_args = ["self", "authenticationToken"]
                 arg_names = [i for i in org_args if i not in skip_args]
-                return functools.partial(targetMethod, authenticationToken=self.token)(
+                return functools.partial(
+                    targetMethod_retry,
+                    authenticationToken=self.token,
+                )(
                     **dict(list(zip(arg_names, args))),
                 )
 
-            return targetMethod(*args, **kwargs)
+            return targetMethod_retry(*args, **kwargs)
 
         return delegate_method
 
