@@ -82,6 +82,7 @@ exclude = [
 # WPS326 implicit line concat
 # Docstings, don't have any
 # WPS226 String constant overuse
+# S301, S403 Pickle deserialize, it's my own data
 
 # Exceptions [false positives & formatting]
 # WPS323 Found `%` string formatting
@@ -93,6 +94,7 @@ exclude = [
 #flake8-eradicate = ["+*", "-E800"]
 
 pycodestyle = ["+*", "-E203", "-W503"]
+flake8-bandit = ["+*", "-S301", "-S403"]
 flake8-commas = ["+*", "-C812"]
 flake8-quotes = ["+*", "-Q000"]
 flake8-rst-docstrings = ["-*"]

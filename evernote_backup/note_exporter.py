@@ -2,11 +2,14 @@
 
 import logging
 from datetime import datetime
+from typing import Iterator, Union
 
 from click import progressbar
+from evernote.edam.type.ttypes import Note
 
 from evernote_backup.cli_app_util import get_progress_output
 from evernote_backup.note_exporter_util import SafePath
+from evernote_backup.note_formatter import NoteFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -81,25 +84,28 @@ class NoteExporter(object):
         for note in notes_source:
             note_path = self.safe_paths.get_file(*parent_dir, f"{note.title}.enex")
 
-            _write_export_file(note_path, note.body)
+            _write_export_file(note_path, note)
 
     def _output_notebook(self, parent_dir, notebook_name, notes_source):
         notebook_path = self.safe_paths.get_file(*parent_dir, f"{notebook_name}.enex")
-        notes_content = (n.body for n in notes_source)
 
-        _write_export_file(notebook_path, notes_content)
+        _write_export_file(notebook_path, notes_source)
 
 
-def _write_export_file(file_path, output):
+def _write_export_file(
+    file_path: str, note_source: Union[Iterator[Note], Note]
+) -> None:
     with open(file_path, "w", encoding="utf-8") as f:
         now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
         f.write(ENEX_HEAD.format(export_date=now))
 
-        if isinstance(output, str):
-            f.write(output)
+        note_formatter = NoteFormatter()
+
+        if isinstance(note_source, Note):
+            f.write(note_formatter.format_note(note_source))
         else:
-            for body in output:
-                f.write(body)
+            for note in note_source:
+                f.write(note_formatter.format_note(note))
 
         f.write(ENEX_TAIL)

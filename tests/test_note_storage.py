@@ -1,8 +1,7 @@
 import pytest
-from evernote.edam.type.ttypes import Note as RawNote
-from evernote.edam.type.ttypes import Notebook as RawNoteBook
+from evernote.edam.type.ttypes import Note, Notebook
 
-from evernote_backup.note_storage import Note, NoteBook, SqliteStorage, initialize_db
+from evernote_backup.note_storage import SqliteStorage, initialize_db
 
 
 def test_database_file_missing():
@@ -62,12 +61,12 @@ def test_config_values_missing(fake_storage):
 
 def test_notebooks(fake_storage):
     test_notebooks = [
-        RawNoteBook(
+        Notebook(
             guid="id1",
             name="name1",
             stack="stack1",
         ),
-        RawNoteBook(
+        Notebook(
             guid="id2",
             name="name2",
             stack="stack2",
@@ -75,12 +74,12 @@ def test_notebooks(fake_storage):
     ]
 
     expected_notebooks = [
-        NoteBook(
+        Notebook(
             guid="id1",
             name="name1",
             stack="stack1",
         ),
-        NoteBook(
+        Notebook(
             guid="id2",
             name="name2",
             stack="stack2",
@@ -95,15 +94,14 @@ def test_notebooks(fake_storage):
     assert result_notebooks == expected_notebooks
 
 
-@pytest.mark.usefixtures("mock_formatter")
-def test_notebook_note_count(fake_storage, mocker):
+def test_notebook_note_count(fake_storage):
     expected_notebooks = [
-        RawNoteBook(
+        Notebook(
             guid="notebook1",
             name="name1",
             stack="stack1",
         ),
-        RawNoteBook(
+        Notebook(
             guid="notebook2",
             name="name2",
             stack="stack2",
@@ -111,14 +109,14 @@ def test_notebook_note_count(fake_storage, mocker):
     ]
 
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="test",
             content="test",
             notebookGuid="notebook1",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="test",
             content="test",
@@ -137,31 +135,30 @@ def test_notebook_note_count(fake_storage, mocker):
     assert result == 1
 
 
-@pytest.mark.usefixtures("mock_formatter")
-def test_notes(fake_storage, mocker):
+def test_notes(fake_storage):
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="test",
             content="test",
             notebookGuid="notebook1",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="test",
             content="test",
             notebookGuid="notebook1",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id3",
             title="test",
             content="test",
             notebookGuid="notebook1",
             active=False,
         ),
-        RawNote(
+        Note(
             guid="id4",
             title="test",
             content="test",
@@ -174,16 +171,16 @@ def test_notes(fake_storage, mocker):
         Note(
             guid="id1",
             title="test",
-            body="test",
-            notebook_guid="notebook1",
-            is_active=True,
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
         ),
         Note(
             guid="id2",
             title="test",
-            body="test",
-            notebook_guid="notebook1",
-            is_active=True,
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
         ),
     ]
 
@@ -195,24 +192,23 @@ def test_notes(fake_storage, mocker):
     assert result_notes == expected_notes
 
 
-@pytest.mark.usefixtures("mock_formatter")
-def test_notes_trash(fake_storage, mocker):
+def test_notes_trash(fake_storage):
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="test",
             content="test",
             notebookGuid="notebook1",
             active=False,
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="test",
             content="test",
             notebookGuid="notebook2",
             active=False,
         ),
-        RawNote(
+        Note(
             guid="id3",
             title="test",
             content="test",
@@ -225,16 +221,16 @@ def test_notes_trash(fake_storage, mocker):
         Note(
             guid="id1",
             title="test",
-            body="test",
-            notebook_guid="notebook1",
-            is_active=False,
+            content="test",
+            notebookGuid="notebook1",
+            active=False,
         ),
         Note(
             guid="id2",
             title="test",
-            body="test",
-            notebook_guid="notebook2",
-            is_active=False,
+            content="test",
+            notebookGuid="notebook2",
+            active=False,
         ),
     ]
 
@@ -248,15 +244,15 @@ def test_notes_trash(fake_storage, mocker):
 
 def test_get_notes_for_sync(fake_storage):
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="name1",
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="name2",
         ),
-        RawNote(
+        Note(
             guid="id3",
             title="name3",
         ),
@@ -272,12 +268,12 @@ def test_get_notes_for_sync(fake_storage):
 
 def test_notebook_deleted(fake_storage):
     test_notebooks = [
-        RawNoteBook(
+        Notebook(
             guid="id1",
             name="name1",
             stack="stack1",
         ),
-        RawNoteBook(
+        Notebook(
             guid="id2",
             name="name2",
             stack="stack2",
@@ -294,17 +290,16 @@ def test_notebook_deleted(fake_storage):
     assert result[0].guid == "id1"
 
 
-@pytest.mark.usefixtures("mock_formatter")
-def test_note_deleted(fake_storage, mocker):
+def test_note_deleted(fake_storage):
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="test",
             content="test",
             notebookGuid="notebook1",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="test",
             content="test",
@@ -324,24 +319,23 @@ def test_note_deleted(fake_storage, mocker):
     assert result[0].guid == "id1"
 
 
-@pytest.mark.usefixtures("mock_formatter")
 def test_note_count(fake_storage):
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="test",
             content="test",
             notebookGuid="test",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="test",
             content="test",
             notebookGuid="test",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id3",
             title="test",
             content="test",
@@ -358,24 +352,23 @@ def test_note_count(fake_storage):
     assert result == 2
 
 
-@pytest.mark.usefixtures("mock_formatter")
 def test_trash_notes_count(fake_storage):
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="test",
             content="test",
             notebookGuid="test",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="test",
             content="test",
             notebookGuid="test",
             active=False,
         ),
-        RawNote(
+        Note(
             guid="id3",
             title="test",
             content="test",

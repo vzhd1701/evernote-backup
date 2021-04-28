@@ -190,16 +190,6 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
 
 
 @pytest.fixture()
-def mock_formatter(mocker):
-    fake_values = MagicMock(fake_body="test")
-
-    mock_formatter = mocker.patch("evernote_backup.note_storage.NoteFormatter")
-    mock_formatter().format_note.side_effect = lambda *a, **kw: fake_values.fake_body
-
-    return fake_values
-
-
-@pytest.fixture()
 def fake_token():
     return "S=1:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
 

@@ -22,14 +22,18 @@ def fmt_content(content_body):
         return content_body
 
     body = content_body.strip()
+
+    # <?xml version="1.0" encoding="UTF-8"?>
     if body.startswith("<?xml") and body.find(">") != -1:
         content_start = body.find(">") + 1
         body = body[content_start:].strip()
 
     return (
         f"\n      "
-        f'<![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
-        f"{body}]]>\n    "
+        f"<![CDATA["
+        f'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+        f"{body}"
+        f"]]>\n    "
     )
 
 

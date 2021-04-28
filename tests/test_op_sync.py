@@ -1,42 +1,33 @@
 import time
 
 import pytest
-from evernote.edam.type.ttypes import Note as RawNote
-from evernote.edam.type.ttypes import Notebook as RawNoteBook
-from evernote.edam.type.ttypes import Tag as RawTag
+from evernote.edam.type.ttypes import Note, Notebook, Tag
 
 from evernote_backup.cli_app_util import ProgramTerminatedError
-from evernote_backup.note_storage import Note, NoteBook
 
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_add_notebook(cli_invoker, mock_evernote_client, fake_storage):
-    expected_notebooks = [
-        NoteBook(
+    test_notebooks = [
+        Notebook(
             guid="id1",
             name="name1",
             stack="stack1",
         )
     ]
-    mock_evernote_client.fake_notebooks.append(
-        RawNoteBook(
-            guid="id1",
-            name="name1",
-            stack="stack1",
-        ),
-    )
+    mock_evernote_client.fake_notebooks = test_notebooks
 
     cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
 
-    assert result_notebooks == expected_notebooks
+    assert result_notebooks == test_notebooks
 
 
 @pytest.mark.usefixtures("fake_init_db")
-def test_sync_add_note(cli_invoker, mock_evernote_client, fake_storage, mock_formatter):
+def test_sync_add_note(cli_invoker, mock_evernote_client, fake_storage):
     mock_evernote_client.fake_notebooks.append(
-        RawNoteBook(
+        Notebook(
             guid="nbid1",
             name="name1",
             stack="stack1",
@@ -44,44 +35,32 @@ def test_sync_add_note(cli_invoker, mock_evernote_client, fake_storage, mock_for
         ),
     )
 
-    mock_evernote_client.fake_notes.append(
-        RawNote(
-            guid="id1",
-            title="title1",
-            content="body1",
-            notebookGuid="nbid1",
-            active=True,
-        )
+    test_note = Note(
+        guid="id1",
+        title="title1",
+        content="body1",
+        notebookGuid="nbid1",
+        active=True,
     )
 
-    expected_notes = [
-        Note(
-            guid="id1",
-            title="title1",
-            body="body1",
-            notebook_guid="nbid1",
-            is_active=True,
-        )
-    ]
-
-    mock_formatter.fake_body = "body1"
+    mock_evernote_client.fake_notes.append(test_note)
 
     cli_invoker("sync", "--database", "fake_db")
 
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
-    assert result_notes == expected_notes
+    assert result_notes == [test_note]
 
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_add_note_with_tags(cli_invoker, mock_evernote_client, fake_storage):
     mock_evernote_client.fake_tags = [
-        RawTag(guid="tid1", name="tag1"),
-        RawTag(guid="tid2", name="tag2"),
+        Tag(guid="tid1", name="tag1"),
+        Tag(guid="tid2", name="tag2"),
     ]
 
     mock_evernote_client.fake_notebooks.append(
-        RawNoteBook(
+        Notebook(
             guid="nbid1",
             name="name1",
             stack="stack1",
@@ -90,7 +69,7 @@ def test_sync_add_note_with_tags(cli_invoker, mock_evernote_client, fake_storage
     )
 
     mock_evernote_client.fake_notes.append(
-        RawNote(
+        Note(
             guid="id1",
             title="title1",
             content="body1",
@@ -104,17 +83,11 @@ def test_sync_add_note_with_tags(cli_invoker, mock_evernote_client, fake_storage
         Note(
             guid="id1",
             title="title1",
-            body="  <note>\n"
-            "    <title>title1</title>\n"
-            "    <tag>tag1</tag>\n"
-            "    <tag>tag2</tag>\n"
-            "    <content>\n"
-            '      <![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
-            "body1]]>\n"
-            "    </content>\n"
-            "  </note>\n",
-            notebook_guid="nbid1",
-            is_active=True,
+            content="body1",
+            notebookGuid="nbid1",
+            active=True,
+            tagGuids=["tid1", "tid2"],
+            tagNames=["tag1", "tag2"],
         )
     ]
 
@@ -138,17 +111,17 @@ def test_sync_wrong_user(cli_invoker, mock_evernote_client, fake_storage):
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_expunge_notebooks(cli_invoker, mock_evernote_client, fake_storage):
     test_notebooks = [
-        RawNoteBook(
+        Notebook(
             guid="id1",
             name="name1",
             stack="stack1",
         ),
-        RawNoteBook(
+        Notebook(
             guid="id2",
             name="name1",
             stack="stack1",
         ),
-        RawNoteBook(
+        Notebook(
             guid="id3",
             name="name1",
             stack="stack1",
@@ -168,25 +141,24 @@ def test_sync_expunge_notebooks(cli_invoker, mock_evernote_client, fake_storage)
     assert result_notebooks[0].guid == "id2"
 
 
-@pytest.mark.usefixtures("mock_formatter")
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_expunge_notes(cli_invoker, mock_evernote_client, fake_storage):
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="test",
             content="test",
             notebookGuid="test",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="test",
             content="test",
             notebookGuid="test",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id3",
             title="test",
             content="test",
@@ -212,7 +184,7 @@ def test_sync_expunge_notes(cli_invoker, mock_evernote_client, fake_storage):
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_nothing_to_sync(cli_invoker, mock_evernote_client, fake_storage):
     mock_evernote_client.fake_notebooks.append(
-        RawNoteBook(
+        Notebook(
             guid="id1",
             name="name1",
             stack="stack1",
@@ -232,7 +204,7 @@ def test_sync_nothing_to_sync(cli_invoker, mock_evernote_client, fake_storage):
 def test_sync_interrupt_download(
     cli_invoker, mock_evernote_client, fake_storage, mocker
 ):
-    test_notes = [RawNote(guid=f"id{i}", title="test") for i in range(100)]
+    test_notes = [Note(guid=f"id{i}", title="test") for i in range(100)]
 
     mock_evernote_client.fake_notes.extend(test_notes)
 
@@ -242,7 +214,7 @@ def test_sync_interrupt_download(
 
     def fake_slow_get_note(note_guid):
         time.sleep(0.1)
-        return RawNote(
+        return Note(
             guid=note_guid,
             title="test",
             content="test",

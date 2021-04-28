@@ -1,6 +1,5 @@
 import pytest
-from evernote.edam.type.ttypes import Note as RawNote
-from evernote.edam.type.ttypes import Notebook as RawNoteBook
+from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.cli_app_util import ProgramTerminatedError
 
@@ -12,25 +11,24 @@ def test_export_empty_db(cli_invoker, fake_storage, tmp_path):
         cli_invoker("export", "--database", "fake_db", str(test_out_path))
 
 
-@pytest.mark.usefixtures("mock_formatter")
 def test_export(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 
     test_notebooks = [
-        RawNoteBook(guid="nbid1", name="name1", stack="stack1"),
-        RawNoteBook(guid="nbid2", name="name2", stack=None),
-        RawNoteBook(guid="nbid3", name="name3", stack=None),
+        Notebook(guid="nbid1", name="name1", stack="stack1"),
+        Notebook(guid="nbid2", name="name2", stack=None),
+        Notebook(guid="nbid3", name="name3", stack=None),
     ]
 
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="title1",
             content="test",
             notebookGuid="nbid1",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="test",
             content="test",
@@ -53,24 +51,23 @@ def test_export(cli_invoker, fake_storage, tmp_path):
     assert book2_path.is_file()
 
 
-@pytest.mark.usefixtures("mock_formatter")
 def test_export_single_notes(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 
     test_notebooks = [
-        RawNoteBook(guid="nbid1", name="name1", stack="stack1"),
-        RawNoteBook(guid="nbid2", name="name2", stack=None),
+        Notebook(guid="nbid1", name="name1", stack="stack1"),
+        Notebook(guid="nbid2", name="name2", stack=None),
     ]
 
     test_notes = [
-        RawNote(
+        Note(
             guid="id1",
             title="title1",
             content="test",
             notebookGuid="nbid1",
             active=True,
         ),
-        RawNote(
+        Note(
             guid="id2",
             title="title2",
             content="test",
@@ -93,12 +90,11 @@ def test_export_single_notes(cli_invoker, fake_storage, tmp_path):
     assert book2_path.is_file()
 
 
-@pytest.mark.usefixtures("mock_formatter")
 def test_export_no_trash(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 
     fake_storage.notes.add_note(
-        RawNote(
+        Note(
             guid="id1",
             title="title1",
             content="test",
@@ -112,12 +108,11 @@ def test_export_no_trash(cli_invoker, fake_storage, tmp_path):
     assert not test_out_path.exists()
 
 
-@pytest.mark.usefixtures("mock_formatter")
 def test_export_yes_trash(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 
     fake_storage.notes.add_note(
-        RawNote(
+        Note(
             guid="id1",
             title="title1",
             content="test",
@@ -135,12 +130,11 @@ def test_export_yes_trash(cli_invoker, fake_storage, tmp_path):
     assert book1_path.is_file()
 
 
-@pytest.mark.usefixtures("mock_formatter")
 def test_export_yes_trash_single_notes(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 
     fake_storage.notes.add_note(
-        RawNote(
+        Note(
             guid="id1",
             title="title1",
             content="test",
