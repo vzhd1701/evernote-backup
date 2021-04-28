@@ -15,7 +15,7 @@ from evernote_backup.evernote_client_oauth import (
 )
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import EvernoteAuthError
-from evernote_backup.note_storage import SqliteStorage
+from evernote_backup.note_storage import DatabaseResyncRequiredError, SqliteStorage
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,15 @@ def get_storage(database_path):
         raise ProgramTerminatedError(
             f"Database file {database_path} does not exist."
             f" Initialize database first!"
+        )
+
+
+def raise_on_old_database_version(storage):
+    try:
+        storage.check_version()
+    except DatabaseResyncRequiredError:
+        raise ProgramTerminatedError(
+            "The database version has been updated. Full resync is required."
         )
 
 

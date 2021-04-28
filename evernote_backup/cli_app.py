@@ -8,7 +8,9 @@ from evernote_backup.cli_app_util import (
     get_auth_token,
     get_storage,
     get_sync_client,
+    raise_on_old_database_version,
 )
+from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.note_exporter import NoteExporter, NothingToExportError
 from evernote_backup.note_storage import initialize_db
 from evernote_backup.note_synchronizer import NoteSynchronizer, WrongAuthUserError
@@ -38,7 +40,8 @@ def init_db(
 
     new_user = note_client.user
 
-    storage.config.set_config_value("USN", 0)
+    storage.config.set_config_value("DB_VERSION", str(CURRENT_DB_VERSION))
+    storage.config.set_config_value("USN", "0")
     storage.config.set_config_value("auth_token", auth_token)
     storage.config.set_config_value("user", new_user)
     storage.config.set_config_value("backend", backend)
@@ -48,6 +51,8 @@ def init_db(
 
 def reauth(database, auth_user, auth_password, auth_is_oauth, auth_token):
     storage = get_storage(database)
+
+    raise_on_old_database_version(storage)
 
     backend = storage.config.get_config_value("backend")
 
@@ -72,6 +77,8 @@ def reauth(database, auth_user, auth_password, auth_is_oauth, auth_token):
 def sync(database):
     storage = get_storage(database)
 
+    raise_on_old_database_version(storage)
+
     backend = storage.config.get_config_value("backend")
     auth_token = storage.config.get_config_value("auth_token")
 
@@ -92,6 +99,8 @@ def sync(database):
 
 def export(database, single_notes, include_trash, output_path):
     storage = get_storage(database)
+
+    raise_on_old_database_version(storage)
 
     exporter = NoteExporter(storage, output_path)
 

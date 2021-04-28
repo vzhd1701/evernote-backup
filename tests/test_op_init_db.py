@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.note_storage import SqliteStorage
 
 
@@ -34,6 +35,8 @@ def test_init_db_new_file(tmp_path, cli_invoker, mock_evernote_client, fake_toke
 
     storage = SqliteStorage(test_db_path)
 
+    assert storage.config.get_config_value("USN") == "0"
+    assert storage.config.get_config_value("DB_VERSION") == str(CURRENT_DB_VERSION)
     assert storage.config.get_config_value("auth_token") == fake_token
     assert storage.config.get_config_value("user") == "user1"
     assert storage.config.get_config_value("backend") == "evernote"

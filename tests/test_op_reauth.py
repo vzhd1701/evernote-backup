@@ -32,7 +32,7 @@ def test_user_mismatch_error(fake_storage, cli_invoker, mock_evernote_client):
 
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
-    assert "Each user must use different database file" in excinfo.value.args[0]
+    assert "Each user must use different database file" in str(excinfo.value)
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
@@ -40,14 +40,14 @@ def test_user_mismatch_error(fake_storage, cli_invoker, mock_evernote_client):
 def test_no_username_error(fake_storage, cli_invoker):
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_invoker("reauth", "--database", "fake_db")
-    assert excinfo.value.args[0] == "--user and --password are required!"
+    assert "--user and --password are required!" in str(excinfo.value)
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
 def test_no_database_error(cli_invoker, fake_token):
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
-    assert "Initialize database first!" in excinfo.value.args[0]
+    assert "Initialize database first!" in str(excinfo.value)
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -270,3 +270,13 @@ def test_oauth_login__declined_error(
     assert mock_launch.called_once_with(
         "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
     )
+
+
+@pytest.mark.usefixtures("mock_evernote_client")
+@pytest.mark.usefixtures("fake_init_db")
+def test_old_db_error(cli_invoker, fake_storage, fake_token):
+    fake_storage.config.set_config_value("DB_VERSION", "0")
+
+    with pytest.raises(ProgramTerminatedError) as excinfo:
+        cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
+    assert "Full resync is required" in str(excinfo.value)

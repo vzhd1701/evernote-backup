@@ -8,23 +8,30 @@ from typing import Iterator, List, Tuple, Union
 
 from evernote.edam.type.ttypes import Note, Notebook
 
-DB_SCHEMA = """create table notebooks(
+from evernote_backup.config import CURRENT_DB_VERSION
+
+DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
                         guid TEXT PRIMARY KEY,
                         name TEXT,
                         stack TEXT
                     );
-                    create table notes(
+                    CREATE TABLE IF NOT EXISTS notes(
                         guid TEXT PRIMARY KEY,
                         title TEXT,
                         notebook_guid TEXT,
                         is_active BOOLEAN,
                         raw_note BLOB
                     );
-                    create table config(
+                    CREATE TABLE IF NOT EXISTS config(
                         name TEXT PRIMARY KEY,
                         value TEXT
                     );
-                    CREATE INDEX idx_notes ON notes(notebook_guid, is_active);"""
+                    CREATE INDEX IF NOT EXISTS idx_notes
+                     ON notes(notebook_guid, is_active);"""
+
+
+class DatabaseResyncRequiredError(Exception):
+    """Raise when database update requires resync"""
 
 
 def initialize_db(filename: str, force: bool = False) -> None:
@@ -65,6 +72,25 @@ class SqliteStorage(object):
     @property
     def notebooks(self) -> "NoteBookStorage":
         return NoteBookStorage(self.db)
+
+    def check_version(self):
+        try:
+            db_version = int(self.config.get_config_value("DB_VERSION"))
+        except KeyError:
+            db_version = 0
+
+        if db_version == 0:
+            with self.db as con:
+                con.execute("DROP TABLE notebooks;")
+                con.execute("DROP TABLE notes;")
+
+                con.executescript(DB_SCHEMA)
+
+        if db_version != CURRENT_DB_VERSION:
+            self.config.set_config_value("DB_VERSION", str(CURRENT_DB_VERSION))
+            self.config.set_config_value("USN", "0")
+
+            raise DatabaseResyncRequiredError
 
 
 class NoteBookStorage(SqliteStorage):

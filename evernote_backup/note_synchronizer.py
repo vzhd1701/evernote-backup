@@ -109,7 +109,7 @@ class NoteSynchronizer(object):
                 if chunk.notes:
                     self.storage.notes.add_notes_for_sync(chunk.notes)
 
-                self.storage.config.set_config_value("USN", chunk.chunkHighUSN)
+                self.storage.config.set_config_value("USN", str(chunk.chunkHighUSN))
 
                 chunks_bar.update(chunk.chunkHighUSN - last_usn)
                 last_usn = chunk.chunkHighUSN

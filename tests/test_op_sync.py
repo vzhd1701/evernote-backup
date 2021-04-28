@@ -129,7 +129,7 @@ def test_sync_expunge_notebooks(cli_invoker, mock_evernote_client, fake_storage)
     ]
 
     fake_storage.notebooks.add_notebooks(test_notebooks)
-    fake_storage.config.set_config_value("USN", 1)
+    fake_storage.config.set_config_value("USN", "1")
 
     mock_evernote_client.fake_expunged_notebooks = ["id1", "id3"]
 
@@ -169,7 +169,7 @@ def test_sync_expunge_notes(cli_invoker, mock_evernote_client, fake_storage):
 
     for note in test_notes:
         fake_storage.notes.add_note(note)
-    fake_storage.config.set_config_value("USN", 1)
+    fake_storage.config.set_config_value("USN", "1")
 
     mock_evernote_client.fake_expunged_notes = ["id1", "id3"]
 
@@ -231,3 +231,13 @@ def test_sync_interrupt_download(
     mock_add_note.side_effect = interrupter
 
     cli_invoker("sync", "--database", "fake_db")
+
+
+@pytest.mark.usefixtures("mock_evernote_client")
+@pytest.mark.usefixtures("fake_init_db")
+def test_old_db_error(cli_invoker, mock_evernote_client, fake_storage):
+    fake_storage.config.set_config_value("DB_VERSION", "0")
+
+    with pytest.raises(ProgramTerminatedError) as excinfo:
+        cli_invoker("sync", "--database", "fake_db")
+    assert "Full resync is required" in str(excinfo.value)
