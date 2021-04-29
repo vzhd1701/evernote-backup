@@ -1,16 +1,20 @@
+from typing import Dict, Iterator, Optional
+
 from evernote.edam.notestore import NoteStore
+from evernote.edam.notestore.ttypes import SyncChunk
+from evernote.edam.type.ttypes import Note
 
 from evernote_backup.config import SYNC_CHUNK_MAX_RESULTS
 from evernote_backup.evernote_client import EvernoteClient
 
 
 class EvernoteClientSync(EvernoteClient):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, backend: str, token: str) -> None:
+        super().__init__(backend=backend, token=token)
 
-        self._tags = None
+        self._tags: Optional[dict] = None
 
-    def get_note(self, note_guid):
+    def get_note(self, note_guid: str) -> Note:
         note = self.note_store.getNote(
             note_guid, True, True, True, True  # noqa: WPS425
         )
@@ -20,7 +24,7 @@ class EvernoteClientSync(EvernoteClient):
 
         return note
 
-    def iter_sync_chunks(self, after_usn):
+    def iter_sync_chunks(self, after_usn: int) -> Iterator[SyncChunk]:
         sync_filter = NoteStore.SyncChunkFilter(
             includeNotes=True,
             includeNoteResources=True,
@@ -44,10 +48,10 @@ class EvernoteClientSync(EvernoteClient):
                 return
 
     @property
-    def tags(self):
+    def tags(self) -> Dict[str, str]:
         if self._tags is None:
             self._tags = {t.guid: t.name for t in self.note_store.listTags()}
         return self._tags
 
-    def get_remote_usn(self):
+    def get_remote_usn(self) -> int:
         return int(self.note_store.getSyncState().updateCount)

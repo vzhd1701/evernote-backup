@@ -2,14 +2,15 @@
 
 import logging
 from datetime import datetime
-from typing import Iterator, Union
+from typing import Iterable, List, Union
 
 from click import progressbar
-from evernote.edam.type.ttypes import Note
+from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.cli_app_util import get_progress_output
 from evernote_backup.note_exporter_util import SafePath
 from evernote_backup.note_formatter import NoteFormatter
+from evernote_backup.note_storage import SqliteStorage
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +26,11 @@ class NothingToExportError(Exception):
 
 
 class NoteExporter(object):
-    def __init__(self, storage, target_dir):
+    def __init__(self, storage: SqliteStorage, target_dir: str) -> None:
         self.storage = storage
         self.safe_paths = SafePath(target_dir)
 
-    def export_notebooks(self, single_notes, export_trash):
+    def export_notebooks(self, single_notes: bool, export_trash: bool) -> None:
         count_notes = self.storage.notes.get_notes_count()
         count_trash = self.storage.notes.get_notes_count(is_active=False)
 
@@ -46,14 +47,14 @@ class NoteExporter(object):
 
             self._export_trash(single_notes)
 
-    def _export_active(self, single_notes):
+    def _export_active(self, single_notes: bool) -> None:
         notebooks = tuple(self.storage.notebooks.iter_notebooks())
 
         with progressbar(
             notebooks,
-            item_show_func=lambda x: x.name if x else None,
+            item_show_func=lambda x: str(x.name) if x else "",
             show_pos=True,
-            file=get_progress_output(),
+            file=get_progress_output(),  # type: ignore
         ) as notebooks_bar:
             for notebook in notebooks_bar:
                 if self.storage.notebooks.get_notebook_notes_count(notebook.guid) == 0:
@@ -61,7 +62,7 @@ class NoteExporter(object):
 
                 self._export_notes(notebook, single_notes)
 
-    def _export_notes(self, notebook, single_notes):
+    def _export_notes(self, notebook: Notebook, single_notes: bool) -> None:
         parent_dir = [notebook.stack] if notebook.stack else []
 
         notes_source = self.storage.notes.iter_notes(notebook.guid)
@@ -72,7 +73,7 @@ class NoteExporter(object):
         else:
             self._output_notebook(parent_dir, notebook.name, notes_source)
 
-    def _export_trash(self, single_notes):
+    def _export_trash(self, single_notes: bool) -> None:
         notes_source = self.storage.notes.iter_notes_trash()
 
         if single_notes:
@@ -80,20 +81,29 @@ class NoteExporter(object):
         else:
             self._output_notebook([], "Trash", notes_source)
 
-    def _output_single_notes(self, parent_dir, notes_source):
+    def _output_single_notes(
+        self,
+        parent_dir: List[str],
+        notes_source: Iterable[Note],
+    ) -> None:
         for note in notes_source:
             note_path = self.safe_paths.get_file(*parent_dir, f"{note.title}.enex")
 
             _write_export_file(note_path, note)
 
-    def _output_notebook(self, parent_dir, notebook_name, notes_source):
+    def _output_notebook(
+        self,
+        parent_dir: List[str],
+        notebook_name: str,
+        notes_source: Iterable[Note],
+    ) -> None:
         notebook_path = self.safe_paths.get_file(*parent_dir, f"{notebook_name}.enex")
 
         _write_export_file(notebook_path, notes_source)
 
 
 def _write_export_file(
-    file_path: str, note_source: Union[Iterator[Note], Note]
+    file_path: str, note_source: Union[Iterable[Note], Note]
 ) -> None:
     with open(file_path, "w", encoding="utf-8") as f:
         now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")

@@ -1,5 +1,6 @@
 import time
 from http.client import HTTPException
+from typing import Any, Callable
 
 from evernote_backup.config import NETWORK_ERROR_RETRY_COUNT
 
@@ -8,8 +9,8 @@ class EvernoteAuthError(Exception):
     """Evernote authentication error"""
 
 
-def network_retry(fun):
-    def wrapper(*args, **kwargs):
+def network_retry(fun: Callable) -> Callable:
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         retry_count = NETWORK_ERROR_RETRY_COUNT
 
         for i in range(retry_count):

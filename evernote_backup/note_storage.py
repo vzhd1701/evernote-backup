@@ -4,7 +4,7 @@ import lzma
 import os
 import pickle
 import sqlite3
-from typing import Iterator, List, Tuple, Union
+from typing import Iterable, Iterator, Tuple, Union
 
 from evernote.edam.type.ttypes import Note, Notebook
 
@@ -73,7 +73,7 @@ class SqliteStorage(object):
     def notebooks(self) -> "NoteBookStorage":
         return NoteBookStorage(self.db)
 
-    def check_version(self):
+    def check_version(self) -> None:
         try:
             db_version = int(self.config.get_config_value("DB_VERSION"))
         except KeyError:
@@ -94,7 +94,7 @@ class SqliteStorage(object):
 
 
 class NoteBookStorage(SqliteStorage):
-    def add_notebooks(self, notebooks: List[Notebook]) -> None:
+    def add_notebooks(self, notebooks: Iterable[Notebook]) -> None:
         with self.db as con:
             con.executemany(
                 "replace into notebooks(guid, name, stack)" " values (?, ?, ?)",
@@ -126,13 +126,13 @@ class NoteBookStorage(SqliteStorage):
 
             return int(cur.fetchone()[0])
 
-    def expunge_notebooks(self, guids: List[str]) -> None:
+    def expunge_notebooks(self, guids: Iterable[str]) -> None:
         with self.db as con:
             con.executemany("delete from notebooks where guid=?", ((g,) for g in guids))
 
 
 class NoteStorage(SqliteStorage):
-    def add_notes_for_sync(self, notes: List[Note]) -> None:
+    def add_notes_for_sync(self, notes: Iterable[Note]) -> None:
         with self.db as con:
             con.executemany(
                 "replace into notes(guid, title) values (?, ?)",
@@ -182,11 +182,11 @@ class NoteStorage(SqliteStorage):
 
             return tuple(notes)
 
-    def expunge_notes(self, guids: str) -> None:
+    def expunge_notes(self, guids: Iterable[str]) -> None:
         with self.db as con:
             con.executemany("delete from notes where guid=?", ((g,) for g in guids))
 
-    def get_notes_count(self, is_active: bool = True):
+    def get_notes_count(self, is_active: bool = True) -> int:
         with self.db as con:
             cur = con.execute(
                 "select COUNT(guid) from notes where is_active=?", (is_active,)
@@ -211,4 +211,4 @@ class ConfigStorage(SqliteStorage):
             if not res:
                 raise KeyError(f"Config ID {name} not found in database!")
 
-            return res[0]
+            return str(res[0])

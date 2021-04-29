@@ -2,8 +2,10 @@
 
 import re
 import uuid
+from typing import Optional
 
 import xmltodict
+from evernote.edam.type.ttypes import Note, Resource
 
 from evernote_backup.note_formatter_util import fmt_binary, fmt_content, fmt_time
 
@@ -11,10 +13,10 @@ from evernote_backup.note_formatter_util import fmt_binary, fmt_content, fmt_tim
 class NoteFormatter(object):
     """http://xml.evernote.com/pub/evernote-export3.dtd"""
 
-    def __init__(self):
-        self._raw_elements = None
+    def __init__(self) -> None:
+        self._raw_elements: dict = {}
 
-    def format_note(self, note):
+    def format_note(self, note: Note) -> str:
         self._raw_elements = {}
 
         note_skeleton = {
@@ -61,9 +63,9 @@ class NoteFormatter(object):
         for r_uuid, r_body in self._raw_elements.items():
             note_template = note_template.replace(r_uuid, r_body)
 
-        return note_template
+        return str(note_template)
 
-    def _fmt_resource(self, resource):
+    def _fmt_resource(self, resource: Resource) -> dict:
         return {
             "data": {
                 "@encoding": "base64",
@@ -87,7 +89,7 @@ class NoteFormatter(object):
             },
         }
 
-    def _fmt_raw(self, body):
+    def _fmt_raw(self, body: Optional[str]) -> Optional[str]:
         if body is None:
             return body
         content_uuid = str(uuid.uuid4())

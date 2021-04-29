@@ -1,6 +1,7 @@
 import functools
 import inspect
 import platform
+from typing import Any, Callable, Optional, Union
 
 from evernote.edam.error.ttypes import (
     EDAMErrorCode,
@@ -8,6 +9,8 @@ from evernote.edam.error.ttypes import (
     EDAMUserException,
 )
 from evernote.edam.notestore import NoteStore
+from evernote.edam.userstore import UserStore
+from evernote.edam.userstore.ttypes import AuthenticationResult
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import THttpClient
 
@@ -15,7 +18,7 @@ from evernote_backup.evernote_client_classes import ClientV2
 from evernote_backup.evernote_client_util import EvernoteAuthError, network_retry
 
 
-def raise_auth_error(exception):
+def raise_auth_error(exception: Union[EDAMSystemException, EDAMUserException]) -> None:
     messages = {
         EDAMErrorCode.BAD_DATA_FORMAT: {"authenticationToken": "Wrong token format!"},
         EDAMErrorCode.INVALID_AUTH: {
@@ -47,9 +50,8 @@ def raise_auth_error(exception):
     raise EvernoteAuthError(error)
 
 
-class EvernoteClient(object):
-    def __init__(self, token=None, backend=None):
-        self.token = token
+class EvernoteClientBase(object):
+    def __init__(self, backend: str) -> None:
         self.backend = backend
 
         backends = {
@@ -70,9 +72,18 @@ class EvernoteClient(object):
         if platform.node():
             self.device_description += " [{0}]".format(platform.node())
 
-        self._user = None
+    def _get_endpoint(self, path: str = "") -> str:
+        return f"https://{self.service_host}/{path}"
 
-    def verify_token(self):
+
+class EvernoteClient(EvernoteClientBase):
+    def __init__(self, backend: str, token: str) -> None:
+        super().__init__(backend=backend)
+
+        self.token = token
+        self._user: Optional[str] = None
+
+    def verify_token(self) -> None:
         try:
             self.user_store.getUser()
         except (EDAMUserException, EDAMSystemException) as e:
@@ -80,7 +91,7 @@ class EvernoteClient(object):
             raise
 
     @property
-    def user_store(self):
+    def user_store(self) -> "Store":
         user_store_uri = self._get_endpoint("edam/user")
         return Store(
             client_class=ClientV2,
@@ -90,7 +101,7 @@ class EvernoteClient(object):
         )
 
     @property
-    def note_store(self):
+    def note_store(self) -> "Store":
         note_store_uri = self.user_store.getNoteStoreUrl()
         return Store(
             client_class=NoteStore.Client,
@@ -100,29 +111,25 @@ class EvernoteClient(object):
         )
 
     @property
-    def user(self):
+    def user(self) -> str:
         if self._user is None:
             self._user = self.user_store.getUser().username
         return self._user
-
-    def _get_endpoint(self, path=""):
-        return f"https://{self.service_host}/{path}"
 
 
 class EvernoteClientAuth(EvernoteClient):
     def __init__(
         self,
-        token=None,
-        backend=None,
-        consumer_key=None,
-        consumer_secret=None,
+        backend: str,
+        consumer_key: str,
+        consumer_secret: str,
     ):
-        super().__init__(token=token, backend=backend)
+        super().__init__(backend=backend, token="")  # noqa: S106
 
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
 
-    def login(self, username, password):
+    def login(self, username: str, password: str) -> AuthenticationResult:
         try:
             return self.user_store.authenticateLongSessionV2(
                 username=username,
@@ -139,7 +146,7 @@ class EvernoteClientAuth(EvernoteClient):
             raise_auth_error(e)
             raise
 
-    def two_factor_auth(self, auth_token, ota_code):
+    def two_factor_auth(self, auth_token: str, ota_code: str) -> AuthenticationResult:
         try:
             return self.user_store.completeTwoFactorAuthentication(
                 authenticationToken=auth_token,
@@ -153,14 +160,20 @@ class EvernoteClientAuth(EvernoteClient):
 
 
 class Store(object):  # pragma: no cover
-    def __init__(self, client_class, store_url, user_agent, token=None):
+    def __init__(
+        self,
+        client_class: Union[UserStore.Client, NoteStore.Client],
+        store_url: str,
+        user_agent: str,
+        token: Optional[str] = None,
+    ):
         self.token = token
         self.user_agent = user_agent
 
         self._client = self._get_thrift_client(client_class, store_url)
 
-    def __getattr__(self, name):
-        def delegate_method(*args, **kwargs):  # noqa: WPS430
+    def __getattr__(self, name: str) -> Callable:
+        def delegate_method(*args: Any, **kwargs: Any) -> Any:  # noqa: WPS430
             targetMethod = getattr(self._client, name, None)
             if targetMethod is None:
                 return object.__getattribute__(self, name)(  # noqa: WPS609
@@ -187,7 +200,11 @@ class Store(object):  # pragma: no cover
 
         return delegate_method
 
-    def _get_thrift_client(self, client_class, url):
+    def _get_thrift_client(
+        self,
+        client_class: Union[UserStore.Client, NoteStore.Client],
+        url: str,
+    ) -> Union[UserStore.Client, NoteStore.Client]:
         http_client = THttpClient.THttpClient(url)
         http_client.setCustomHeaders(
             {

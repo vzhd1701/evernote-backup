@@ -33,11 +33,11 @@ def test_cli_quiet(is_quiet, log_level_expected, cli_invoker, mocker):
         (True, "%(message)s"),
     ],
 )
-def test_cli_test_tty(is_tty, log_format, cli_invoker, mocker):
+def test_cli_test_tty(is_tty, log_format, cli_invoker, mocker, mock_output_to_terminal):
     mocker.patch("evernote_backup.cli.cli_app")
 
     logging_mock = mocker.patch("evernote_backup.cli.logging.basicConfig")
-    mocker.patch("evernote_backup.cli.is_output_to_terminal", return_value=is_tty)
+    mock_output_to_terminal.is_tty = is_tty
 
     cli_invoker("init-db")
 

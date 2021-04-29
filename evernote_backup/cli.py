@@ -1,6 +1,7 @@
 import logging
 import sys
 import traceback
+from typing import Optional
 
 import click
 
@@ -69,7 +70,7 @@ opt_database = click.option(
     help="Quiet mode, output only in case of critical errors.",
 )
 @click.version_option(__version__)
-def cli(quiet):
+def cli(quiet: bool) -> None:
     """Evernote backup & export
 
     \b
@@ -110,7 +111,15 @@ def cli(quiet):
     type=click.Choice(["evernote", "evernote:sandbox", "china", "china:sandbox"]),
     help="API backend to connect to. If you are using Yinxiang, select 'china'.",
 )
-def init_db(database, user, password, oauth, token, force, backend):
+def init_db(
+    database: str,
+    user: Optional[str],
+    password: Optional[str],
+    oauth: bool,
+    token: Optional[str],
+    force: bool,
+    backend: str,
+) -> None:
     """Initialize storage & log in to Evernote."""
 
     cli_app.init_db(
@@ -126,7 +135,7 @@ def init_db(database, user, password, oauth, token, force, backend):
 
 @cli.command()
 @opt_database
-def sync(database):
+def sync(database: str) -> None:
     """Sync local database with Evernote, downloading all notes."""
 
     cli_app.sync(database=database)
@@ -149,7 +158,9 @@ def sync(database):
     required=True,
     type=DIR_ONLY,
 )
-def export(database, single_notes, include_trash, output_path):
+def export(
+    database: str, single_notes: bool, include_trash: bool, output_path: str
+) -> None:
     """Export all notes from local database into ENEX files."""
 
     cli_app.export(
@@ -166,7 +177,13 @@ click.password_option()
 @cli.command()
 @opt_database
 @group_options(opt_user, opt_password, opt_oauth, opt_token)
-def reauth(database, user, password, oauth, token):
+def reauth(
+    database: str,
+    user: Optional[str],
+    password: Optional[str],
+    oauth: bool,
+    token: Optional[str],
+) -> None:
     """Refresh login to Evernote, run when token expires."""
 
     cli_app.reauth(
@@ -178,7 +195,7 @@ def reauth(database, user, password, oauth, token):
     )
 
 
-def main():
+def main() -> None:
     try:
         cli()
     except ProgramTerminatedError as e:

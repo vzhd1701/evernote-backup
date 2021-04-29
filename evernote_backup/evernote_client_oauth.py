@@ -1,12 +1,13 @@
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Optional
 from urllib.parse import parse_qsl, quote, urlparse
 
 import oauth2
 
 from evernote_backup.config import OAUTH_LOCAL_PORT
-from evernote_backup.evernote_client import EvernoteClient
+from evernote_backup.evernote_client import EvernoteClientBase
 
 
 class OAuthDeclinedError(Exception):
@@ -19,7 +20,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
         "NOT FOUND": 404,
     }
 
-    def do_GET(self):
+    def do_GET(self) -> None:
         response = urlparse(self.path)
 
         if response.path != "/oauth_callback":
@@ -27,7 +28,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
-        self.server.callback_response = dict(parse_qsl(response.query))
+        self.server.callback_response = dict(parse_qsl(response.query))  # type: ignore
 
         self.send_response(self.http_codes["OK"])
         self.end_headers()
@@ -36,12 +37,17 @@ class CallbackHandler(BaseHTTPRequestHandler):
             "<body>You can close this tab now...</body></html>".encode("utf-8")
         )
 
-    def log_message(self, *args, **kwargs):
+    def log_message(self, *args, **kwargs) -> None:  # type: ignore
         """Silencing server log"""
 
 
 class StoppableHTTPServer(HTTPServer):
-    def run(self):
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore
+        super().__init__(*args, **kwargs)
+
+        self.callback_response: dict = {}
+
+    def run(self) -> None:
         try:  # noqa: WPS501
             self.serve_forever()
         finally:
@@ -49,21 +55,21 @@ class StoppableHTTPServer(HTTPServer):
 
 
 class EvernoteOAuthCallbackHandler(object):
-    def __init__(self, oauth_client):
+    def __init__(self, oauth_client: "EvernoteOAuthClient") -> None:
         self.client = oauth_client
 
         self.server_host = "localhost"
         self.server_port = OAUTH_LOCAL_PORT
-        self.oauth_token = None
+        self.oauth_token: dict = {}
 
-    def get_oauth_url(self):
+    def get_oauth_url(self) -> str:
         self.oauth_token = self.client.get_request_token(
             f"http://{self.server_host}:{self.server_port}/oauth_callback"
         )
 
         return self.client.get_authorize_url(self.oauth_token)
 
-    def wait_for_token(self):
+    def wait_for_token(self) -> str:
         callback = self._wait_for_callback()
 
         if "oauth_verifier" not in callback:
@@ -75,12 +81,10 @@ class EvernoteOAuthCallbackHandler(object):
             oauth_token_secret=self.oauth_token["oauth_token_secret"],
         )
 
-    def _wait_for_callback(self):
+    def _wait_for_callback(self) -> dict:
         server_param = (self.server_host, self.server_port)
 
         callback_server = StoppableHTTPServer(server_param, CallbackHandler)
-
-        callback_server.callback_response = {}
 
         thread = threading.Thread(target=callback_server.run)
         thread.start()
@@ -95,26 +99,25 @@ class EvernoteOAuthCallbackHandler(object):
         return callback_server.callback_response
 
 
-class EvernoteOAuthClient(EvernoteClient):
+class EvernoteOAuthClient(EvernoteClientBase):
     def __init__(
         self,
-        token=None,
-        backend=None,
-        consumer_key=None,
-        consumer_secret=None,
-    ):
-        super().__init__(token=token, backend=backend)
+        backend: str,
+        consumer_key: str,
+        consumer_secret: str,
+    ) -> None:
+        super().__init__(backend=backend)
 
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
 
-    def get_authorize_url(self, request_token):
+    def get_authorize_url(self, request_token: dict) -> str:
         return "{0}?oauth_token={1}".format(
             self._get_endpoint("OAuth.action"),
             quote(request_token["oauth_token"]),
         )
 
-    def get_request_token(self, callback_url):
+    def get_request_token(self, callback_url: str) -> dict:
 
         client = self._get_oauth_client()
 
@@ -126,7 +129,12 @@ class EvernoteOAuthClient(EvernoteClient):
 
         return dict(parse_qsl(response_content.decode("utf-8")))
 
-    def get_access_token(self, oauth_token, oauth_token_secret, oauth_verifier):
+    def get_access_token(
+        self,
+        oauth_token: str,
+        oauth_token_secret: str,
+        oauth_verifier: str,
+    ) -> str:
         token = oauth2.Token(oauth_token, oauth_token_secret)
         token.set_verifier(oauth_verifier)
 
@@ -139,7 +147,7 @@ class EvernoteOAuthClient(EvernoteClient):
 
         return access_token_dict["oauth_token"]
 
-    def _get_oauth_client(self, token=None):
+    def _get_oauth_client(self, token: Optional[oauth2.Token] = None) -> oauth2.Client:
         consumer = oauth2.Consumer(self.consumer_key, self.consumer_secret)
 
         if token:

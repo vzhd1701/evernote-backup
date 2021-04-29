@@ -15,7 +15,7 @@ def mock_click_prompt(mocker):
 
 @pytest.mark.usefixtures("mock_evernote_client")
 @pytest.mark.usefixtures("fake_init_db")
-def test_roken_refresh(fake_storage, cli_invoker):
+def test_token_refresh(fake_storage, cli_invoker):
     fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)

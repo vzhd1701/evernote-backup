@@ -178,6 +178,8 @@ def fake_storage(monkeypatch):
 
 @pytest.fixture()
 def fake_init_db(fake_storage, fake_token, mock_evernote_client):
+    mock_evernote_client.fake_user = "fake_user"
+
     cli_app.init_db(
         database="fake_db",
         auth_user=None,
@@ -222,7 +224,7 @@ def mock_oauth_client(mocker):
         else:
             response = oauth_mock.fake_request_url
 
-        return (None, response)
+        return None, response
 
     oauth_mock.Client().request.side_effect = fake_request
 
@@ -242,9 +244,18 @@ def mock_oauth_http_server(mock_oauth_client, mocker):
 
 
 @pytest.fixture()
-def mock_output_to_terminal(mocker):
-    click_mock = mocker.patch("evernote_backup.cli_app_util.is_output_to_terminal")
-    click_mock.is_tty = True
-    click_mock.side_effect = lambda *a, **kw: click_mock.is_tty
+def mock_output_to_terminal(mocker, monkeypatch):
+    tty_mock = MagicMock()
 
-    return click_mock
+    tty_mock.is_tty = True
+    tty_mock.side_effect = lambda *a, **kw: tty_mock.is_tty
+
+    mocker.patch(
+        "evernote_backup.cli_app_auth_oauth.is_output_to_terminal", new=tty_mock
+    )
+    mocker.patch(
+        "evernote_backup.cli_app_auth_password.is_output_to_terminal", new=tty_mock
+    )
+    mocker.patch("evernote_backup.cli.is_output_to_terminal", new=tty_mock)
+
+    return tty_mock

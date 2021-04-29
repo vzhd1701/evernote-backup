@@ -50,6 +50,7 @@ commitizen = "^2.17.2"
 flakehell = "^0.9.0"
 wemake-python-styleguide = "^0.15.2"
 xmltodict = "^0.12.0"
+mypy = "^0.812"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
@@ -101,10 +102,6 @@ flake8-rst-docstrings = ["-*"]
 flake8-docstrings = ["-*"]
 flake8-darglint = ["-*"]
 wemake-python-styleguide = ["+*", "-WPS111", "-WPS323", "-WPS326", "-WPS305", "-WPS226"]
-
-[tool.flakehell.exceptions."evernote_backup/cli_app_util.py"]
-# Lots of tiny helper modules
-wemake-python-styleguide = ["-WPS202"]
 
 [tool.flakehell.exceptions."evernote_backup/evernote_client_util.py"]
 # Complex decorator

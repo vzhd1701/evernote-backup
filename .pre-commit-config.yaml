@@ -60,6 +60,15 @@ repos:
         types: [python]
         pass_filenames: false
 
+    -   id: mypy
+        name: mypy
+        stages: [commit]
+        language: system
+        entry: poetry run mypy
+        types: [python]
+        require_serial: true
+        pass_filenames: false
+
     -   id: pytest-cov
         name: pytest
         stages: [push]
@@ -67,11 +76,3 @@ repos:
         entry: poetry run pytest --cov-fail-under=100 --cov=evernote_backup tests/
         types: [python]
         pass_filenames: false
-
-  #  - id: mypy
-  #    name: mypy
-  #    stages: [commit]
-  #    language: system
-  #    entry: poetry run mypy
-  #    types: [python]
-  #    require_serial: true
