@@ -1,3 +1,14 @@
+## 1.3.0 (2021-04-29)
+
+### Feat
+
+- make exported notes sorted
+
+### Refactor
+
+- add type hints
+- dedicate network_retry decorator to store functions
+
 ## 1.2.0 (2021-04-28)
 
 ### Feat
