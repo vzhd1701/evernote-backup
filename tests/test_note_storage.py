@@ -192,6 +192,50 @@ def test_notes(fake_storage):
     assert result_notes == expected_notes
 
 
+def test_notes_order(fake_storage):
+    test_notes = [
+        Note(
+            guid="id5",
+            title="test5",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+        Note(
+            guid="id4",
+            title="test4",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+        Note(
+            guid="id2",
+            title="test1",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+        Note(
+            guid="id1",
+            title="test2",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+    ]
+
+    expected_notes_titles_order = ["test1", "test2", "test4", "test5"]
+
+    for note in test_notes:
+        fake_storage.notes.add_note(note)
+
+    result_notes_titles_order = list(
+        n.title for n in fake_storage.notes.iter_notes("notebook1")
+    )
+
+    assert result_notes_titles_order == expected_notes_titles_order
+
+
 def test_notes_trash(fake_storage):
     test_notes = [
         Note(

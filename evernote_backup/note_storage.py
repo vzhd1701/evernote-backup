@@ -27,7 +27,9 @@ DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
                         value TEXT
                     );
                     CREATE INDEX IF NOT EXISTS idx_notes
-                     ON notes(notebook_guid, is_active);"""
+                     ON notes(notebook_guid, is_active);
+                    CREATE INDEX IF NOT EXISTS idx_notes_title
+                     ON notes(title COLLATE NOCASE);"""
 
 
 class DatabaseResyncRequiredError(Exception):
@@ -79,17 +81,31 @@ class SqliteStorage(object):
         except KeyError:
             db_version = 0
 
-        if db_version == 0:
-            with self.db as con:
-                con.execute("DROP TABLE notebooks;")
-                con.execute("DROP TABLE notes;")
-
-                con.executescript(DB_SCHEMA)
-
         if db_version != CURRENT_DB_VERSION:
-            self.config.set_config_value("DB_VERSION", str(CURRENT_DB_VERSION))
-            self.config.set_config_value("USN", "0")
+            self.upgrade_db(db_version)
 
+    def upgrade_db(self, db_version: int) -> None:
+        need_resync = False
+
+        if db_version == 0:
+            need_resync = True
+            with self.db as con1:
+                con1.execute("DROP TABLE notebooks;")
+                con1.execute("DROP TABLE notes;")
+
+                con1.executescript(DB_SCHEMA)
+
+        if db_version < 3:
+            with self.db as con2:
+                con2.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_notes_title"
+                    " ON notes(title COLLATE NOCASE);"
+                )
+
+        self.config.set_config_value("DB_VERSION", str(CURRENT_DB_VERSION))
+
+        if need_resync:
+            self.config.set_config_value("USN", "0")
             raise DatabaseResyncRequiredError
 
 
@@ -160,7 +176,7 @@ class NoteStorage(SqliteStorage):
             cur = con.execute(
                 "select raw_note"
                 " from notes where notebook_guid=? and is_active=1"
-                " order by title",
+                " order by title COLLATE NOCASE",
                 (notebook_guid,),
             )
 
@@ -169,7 +185,9 @@ class NoteStorage(SqliteStorage):
     def iter_notes_trash(self) -> Iterator[Note]:
         with self.db as con:
             cur = con.execute(
-                "select raw_note" " from notes where is_active=0" " order by title",
+                "select raw_note"
+                " from notes where is_active=0"
+                " order by title COLLATE NOCASE",
             )
 
             yield from (pickle.loads(lzma.decompress(row["raw_note"])) for row in cur)
