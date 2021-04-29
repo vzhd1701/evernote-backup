@@ -175,8 +175,8 @@ class authenticateLongSessionV2_args(object):
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
-    def validate(self):  # pragma: no cover
-        return
+    def validate(self):
+        """not implemented"""
 
     def __repr__(self):  # pragma: no cover
         L = ["%s=%r" % (key, value) for key, value in self.__dict__.items()]
@@ -184,9 +184,6 @@ class authenticateLongSessionV2_args(object):
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):  # pragma: no cover
-        return not (self == other)
 
 
 class authenticateLongSessionV2_request(object):
@@ -259,8 +256,8 @@ class authenticateLongSessionV2_request(object):
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
-    def validate(self):  # pragma: no cover
-        return
+    def validate(self):
+        """not implemented"""
 
     def __repr__(self):  # pragma: no cover
         L = ["%s=%r" % (key, value) for key, value in self.__dict__.items()]
@@ -268,9 +265,6 @@ class authenticateLongSessionV2_request(object):
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):  # pragma: no cover
-        return not (self == other)
 
 
 class ClientV2(UserStore.Client):

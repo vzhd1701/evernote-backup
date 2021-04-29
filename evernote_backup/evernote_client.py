@@ -1,7 +1,7 @@
 import functools
 import inspect
 import platform
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 
 from evernote.edam.error.ttypes import (
     EDAMErrorCode,
@@ -159,7 +159,7 @@ class EvernoteClientAuth(EvernoteClient):
             raise
 
 
-class Store(object):  # pragma: no cover
+class Store(object):
     def __init__(
         self,
         client_class: Union[UserStore.Client, NoteStore.Client],
@@ -172,33 +172,31 @@ class Store(object):  # pragma: no cover
 
         self._client = self._get_thrift_client(client_class, store_url)
 
-    def __getattr__(self, name: str) -> Callable:
-        def delegate_method(*args: Any, **kwargs: Any) -> Any:  # noqa: WPS430
-            targetMethod = getattr(self._client, name, None)
-            if targetMethod is None:
-                return object.__getattribute__(self, name)(  # noqa: WPS609
-                    *args,
-                    **kwargs,
-                )
+    def __getattr__(self, name: str) -> Any:
+        target_method = getattr(self._client, name)
 
-            targetMethod_retry = network_retry(targetMethod)
+        if not callable(target_method):
+            return target_method
 
-            org_args = inspect.getfullargspec(targetMethod).args
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            target_method_retry = network_retry(target_method)
+
+            org_args = inspect.getfullargspec(target_method).args
             if len(org_args) == len(args) + 1:
-                return targetMethod_retry(*args, **kwargs)
+                return target_method_retry(*args, **kwargs)
             elif self.token and "authenticationToken" in org_args:
                 skip_args = ["self", "authenticationToken"]
                 arg_names = [i for i in org_args if i not in skip_args]
                 return functools.partial(
-                    targetMethod_retry,
+                    target_method_retry,
                     authenticationToken=self.token,
                 )(
                     **dict(list(zip(arg_names, args))),
                 )
 
-            return targetMethod_retry(*args, **kwargs)
+            return target_method_retry(*args, **kwargs)
 
-        return delegate_method
+        return wrapper
 
     def _get_thrift_client(
         self,

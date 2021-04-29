@@ -25,7 +25,7 @@ class ProgramTerminatedError(Exception):
     """Terminate program with an error"""
 
 
-class NaturalOrderGroup(click.Group):  # pragma: no cover
+class NaturalOrderGroup(click.Group):
     def list_commands(self, ctx: Any) -> Iterable:
         return self.commands.keys()
 
