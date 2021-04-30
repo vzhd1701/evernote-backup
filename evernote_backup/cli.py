@@ -85,10 +85,11 @@ def cli(quiet: bool) -> None:
     else:
         log_format = "%(asctime)s | [%(levelname)s] | %(message)s"
 
-    logging.basicConfig(
-        format=log_format,
-        force=True,
-    )
+    for h in logging.root.handlers[:]:
+        logging.root.removeHandler(h)
+        h.close()
+
+    logging.basicConfig(format=log_format)
 
     if quiet:
         logger.setLevel(logging.CRITICAL)

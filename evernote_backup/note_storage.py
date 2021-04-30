@@ -113,7 +113,7 @@ class NoteBookStorage(SqliteStorage):
     def add_notebooks(self, notebooks: Iterable[Notebook]) -> None:
         with self.db as con:
             con.executemany(
-                "replace into notebooks(guid, name, stack)" " values (?, ?, ?)",
+                "replace into notebooks(guid, name, stack) values (?, ?, ?)",
                 ((nb.guid, nb.name, nb.stack) for nb in notebooks),
             )
 

@@ -36,14 +36,11 @@ def test_cli_quiet(is_quiet, log_level_expected, cli_invoker, mocker):
 def test_cli_test_tty(is_tty, log_format, cli_invoker, mocker, mock_output_to_terminal):
     mocker.patch("evernote_backup.cli.cli_app")
 
-    logging_mock = mocker.patch("evernote_backup.cli.logging.basicConfig")
     mock_output_to_terminal.is_tty = is_tty
 
     cli_invoker("init-db")
 
-    # only works in python >=38
-    # assert logging_mock.call_args.kwargs["format"] == log_format
-    assert logging_mock.call_args[-1]["format"] == log_format
+    assert logging.root.handlers[0].formatter._fmt == log_format
 
 
 def test_cli_program_error(mocker, caplog):

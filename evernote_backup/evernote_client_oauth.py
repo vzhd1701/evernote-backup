@@ -143,8 +143,6 @@ class EvernoteOAuthClient(EvernoteClientBase):
         _, response_content = client.request(self._get_endpoint("oauth"), "POST")
         access_token_dict = dict(parse_qsl(response_content.decode("utf-8")))
 
-        self.token = access_token_dict["oauth_token"]
-
         return access_token_dict["oauth_token"]
 
     def _get_oauth_client(self, token: Optional[oauth2.Token] = None) -> oauth2.Client:

@@ -11,7 +11,7 @@ from evernote_backup.note_formatter_util import fmt_binary, fmt_content, fmt_tim
 
 
 class NoteFormatter(object):
-    """http://xml.evernote.com/pub/evernote-export3.dtd"""
+    """https://xml.evernote.com/pub/evernote-export3.dtd"""
 
     def __init__(self) -> None:
         self._raw_elements: dict = {}
