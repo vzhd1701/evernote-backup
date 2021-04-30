@@ -1,3 +1,9 @@
+## 1.3.1 (2021-04-30)
+
+### Fix
+
+- improve logger compatability
+
 ## 1.3.0 (2021-04-29)
 
 ### Feat
