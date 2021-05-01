@@ -2,41 +2,15 @@ import base64
 import logging
 import os
 import sys
-from typing import Any, Callable, Iterable, List, Optional
+from typing import List, Optional
 
 import click
 
 logger = logging.getLogger(__name__)
 
-DIR_ONLY = click.Path(
-    file_okay=False,
-    writable=True,
-    resolve_path=True,
-)
-
-FILE_ONLY = click.Path(
-    dir_okay=False,
-    writable=True,
-    resolve_path=True,
-)
-
 
 class ProgramTerminatedError(Exception):
     """Terminate program with an error"""
-
-
-class NaturalOrderGroup(click.Group):
-    def list_commands(self, ctx: Any) -> Iterable:
-        return self.commands.keys()
-
-
-def group_options(*options: Callable) -> Callable:
-    def wrapper(function: Callable) -> Callable:
-        for option in reversed(options):
-            function = option(function)
-        return function
-
-    return wrapper
 
 
 def unscramble(scrambled_data: bytes) -> List[str]:
@@ -65,3 +39,7 @@ def is_console_interactive() -> bool:
 
 def is_output_to_terminal() -> bool:
     return sys.stdout.isatty()
+
+
+def is_inside_docker() -> bool:
+    return os.environ.get("INSIDE_DOCKER_CONTAINER", False) is not False

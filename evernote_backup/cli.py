@@ -6,14 +6,13 @@ from typing import Optional
 import click
 
 from evernote_backup import cli_app
-from evernote_backup.cli_app_util import (
+from evernote_backup.cli_app_click_util import (
     DIR_ONLY,
     FILE_ONLY,
     NaturalOrderGroup,
-    ProgramTerminatedError,
     group_options,
-    is_output_to_terminal,
 )
+from evernote_backup.cli_app_util import ProgramTerminatedError, is_output_to_terminal
 from evernote_backup.version import __version__
 
 logger = logging.getLogger()

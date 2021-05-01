@@ -5,7 +5,8 @@ import pytest
 from evernote.edam.error.ttypes import EDAMUserException
 
 from evernote_backup import cli_app_auth, cli_app_util
-from evernote_backup.cli_app_util import NaturalOrderGroup, ProgramTerminatedError
+from evernote_backup.cli_app_click_util import NaturalOrderGroup
+from evernote_backup.cli_app_util import ProgramTerminatedError
 
 
 def test_get_sync_client_token_expired_error(mock_evernote_client):

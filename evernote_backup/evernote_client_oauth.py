@@ -6,6 +6,7 @@ from urllib.parse import parse_qsl, quote, urlparse
 
 import oauth2
 
+from evernote_backup.cli_app_util import is_inside_docker
 from evernote_backup.config import OAUTH_LOCAL_PORT
 from evernote_backup.evernote_client import EvernoteClientBase
 
@@ -82,7 +83,10 @@ class EvernoteOAuthCallbackHandler(object):
         )
 
     def _wait_for_callback(self) -> dict:
-        server_param = (self.server_host, self.server_port)
+        if is_inside_docker():
+            server_param = ("0.0.0.0", self.server_port)  # noqa: S104
+        else:
+            server_param = (self.server_host, self.server_port)
 
         callback_server = StoppableHTTPServer(server_param, CallbackHandler)
 
@@ -148,9 +152,4 @@ class EvernoteOAuthClient(EvernoteClientBase):
     def _get_oauth_client(self, token: Optional[oauth2.Token] = None) -> oauth2.Client:
         consumer = oauth2.Consumer(self.consumer_key, self.consumer_secret)
 
-        if token:
-            client = oauth2.Client(consumer, token)
-        else:
-            client = oauth2.Client(consumer)
-
-        return client
+        return oauth2.Client(consumer, token) if token else oauth2.Client(consumer)
