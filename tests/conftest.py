@@ -262,6 +262,8 @@ def mock_oauth_http_server(mock_oauth_client, mocker):
 
     mock_server().run.side_effect = callback_setter
 
+    return mock_server
+
 
 @pytest.fixture()
 def mock_output_to_terminal(mocker, monkeypatch):

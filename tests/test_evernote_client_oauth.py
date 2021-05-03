@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from evernote_backup.evernote_client_oauth import (
@@ -23,6 +25,35 @@ def test_get_auth_token(mock_oauth_client, mock_evernote_oauth_client):
     test_token = oauth_handler.wait_for_token()
 
     assert test_token == mock_oauth_client.fake_token
+
+
+from evernote_backup.config import OAUTH_LOCAL_PORT
+
+
+def test_server_no_docker(
+    mock_oauth_client, mock_evernote_oauth_client, mock_oauth_http_server, mocker
+):
+    oauth_handler = EvernoteOAuthCallbackHandler(mock_evernote_oauth_client)
+    oauth_handler.get_oauth_url()
+
+    oauth_handler.wait_for_token()
+
+    mock_oauth_http_server.assert_any_call(("localhost", OAUTH_LOCAL_PORT), mocker.ANY)
+
+
+def test_server_yes_docker(
+    mock_oauth_client, mock_evernote_oauth_client, mock_oauth_http_server, mocker
+):
+    os.environ["INSIDE_DOCKER_CONTAINER"] = "1"
+
+    oauth_handler = EvernoteOAuthCallbackHandler(mock_evernote_oauth_client)
+    oauth_handler.get_oauth_url()
+
+    oauth_handler.wait_for_token()
+
+    mock_oauth_http_server.assert_any_call(("0.0.0.0", OAUTH_LOCAL_PORT), mocker.ANY)
+
+    del os.environ["INSIDE_DOCKER_CONTAINER"]
 
 
 @pytest.mark.usefixtures("mock_oauth_http_server")

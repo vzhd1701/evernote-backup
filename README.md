@@ -32,7 +32,7 @@ $ pipx install evernote-backup
 $ docker run --rm -t -v "$PWD":/tmp vzhd1701/evernote-backup
 ```
 
-To log in to Evernote using OAuth with Docker, you'll have to forward port 10500:
+To log in to Evernote using OAuth with Docker, you'll have to forward port 10500 for a callback:
 
 ```bash
 $ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 vzhd1701/evernote-backup init-db --oauth
