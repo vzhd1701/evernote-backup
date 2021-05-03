@@ -1,42 +1,17 @@
-name: release
+name: manual build
 
 on:
-  push:
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build'
+        required: true
 
 env:
   BUILD_PYTHON_VERSION: 3.9
   BUILD_POETRY_VERSION: 1.1.5
 
 jobs:
-  make_changelog:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Get tag version
-        run: echo "TAG_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-
-      - name: Get latest changelog version
-        run: echo "TAG_VERSION_CH=$(head -1 CHANGELOG.md | cut -f 2 -d ' ')" >> $GITHUB_ENV
-
-      - name: Create dummy release_changelog
-        run: touch release_changelog
-
-      - name: Extract and prepare changelog for latest version
-        if: env.TAG_VERSION == env.TAG_VERSION_CH
-        run: |
-          csplit --suppress-matched -zs -f chlog -n 1 CHANGELOG.md /^##\ / {*}
-          sed -e 's/^### /## /' chlog0 > release_changelog
-
-      - name: Save release changelog
-        uses: actions/upload-artifact@v2
-        with:
-          name: release_changelog
-          path: release_changelog
-
   build_python:
     runs-on: ubuntu-latest
     env:
@@ -44,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          ref: refs/tags/${{ github.event.inputs.tag }}
 
       - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
         uses: actions/setup-python@v2
@@ -77,10 +54,13 @@ jobs:
     needs: build_python
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: refs/tags/${{ github.event.inputs.tag }}
 
       - name: Get tag version
-        run: echo "TAG_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        run: echo "TAG_VERSION=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
 
       - name: Load release python requirements
         uses: actions/download-artifact@v2
@@ -135,9 +115,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          ref: refs/tags/${{ github.event.inputs.tag }}
 
       - name: Get tag version
-        run: echo "TAG_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        run: echo "TAG_VERSION=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
 
       - name: Load release python requirements
         uses: actions/download-artifact@v2
@@ -170,84 +152,3 @@ jobs:
         with:
           name: release_dist_bin_${{ matrix.os }}_${{ matrix.arch_code }}
           path: dist_bin
-
-  release:
-    needs: [build_binaries, build_binaries_mac, make_changelog]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Load release python packages
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_python
-          path: dist
-
-      - name: Load release binaries for linux x86
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_bin_linux_x86
-          path: dist
-
-      - name: Load release binaries for linux x64
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_bin_linux_x64
-          path: dist
-
-      - name: Load release binaries for windows x86
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_bin_windows_x86
-          path: dist
-
-      - name: Load release binaries for windows x64
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_bin_windows_x64
-          path: dist
-
-      - name: Load release binaries for macos x64
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_bin_macos_x64
-          path: dist
-
-      - name: Load release changelog
-        uses: actions/download-artifact@v2
-        with:
-          name: release_changelog
-
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        with:
-          bodyFile: release_changelog
-          artifacts: "dist/*"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          draft: false
-
-  release_pypi:
-    needs: [release]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ env.BUILD_PYTHON_VERSION }}
-
-      - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: abatilo/actions-poetry@v2.0.0
-        with:
-          poetry-version: ${{ env.BUILD_POETRY_VERSION }}
-
-      - name: Load release python packages
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_python
-          path: dist
-
-      - name: Publish to PyPI
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: poetry publish

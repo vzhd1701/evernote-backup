@@ -16,6 +16,10 @@ Backup your notes & notebooks from Evernote locally and export them at any time!
 
 ## Installation
 
+[**Download the latest release**](https://github.com/vzhd1701/evernote-backup/releases/latest) for your OS.
+
+### With PIP
+
 ```bash
 $ pip install evernote-backup
 ```
