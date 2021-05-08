@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "evernote-backup"
-version = "1.4.0"
+version = "1.4.1"
 description = "Backup & export all Evernote notes and notebooks."
 authors = ["vzhd1701 <vzhd1701@gmail.com>"]
 readme = "README.md"
@@ -54,7 +54,7 @@ mypy = "^0.812"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.4.0"
+version = "1.4.1"
 tag_format = "$version"
 version_files = [
   "pyproject.toml:version",

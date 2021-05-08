@@ -1,3 +1,9 @@
+## 1.4.1 (2021-05-08)
+
+### Fix
+
+- make init-db return early if database exists
+
 ## 1.4.0 (2021-05-01)
 
 ### Feat
