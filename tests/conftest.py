@@ -189,7 +189,7 @@ def fake_storage(monkeypatch):
     fake_storage = note_storage.SqliteStorage(db)
 
     monkeypatch.setattr(cli_app, "get_storage", lambda *a, **kw: fake_storage)
-    monkeypatch.setattr(cli_app, "initialize_db", lambda *a, **kw: None)
+    monkeypatch.setattr(cli_app, "initialize_storage", lambda *a, **kw: fake_storage)
 
     yield fake_storage
 

@@ -36,13 +36,9 @@ class DatabaseResyncRequiredError(Exception):
     """Raise when database update requires resync"""
 
 
-def initialize_db(filename: str, force: bool = False) -> None:
+def initialize_db(filename: str) -> None:
     if os.path.exists(filename):
-        if force:
-            if os.path.exists(filename) and force:
-                os.remove(filename)
-        else:
-            raise FileExistsError
+        raise FileExistsError
 
     db = sqlite3.connect(filename)
 

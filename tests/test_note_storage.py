@@ -28,14 +28,6 @@ def test_init_existing_file(tmp_path):
         initialize_db(test_db_path)
 
 
-def test_init_existing_file_force(tmp_path):
-    test_db_path = str(tmp_path / "test.db")
-
-    initialize_db(test_db_path)
-
-    initialize_db(test_db_path, force=True)
-
-
 def test_init_db(tmp_path):
     test_db_path = tmp_path / "test.db"
 

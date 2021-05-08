@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "evernote-backup"
 version = "1.4.0"
-description = "Backup & export Evernote notes and notebooks."
+description = "Backup & export all Evernote notes and notebooks."
 authors = ["vzhd1701 <vzhd1701@gmail.com>"]
 readme = "README.md"
 include = ["CHANGELOG.md"]

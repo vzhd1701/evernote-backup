@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import os
 from typing import Optional
 
 from evernote_backup.cli_app_auth import get_auth_token, get_sync_client
-from evernote_backup.cli_app_storage import get_storage, raise_on_old_database_version
+from evernote_backup.cli_app_storage import (
+    get_storage,
+    initialize_storage,
+    raise_on_existing_database,
+    raise_on_old_database_version,
+)
 from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.note_exporter import NoteExporter, NothingToExportError
-from evernote_backup.note_storage import initialize_db
 from evernote_backup.note_synchronizer import NoteSynchronizer, WrongAuthUserError
 
 logger = logging.getLogger(__name__)
@@ -24,22 +27,15 @@ def init_db(
     force: bool,
     backend: str,
 ) -> None:
+    if not force:
+        raise_on_existing_database(database)
+
     if not auth_token:
         auth_token = get_auth_token(auth_user, auth_password, auth_is_oauth, backend)
 
     note_client = get_sync_client(auth_token, backend)
 
-    logger.info("Initializing database {0}...".format(os.path.basename(database)))
-
-    try:
-        initialize_db(database, force)
-    except FileExistsError:
-        raise ProgramTerminatedError(
-            "Database already exists."
-            " Use --force option to overwrite existing database file."
-        )
-
-    storage = get_storage(database)
+    storage = initialize_storage(database, force)
 
     new_user = note_client.user
 
