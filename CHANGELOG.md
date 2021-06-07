@@ -1,3 +1,9 @@
+## 1.5.0 (2021-06-07)
+
+### Feat
+
+- convert hardcoded config variables into cli options
+
 ## 1.4.1 (2021-05-08)
 
 ### Fix
