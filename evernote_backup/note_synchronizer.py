@@ -9,7 +9,6 @@ from click import progressbar
 from evernote.edam.type.ttypes import Note
 
 from evernote_backup.cli_app_util import get_progress_output
-from evernote_backup.config import SYNC_MAX_DOWNLOAD_WORKERS
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.note_storage import SqliteStorage
 
@@ -29,10 +28,18 @@ class WorkerStopException(Exception):
 
 
 class NoteClientWorker(object):
-    def __init__(self, token: str, backend: str) -> None:
+    def __init__(
+        self,
+        token: str,
+        backend: str,
+        network_error_retry_count: int,
+        max_chunk_results: int,
+    ) -> None:
         self.stop = False
         self.token = token
         self.backend = backend
+        self.network_error_retry_count = network_error_retry_count
+        self.max_chunk_results = max_chunk_results
 
         self._thread_data = threading.local()
 
@@ -43,7 +50,12 @@ class NoteClientWorker(object):
         try:
             note_client = self._thread_data.note_client
         except AttributeError:
-            note_client = EvernoteClientSync(token=self.token, backend=self.backend)
+            note_client = EvernoteClientSync(
+                token=self.token,
+                backend=self.backend,
+                network_error_retry_count=self.network_error_retry_count,
+                max_chunk_results=self.max_chunk_results,
+            )
             self._thread_data.note_client = note_client
 
         return note_client.get_note(note_id)
@@ -54,6 +66,7 @@ class NoteSynchronizer(object):
         self,
         note_client: EvernoteClientSync,
         note_storage: SqliteStorage,
+        max_download_workers: int,
     ) -> None:
         self._count_updated_notebooks = 0
         self._count_updated_notes = 0
@@ -63,6 +76,7 @@ class NoteSynchronizer(object):
 
         self.note_client = note_client
         self.storage = note_storage
+        self.max_download_workers = max_download_workers
 
     def sync(self) -> None:
         self._raise_on_wrong_user()
@@ -141,10 +155,12 @@ class NoteSynchronizer(object):
     def _download_scheduled_notes(
         self, notes_to_sync: Iterable[Tuple[str, str]]
     ) -> None:
-        with ThreadPoolExecutor(max_workers=SYNC_MAX_DOWNLOAD_WORKERS) as executor:
+        with ThreadPoolExecutor(max_workers=self.max_download_workers) as executor:
             note_worker = NoteClientWorker(
                 self.note_client.token,
                 self.note_client.backend,
+                self.note_client.network_error_retry_count,
+                self.note_client.max_chunk_results,
             )
 
             note_futures = {

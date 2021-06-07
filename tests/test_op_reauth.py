@@ -243,7 +243,34 @@ def test_oauth_login(
 
     cli_invoker("reauth", "-d", "fake_db", "--oauth")
 
-    assert mock_launch.called_once_with(
+    mock_launch.assert_called_once_with(
+        "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
+    )
+    assert (
+        fake_storage.config.get_config_value("auth_token")
+        == mock_oauth_client.fake_token
+    )
+
+
+@pytest.mark.usefixtures("mock_output_to_terminal")
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_login_custom_port(
+    cli_invoker,
+    fake_storage,
+    mock_evernote_client,
+    mock_oauth_client,
+    mocker,
+    mock_oauth_http_server,
+):
+    mocker.patch("evernote_backup.cli_app_util.click.echo")
+    mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
+
+    test_port = 10666
+
+    cli_invoker("reauth", "-d", "fake_db", "--oauth", "--oauth-port", test_port)
+
+    mock_oauth_http_server.assert_any_call(("localhost", test_port), mocker.ANY)
+    mock_launch.assert_called_once_with(
         "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
     )
     assert (
@@ -255,7 +282,7 @@ def test_oauth_login(
 @pytest.mark.usefixtures("mock_oauth_http_server")
 @pytest.mark.usefixtures("mock_output_to_terminal")
 @pytest.mark.usefixtures("fake_init_db")
-def test_oauth_login__declined_error(
+def test_oauth_login_declined_error(
     cli_invoker, fake_storage, mock_evernote_client, mock_oauth_client, mocker
 ):
     del mock_oauth_client.fake_callback_response["oauth_verifier"]
@@ -267,7 +294,7 @@ def test_oauth_login__declined_error(
         cli_invoker("reauth", "-d", "fake_db", "--oauth")
     assert "declined" in str(excinfo.value)
 
-    assert mock_launch.called_once_with(
+    mock_launch.assert_called_once_with(
         "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
     )
 
@@ -280,3 +307,50 @@ def test_old_db_error(cli_invoker, fake_storage, fake_token):
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
     assert "Full resync is required" in str(excinfo.value)
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_custom_network_retry_count_fail(
+    fake_storage, cli_invoker, mock_evernote_client, mocker
+):
+    fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+
+    mocker.patch("evernote_backup.evernote_client_util.time.sleep")
+
+    test_network_retry_count = 10
+    mock_evernote_client.fake_network_counter = test_network_retry_count
+
+    with pytest.raises(ConnectionError):
+        cli_invoker(
+            "reauth",
+            "--database",
+            "fake_db",
+            "--token",
+            fake_token,
+            "--network-retry-count",
+            test_network_retry_count,
+        )
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_custom_network_retry_count(
+    fake_storage, cli_invoker, mock_evernote_client, mocker
+):
+    fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+
+    mocker.patch("evernote_backup.evernote_client_util.time.sleep")
+
+    test_network_retry_count = 90
+    mock_evernote_client.fake_network_counter = test_network_retry_count - 1
+
+    cli_invoker(
+        "reauth",
+        "--database",
+        "fake_db",
+        "--token",
+        fake_token,
+        "--network-retry-count",
+        test_network_retry_count,
+    )
+
+    assert fake_storage.config.get_config_value("auth_token") == fake_token

@@ -3,6 +3,7 @@ import time
 import pytest
 from evernote.edam.type.ttypes import Note, Notebook, Tag
 
+from evernote_backup import note_synchronizer
 from evernote_backup.cli_app_util import ProgramTerminatedError
 
 
@@ -241,3 +242,75 @@ def test_old_db_error(cli_invoker, mock_evernote_client, fake_storage):
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_invoker("sync", "--database", "fake_db")
     assert "Full resync is required" in str(excinfo.value)
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_custom_max_chunk_results(cli_invoker, mock_evernote_client, fake_storage):
+    mock_evernote_client.fake_notebooks.append(
+        Notebook(
+            guid="nbid1",
+            name="name1",
+            stack="stack1",
+            serviceUpdated=1000,
+        ),
+    )
+
+    test_note = Note(
+        guid="id1",
+        title="title1",
+        content="body1",
+        notebookGuid="nbid1",
+        active=True,
+    )
+
+    mock_evernote_client.fake_notes.append(test_note)
+    test_max_chunk_results = 100
+
+    cli_invoker(
+        "sync", "--database", "fake_db", "--max-chunk-results", test_max_chunk_results
+    )
+
+    result_notes = list(fake_storage.notes.iter_notes("nbid1"))
+
+    assert result_notes == [test_note]
+    assert mock_evernote_client.last_maxEntries == test_max_chunk_results
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_custom_max_download_workers(
+    cli_invoker, mock_evernote_client, fake_storage, mocker
+):
+    mock_evernote_client.fake_notebooks.append(
+        Notebook(
+            guid="nbid1",
+            name="name1",
+            stack="stack1",
+            serviceUpdated=1000,
+        ),
+    )
+
+    test_note = Note(
+        guid="id1",
+        title="title1",
+        content="body1",
+        notebookGuid="nbid1",
+        active=True,
+    )
+
+    mock_evernote_client.fake_notes.append(test_note)
+
+    test_max_download_workers = 1
+    thread_pool_spy = mocker.spy(note_synchronizer, "ThreadPoolExecutor")
+
+    cli_invoker(
+        "sync",
+        "--database",
+        "fake_db",
+        "--max-download-workers",
+        test_max_download_workers,
+    )
+
+    result_notes = list(fake_storage.notes.iter_notes("nbid1"))
+
+    assert result_notes == [test_note]
+    thread_pool_spy.assert_called_once_with(max_workers=test_max_download_workers)

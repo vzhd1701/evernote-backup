@@ -105,13 +105,22 @@ wemake-python-styleguide = ["+*", "-WPS111", "-WPS323", "-WPS326", "-WPS305", "-
 
 [tool.flakehell.exceptions."evernote_backup/evernote_client_util.py"]
 # Complex decorator
-wemake-python-styleguide = ["-WPS231", "-WPS232"]
+mccabe = ["+*", "-C901"]
+wemake-python-styleguide = ["-WPS231", "-WPS232", "-WPS220"]
 
 [tool.flakehell.exceptions."evernote_backup/cli.py"]
+# Too many arguments, argv options and decorators
+wemake-python-styleguide = ["-WPS211", "-WPS216"]
+
+[tool.flakehell.exceptions."evernote_backup/cli_app.py"]
 # Too many arguments, argv options
 wemake-python-styleguide = ["-WPS211"]
 
-[tool.flakehell.exceptions."evernote_backup/cli_app.py"]
+[tool.flakehell.exceptions."evernote_backup/cli_app_auth.py"]
+# Too many arguments, argv options
+wemake-python-styleguide = ["-WPS211"]
+
+[tool.flakehell.exceptions."evernote_backup/evernote_client.py"]
 # Too many arguments, argv options
 wemake-python-styleguide = ["-WPS211"]
 

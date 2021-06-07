@@ -7,7 +7,6 @@ from urllib.parse import parse_qsl, quote, urlparse
 import oauth2
 
 from evernote_backup.cli_app_util import is_inside_docker
-from evernote_backup.config import OAUTH_LOCAL_PORT
 from evernote_backup.evernote_client import EvernoteClientBase
 
 
@@ -56,11 +55,11 @@ class StoppableHTTPServer(HTTPServer):
 
 
 class EvernoteOAuthCallbackHandler(object):
-    def __init__(self, oauth_client: "EvernoteOAuthClient") -> None:
+    def __init__(self, oauth_client: "EvernoteOAuthClient", oauth_port: int) -> None:
         self.client = oauth_client
 
         self.server_host = "localhost"
-        self.server_port = OAUTH_LOCAL_PORT
+        self.server_port = oauth_port
         self.oauth_token: dict = {}
 
     def get_oauth_url(self) -> str:

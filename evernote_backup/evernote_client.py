@@ -77,10 +77,14 @@ class EvernoteClientBase(object):
 
 
 class EvernoteClient(EvernoteClientBase):
-    def __init__(self, backend: str, token: str) -> None:
+    def __init__(
+        self, backend: str, token: str, network_error_retry_count: int
+    ) -> None:
         super().__init__(backend=backend)
 
         self.token = token
+        self.network_error_retry_count = network_error_retry_count
+
         self._user: Optional[str] = None
 
     def verify_token(self) -> None:
@@ -98,6 +102,7 @@ class EvernoteClient(EvernoteClientBase):
             store_url=user_store_uri,
             token=self.token,
             user_agent=self.user_agent,
+            network_error_retry_count=self.network_error_retry_count,
         )
 
     @property
@@ -108,6 +113,7 @@ class EvernoteClient(EvernoteClientBase):
             store_url=note_store_uri,
             token=self.token,
             user_agent=self.user_agent,
+            network_error_retry_count=self.network_error_retry_count,
         )
 
     @property
@@ -121,10 +127,15 @@ class EvernoteClientAuth(EvernoteClient):
     def __init__(
         self,
         backend: str,
+        network_error_retry_count: int,
         consumer_key: str,
         consumer_secret: str,
     ):
-        super().__init__(backend=backend, token="")  # noqa: S106
+        super().__init__(  # noqa: S106
+            backend=backend,
+            token="",
+            network_error_retry_count=network_error_retry_count,
+        )
 
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
@@ -165,10 +176,12 @@ class Store(object):
         client_class: Union[UserStore.Client, NoteStore.Client],
         store_url: str,
         user_agent: str,
+        network_error_retry_count: int,
         token: Optional[str] = None,
     ):
         self.token = token
         self.user_agent = user_agent
+        self.network_error_retry_count = network_error_retry_count
 
         self._client = self._get_thrift_client(client_class, store_url)
 
@@ -179,7 +192,9 @@ class Store(object):
             return target_method
 
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            target_method_retry = network_retry(target_method)
+            target_method_retry = network_retry(self.network_error_retry_count)(
+                target_method
+            )
 
             org_args = inspect.getfullargspec(target_method).args
             if len(org_args) == len(args) + 1:

@@ -23,17 +23,26 @@ def init_db(
     auth_user: Optional[str],
     auth_password: Optional[str],
     auth_is_oauth: bool,
+    auth_oauth_port: int,
     auth_token: Optional[str],
     force: bool,
     backend: str,
+    network_retry_count: int,
 ) -> None:
     if not force:
         raise_on_existing_database(database)
 
     if not auth_token:
-        auth_token = get_auth_token(auth_user, auth_password, auth_is_oauth, backend)
+        auth_token = get_auth_token(
+            auth_user,
+            auth_password,
+            auth_is_oauth,
+            auth_oauth_port,
+            backend,
+            network_retry_count,
+        )
 
-    note_client = get_sync_client(auth_token, backend)
+    note_client = get_sync_client(auth_token, backend, network_retry_count, 1)
 
     storage = initialize_storage(database, force)
 
@@ -53,7 +62,9 @@ def reauth(
     auth_user: Optional[str],
     auth_password: Optional[str],
     auth_is_oauth: bool,
+    auth_oauth_port: int,
     auth_token: Optional[str],
+    network_retry_count: int,
 ) -> None:
     storage = get_storage(database)
 
@@ -62,9 +73,16 @@ def reauth(
     backend = storage.config.get_config_value("backend")
 
     if not auth_token:
-        auth_token = get_auth_token(auth_user, auth_password, auth_is_oauth, backend)
+        auth_token = get_auth_token(
+            auth_user,
+            auth_password,
+            auth_is_oauth,
+            auth_oauth_port,
+            backend,
+            network_retry_count,
+        )
 
-    note_client = get_sync_client(auth_token, backend)
+    note_client = get_sync_client(auth_token, backend, network_retry_count, 1)
 
     local_user = storage.config.get_config_value("user")
 
@@ -79,7 +97,12 @@ def reauth(
     logger.info(f"Successfully refreshed auth token for {local_user}!")
 
 
-def sync(database: str) -> None:
+def sync(
+    database: str,
+    max_chunk_results: int,
+    max_download_workers: int,
+    network_retry_count: int,
+) -> None:
     storage = get_storage(database)
 
     raise_on_old_database_version(storage)
@@ -87,9 +110,11 @@ def sync(database: str) -> None:
     backend = storage.config.get_config_value("backend")
     auth_token = storage.config.get_config_value("auth_token")
 
-    note_client = get_sync_client(auth_token, backend)
+    note_client = get_sync_client(
+        auth_token, backend, network_retry_count, max_chunk_results
+    )
 
-    note_synchronizer = NoteSynchronizer(note_client, storage)
+    note_synchronizer = NoteSynchronizer(note_client, storage, max_download_workers)
 
     try:
         note_synchronizer.sync()

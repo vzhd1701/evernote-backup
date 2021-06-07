@@ -14,13 +14,14 @@ from evernote_backup.evernote_client import EvernoteClientAuth
 from evernote_backup.evernote_client_util import EvernoteAuthError
 
 
-def get_auth_client(backend: str) -> EvernoteClientAuth:
+def get_auth_client(backend: str, network_retry_count: int) -> EvernoteClientAuth:
     key, secret = unscramble(API_DATA)
 
     return EvernoteClientAuth(
         consumer_key=key,
         consumer_secret=secret,
         backend=backend,
+        network_error_retry_count=network_retry_count,
     )
 
 
@@ -43,10 +44,13 @@ def evernote_login_password(
     auth_user: Optional[str],
     auth_password: Optional[str],
     backend: str,
+    network_retry_count: int,
 ) -> str:
     auth_user, auth_password = prompt_credentials(auth_user, auth_password)
 
-    auth_client = get_auth_client(backend)
+    auth_client = get_auth_client(
+        backend=backend, network_retry_count=network_retry_count
+    )
 
     try:
         auth_res = auth_client.login(auth_user, auth_password)

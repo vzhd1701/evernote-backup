@@ -13,6 +13,16 @@ from evernote_backup.cli_app_click_util import (
     group_options,
 )
 from evernote_backup.cli_app_util import ProgramTerminatedError, is_output_to_terminal
+from evernote_backup.config_defaults import (
+    BACKEND,
+    DATABASE_NAME,
+    NETWORK_ERROR_RETRY_COUNT,
+    OAUTH_LOCAL_PORT,
+    SYNC_CHUNK_MAX_RESULTS,
+    SYNC_CHUNK_MAX_RESULTS_SERVER_LIMIT,
+    SYNC_MAX_DOWNLOAD_WORKERS,
+    SYNC_MAX_DOWNLOAD_WORKERS_SANE_LIMIT,
+)
 from evernote_backup.version import __version__
 
 logger = logging.getLogger()
@@ -41,6 +51,13 @@ opt_oauth = click.option(
     ),
 )
 
+opt_oauth_port = click.option(
+    "--oauth-port",
+    default=OAUTH_LOCAL_PORT,
+    show_default=True,
+    help="OAuth local server port. (Advanced option, use with --oauth.)",
+)
+
 opt_token = click.option(
     "--token",
     "-t",
@@ -50,10 +67,18 @@ opt_token = click.option(
     ),
 )
 
+opt_network_retry_count = click.option(
+    "--network-retry-count",
+    default=NETWORK_ERROR_RETRY_COUNT,
+    show_default=True,
+    type=click.IntRange(1),
+    help=("Network error retry count. (Advanced option)"),
+)
+
 opt_database = click.option(
     "--database",
     "-d",
-    default="en_backup.db",
+    default=DATABASE_NAME,
     show_default=True,
     required=True,
     type=FILE_ONLY,
@@ -98,7 +123,7 @@ def cli(quiet: bool) -> None:
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_oauth, opt_token)
+@group_options(opt_user, opt_password, opt_oauth, opt_oauth_port, opt_token)
 @click.option(
     "--force",
     is_flag=True,
@@ -106,19 +131,22 @@ def cli(quiet: bool) -> None:
 )
 @click.option(
     "--backend",
-    default="evernote",
+    default=BACKEND,
     show_default=True,
     type=click.Choice(["evernote", "evernote:sandbox", "china", "china:sandbox"]),
     help="API backend to connect to. If you are using Yinxiang, select 'china'.",
 )
+@opt_network_retry_count
 def init_db(
     database: str,
     user: Optional[str],
     password: Optional[str],
     oauth: bool,
+    oauth_port: int,
     token: Optional[str],
     force: bool,
     backend: str,
+    network_retry_count: int,
 ) -> None:
     """Initialize storage & log in to Evernote."""
 
@@ -127,18 +155,48 @@ def init_db(
         auth_user=user,
         auth_password=password,
         auth_is_oauth=oauth,
+        auth_oauth_port=oauth_port,
         auth_token=token,
         force=force,
         backend=backend,
+        network_retry_count=network_retry_count,
     )
 
 
 @cli.command()
 @opt_database
-def sync(database: str) -> None:
+@click.option(
+    "--max-chunk-results",
+    default=SYNC_CHUNK_MAX_RESULTS,
+    type=click.IntRange(1, SYNC_CHUNK_MAX_RESULTS_SERVER_LIMIT),
+    show_default=True,
+    help="Max entries per sync chunk. (Advanced option)",
+)
+@click.option(
+    "--max-download-workers",
+    default=SYNC_MAX_DOWNLOAD_WORKERS,
+    show_default=True,
+    type=click.IntRange(1, SYNC_MAX_DOWNLOAD_WORKERS_SANE_LIMIT),
+    help=(
+        "Max number of parallel downloads."
+        " (Advanced option, don't set too high to avoid rate limits.)"
+    ),
+)
+@opt_network_retry_count
+def sync(
+    database: str,
+    max_chunk_results: int,
+    max_download_workers: int,
+    network_retry_count: int,
+) -> None:
     """Sync local database with Evernote, downloading all notes."""
 
-    cli_app.sync(database=database)
+    cli_app.sync(
+        database=database,
+        max_chunk_results=max_chunk_results,
+        max_download_workers=max_download_workers,
+        network_retry_count=network_retry_count,
+    )
 
 
 @cli.command()
@@ -159,7 +217,10 @@ def sync(database: str) -> None:
     type=DIR_ONLY,
 )
 def export(
-    database: str, single_notes: bool, include_trash: bool, output_path: str
+    database: str,
+    single_notes: bool,
+    include_trash: bool,
+    output_path: str,
 ) -> None:
     """Export all notes from local database into ENEX files."""
 
@@ -176,13 +237,16 @@ click.password_option()
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_oauth, opt_token)
+@group_options(opt_user, opt_password, opt_oauth, opt_oauth_port, opt_token)
+@opt_network_retry_count
 def reauth(
     database: str,
     user: Optional[str],
     password: Optional[str],
     oauth: bool,
+    oauth_port: int,
     token: Optional[str],
+    network_retry_count: int,
 ) -> None:
     """Refresh login to Evernote, run when token expires."""
 
@@ -191,7 +255,9 @@ def reauth(
         auth_user=user,
         auth_password=password,
         auth_is_oauth=oauth,
+        auth_oauth_port=oauth_port,
         auth_token=token,
+        network_retry_count=network_retry_count,
     )
 
 

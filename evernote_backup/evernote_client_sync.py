@@ -4,15 +4,25 @@ from evernote.edam.notestore import NoteStore
 from evernote.edam.notestore.ttypes import SyncChunk
 from evernote.edam.type.ttypes import Note
 
-from evernote_backup.config import SYNC_CHUNK_MAX_RESULTS
 from evernote_backup.evernote_client import EvernoteClient
 
 
 class EvernoteClientSync(EvernoteClient):
-    def __init__(self, backend: str, token: str) -> None:
-        super().__init__(backend=backend, token=token)
+    def __init__(
+        self,
+        backend: str,
+        token: str,
+        network_error_retry_count: int,
+        max_chunk_results: int,
+    ) -> None:
+        super().__init__(
+            backend=backend,
+            token=token,
+            network_error_retry_count=network_error_retry_count,
+        )
 
         self._tags: Optional[dict] = None
+        self.max_chunk_results = max_chunk_results
 
     def get_note(self, note_guid: str) -> Note:
         note = self.note_store.getNote(
@@ -33,11 +43,9 @@ class EvernoteClientSync(EvernoteClient):
             includeExpunged=True,
         )
 
-        max_results = SYNC_CHUNK_MAX_RESULTS
-
         while True:
             chunk = self.note_store.getFilteredSyncChunk(
-                after_usn, max_results, sync_filter
+                after_usn, self.max_chunk_results, sync_filter
             )
 
             yield chunk

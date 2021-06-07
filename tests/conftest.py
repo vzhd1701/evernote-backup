@@ -45,11 +45,18 @@ class FakeEvernoteValues(MagicMock):
         self.fake_auth_unexpected_error = False
         self.fake_auth_twofactor_unexpected_error = False
 
+        self.last_maxEntries = None
+        self.fake_network_counter = 0
+
 
 class FakeEvernoteUserStore(MagicMock):
     fake_values = None
 
     def getUser(self, authenticationToken):
+        if self.fake_values.fake_network_counter > 0:
+            self.fake_values.fake_network_counter -= 1
+            raise ConnectionError
+
         if self.fake_values.fake_auth_verify_unexpected_error:
             raise EDAMUserException()
         if self.fake_values.fake_is_token_expired:
@@ -142,6 +149,8 @@ class FakeEvernoteNoteStore(MagicMock):
         return next(n for n in self.fake_values.fake_notes if n.guid == guid)
 
     def getFilteredSyncChunk(self, authenticationToken, afterUSN, maxEntries, filter):
+        self.fake_values.last_maxEntries = maxEntries
+
         fake_chunk = MagicMock()
 
         fake_chunk.notebooks = self.fake_values.fake_notebooks
@@ -205,9 +214,11 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
         auth_user=None,
         auth_password=None,
         auth_is_oauth=False,
+        auth_oauth_port=10500,
         auth_token=fake_token,
         force=False,
         backend="evernote",
+        network_retry_count=50,
     )
 
 
