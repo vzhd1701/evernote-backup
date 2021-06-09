@@ -1,8 +1,9 @@
 import base64
+import io
 import logging
 import os
 import sys
-from typing import List, Optional
+from typing import Iterable, Iterator, List, Optional, Sequence, TextIO
 
 import click
 
@@ -24,9 +25,9 @@ def unscramble(scrambled_data: bytes) -> List[str]:
     return unscrambled.decode().split()
 
 
-def get_progress_output() -> Optional[str]:
+def get_progress_output() -> Optional[TextIO]:
     if not is_console_interactive():
-        return os.devnull
+        return io.StringIO()
 
     return None
 
@@ -43,3 +44,9 @@ def is_output_to_terminal() -> bool:
 
 def is_inside_docker() -> bool:
     return os.environ.get("INSIDE_DOCKER_CONTAINER", False) is not False
+
+
+def chunks(lst: Sequence, n: int) -> Iterator[Iterable]:
+    """Yield successive n-sized chunks from lst."""
+
+    yield from (lst[i : i + n] for i in range(0, len(lst), n))  # noqa: WPS221

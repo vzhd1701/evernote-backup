@@ -1,3 +1,4 @@
+import io
 import logging
 import os
 
@@ -67,10 +68,10 @@ def test_cli_program_error_unexpected(mocker, caplog):
 @pytest.mark.parametrize(
     "is_quiet,progress_output,is_tty",
     [
-        (True, os.devnull, True),
+        (True, "StringIO", True),
         (False, None, True),
-        (True, os.devnull, False),
-        (False, os.devnull, False),
+        (True, "StringIO", False),
+        (False, "StringIO", False),
     ],
 )
 def test_silent_progress(is_quiet, progress_output, is_tty, cli_invoker, mocker):
@@ -93,7 +94,10 @@ def test_silent_progress(is_quiet, progress_output, is_tty, cli_invoker, mocker)
     else:
         cli_invoker("init-db")
 
-    assert test_out == progress_output
+    if progress_output == "StringIO":
+        assert isinstance(test_out, io.StringIO)
+    else:
+        assert test_out == progress_output
 
 
 def test_cli_main_import():

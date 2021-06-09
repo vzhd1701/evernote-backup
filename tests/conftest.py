@@ -290,5 +290,6 @@ def mock_output_to_terminal(mocker, monkeypatch):
         "evernote_backup.cli_app_auth_password.is_output_to_terminal", new=tty_mock
     )
     mocker.patch("evernote_backup.cli.is_output_to_terminal", new=tty_mock)
+    mocker.patch("evernote_backup.cli_app_util.is_output_to_terminal", new=tty_mock)
 
     return tty_mock

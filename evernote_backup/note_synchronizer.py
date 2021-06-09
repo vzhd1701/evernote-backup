@@ -2,17 +2,20 @@
 
 import logging
 import threading
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed, wait
-from typing import Dict, Iterable, List, Tuple
+from concurrent.futures import ThreadPoolExecutor, as_completed, wait
+from typing import Any, Iterable, List, Tuple
 
 from click import progressbar
 from evernote.edam.type.ttypes import Note
 
-from evernote_backup.cli_app_util import get_progress_output
+from evernote_backup.cli_app_util import chunks, get_progress_output
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.note_storage import SqliteStorage
 
 logger = logging.getLogger(__name__)
+
+
+THREAD_CHUNK_SIZE = 1000
 
 
 class WrongAuthUserError(Exception):
@@ -78,6 +81,13 @@ class NoteSynchronizer(object):
         self.storage = note_storage
         self.max_download_workers = max_download_workers
 
+        self.note_worker = NoteClientWorker(
+            self.note_client.token,
+            self.note_client.backend,
+            self.note_client.network_error_retry_count,
+            self.note_client.max_chunk_results,
+        )
+
     def sync(self) -> None:
         self._raise_on_wrong_user()
 
@@ -120,7 +130,7 @@ class NoteSynchronizer(object):
         with progressbar(
             length=remote_usn - current_usn,
             show_pos=True,
-            file=get_progress_output(),  # type: ignore
+            file=get_progress_output(),
         ) as chunks_bar:
             for chunk in self.note_client.iter_sync_chunks(current_usn):
                 if current_usn > 0:
@@ -153,45 +163,41 @@ class NoteSynchronizer(object):
             self._count_expunged_notes += len(expunged_notes)
 
     def _download_scheduled_notes(
-        self, notes_to_sync: Iterable[Tuple[str, str]]
+        self, notes_to_sync: Tuple[Tuple[str, str], ...]
     ) -> None:
+
         with ThreadPoolExecutor(max_workers=self.max_download_workers) as executor:
-            note_worker = NoteClientWorker(
-                self.note_client.token,
-                self.note_client.backend,
-                self.note_client.network_error_retry_count,
-                self.note_client.max_chunk_results,
-            )
+            with progressbar(
+                length=len(notes_to_sync),
+                show_pos=True,
+                file=get_progress_output(),
+                item_show_func=lambda x: x.title if x else "",  # type: ignore
+            ) as notes_bar:
+                for notes_to_sync_chunk in chunks(notes_to_sync, THREAD_CHUNK_SIZE):
+                    self._process_download_chunk(
+                        executor, notes_bar, notes_to_sync_chunk
+                    )
 
-            note_futures = {
-                executor.submit(note_worker, note_guid): note_title
-                for note_guid, note_title in notes_to_sync
-            }
-
-            try:
-                self._progress_sync_notes(note_futures)
-            except KeyboardInterrupt:
-                note_worker.stop = True
-
-                logger.warning("Aborting, please wait...")
-                wait(note_futures)
-
-                raise
-
-    def _progress_sync_notes(
+    def _process_download_chunk(
         self,
-        note_futures: Dict[Future, str],
+        executor: Any,
+        notes_bar: Any,
+        notes_chunk: Iterable[Tuple[str, str]],
     ) -> None:
-        notes = as_completed(note_futures)
+        note_futures = {
+            executor.submit(self.note_worker, note_guid): note_title
+            for note_guid, note_title in notes_chunk
+        }
 
-        with progressbar(
-            notes,
-            length=len(note_futures),
-            item_show_func=lambda x: note_futures[x] if x else "",
-            show_pos=True,
-            file=get_progress_output(),  # type: ignore
-        ) as notes_bar:
-            for note_f in notes_bar:
+        try:
+            for note_f in as_completed(note_futures):
                 note = note_f.result()
-
                 self.storage.notes.add_note(note)
+                notes_bar.update(1, note)
+        except KeyboardInterrupt:
+            self.note_worker.stop = True
+
+            logger.warning("Aborting, please wait...")
+            wait(note_futures)
+
+            raise

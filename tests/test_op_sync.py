@@ -314,3 +314,39 @@ def test_sync_custom_max_download_workers(
 
     assert result_notes == [test_note]
     thread_pool_spy.assert_called_once_with(max_workers=test_max_download_workers)
+
+
+@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("mock_output_to_terminal")
+def test_sync_massive_note_count(
+    cli_invoker, mock_evernote_client, fake_storage, monkeypatch
+):
+    mock_evernote_client.fake_notebooks.append(
+        Notebook(
+            guid="nbid1",
+            name="name1",
+            stack="stack1",
+            serviceUpdated=1000,
+        ),
+    )
+
+    for i in range(10):
+        test_note = Note(
+            guid=f"id{i}",
+            title=f"title{i}",
+            content="body1",
+            notebookGuid="nbid1",
+            active=True,
+        )
+
+        mock_evernote_client.fake_notes.append(test_note)
+
+    monkeypatch.setattr(note_synchronizer, "THREAD_CHUNK_SIZE", 2)
+
+    cli_invoker("sync", "--database", "fake_db")
+
+    result_notes = sorted(
+        fake_storage.notes.iter_notes("nbid1"), key=lambda x: int(x.guid[2:])
+    )
+
+    assert result_notes == mock_evernote_client.fake_notes

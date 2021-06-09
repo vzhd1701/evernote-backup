@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, List
 
 import click
 
@@ -16,8 +16,8 @@ FILE_ONLY = click.Path(
 
 
 class NaturalOrderGroup(click.Group):
-    def list_commands(self, ctx: Any) -> Iterable:
-        return self.commands.keys()
+    def list_commands(self, ctx: Any) -> List[str]:
+        return list(self.commands.keys())
 
 
 def group_options(*options: Callable) -> Callable:

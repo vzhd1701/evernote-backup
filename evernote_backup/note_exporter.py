@@ -54,7 +54,7 @@ class NoteExporter(object):
             notebooks,
             item_show_func=lambda x: str(x.name) if x else "",
             show_pos=True,
-            file=get_progress_output(),  # type: ignore
+            file=get_progress_output(),
         ) as notebooks_bar:
             for notebook in notebooks_bar:
                 if self.storage.notebooks.get_notebook_notes_count(notebook.guid) == 0:
