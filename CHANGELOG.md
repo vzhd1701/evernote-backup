@@ -1,3 +1,9 @@
+## 1.5.1 (2021-06-09)
+
+### Fix
+
+- improve performance on big sync, e.g. >1k notes
+
 ## 1.5.0 (2021-06-07)
 
 ### Feat
