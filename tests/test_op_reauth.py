@@ -32,7 +32,7 @@ def test_user_mismatch_error(fake_storage, cli_invoker, mock_evernote_client):
 
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
-    assert "Each user must use different database file" in str(excinfo.value)
+    assert "Each user must use a different database file" in str(excinfo.value)
 
 
 @pytest.mark.usefixtures("mock_evernote_client")

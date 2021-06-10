@@ -95,7 +95,7 @@ class NoteSynchronizer(object):
         current_usn = int(self.storage.config.get_config_value("USN"))
 
         if remote_usn == current_usn:
-            logger.info("Noting to sync, current database is up to date!")
+            logger.info("Nothing to sync, current database is up to date!")
         else:
             logger.info("Syncing latest changes...")
             self._sync_chunks(current_usn, remote_usn)

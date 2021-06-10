@@ -89,7 +89,7 @@ def reauth(
     if local_user != note_client.user:
         raise ProgramTerminatedError(
             f"Current user of this database is {local_user}, not {note_client.user}!"
-            " Each user must use different database file."
+            " Each user must use a different database file."
         )
 
     storage.config.set_config_value("auth_token", auth_token)
@@ -121,7 +121,7 @@ def sync(
     except WrongAuthUserError as e:
         raise ProgramTerminatedError(
             f"Current user of this database is {e.local_user}, not {e.remote_user}!"
-            " Each user must use different database file."
+            " Each user must use a different database file."
         )
 
     logger.info("Synchronization completed!")
