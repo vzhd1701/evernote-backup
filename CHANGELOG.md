@@ -1,3 +1,14 @@
+## 1.6.0 (2021-08-09)
+
+### Feat
+
+- add debug logging on sync & export
+- add --verbose output option
+
+### Fix
+
+- typos
+
 ## 1.5.1 (2021-06-09)
 
 ### Fix
