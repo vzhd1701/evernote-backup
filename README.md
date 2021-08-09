@@ -2,7 +2,6 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/evernote-backup?label=version)](https://pypi.python.org/pypi/evernote-backup)
 [![Python Version](https://img.shields.io/pypi/pyversions/evernote-backup.svg)](https://pypi.org/project/evernote-backup/)
-[![Docker Build Status](https://img.shields.io/docker/cloud/build/vzhd1701/evernote-backup?label=Docker)](https://hub.docker.com/r/vzhd1701/evernote-backup/)
 [![tests](https://github.com/vzhd1701/evernote-backup/actions/workflows/test.yml/badge.svg)](https://github.com/vzhd1701/evernote-backup/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/vzhd1701/evernote-backup/branch/master/graph/badge.svg)](https://codecov.io/gh/vzhd1701/evernote-backup)
 
@@ -33,13 +32,13 @@ $ pipx install evernote-backup
 ### With Docker
 
 ```bash
-$ docker run --rm -t -v "$PWD":/tmp vzhd1701/evernote-backup
+$ docker run --rm -t -v "$PWD":/tmp ghcr.io/vzhd1701/evernote-backup:latest
 ```
 
 To log in to Evernote using OAuth with Docker, you'll have to forward port 10500 for a callback:
 
 ```bash
-$ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 vzhd1701/evernote-backup init-db --oauth
+$ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 ghcr.io/vzhd1701/evernote-backup:latest init-db --oauth
 ```
 
 ## Usage
