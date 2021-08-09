@@ -8,6 +8,7 @@ from click import progressbar
 from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.cli_app_util import get_progress_output
+from evernote_backup.log_util import log_format_note, log_format_notebook
 from evernote_backup.note_exporter_util import SafePath
 from evernote_backup.note_formatter import NoteFormatter
 from evernote_backup.note_storage import SqliteStorage
@@ -34,6 +35,14 @@ class NoteExporter(object):
         count_notes = self.storage.notes.get_notes_count()
         count_trash = self.storage.notes.get_notes_count(is_active=False)
 
+        if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
+            logger.debug(f"Notes to export: {count_notes}")
+            logger.debug(f"Trashed notes: {count_trash}")
+            if single_notes:
+                logger.debug("Export mode: single notes")
+            else:
+                logger.debug("Export mode: notebooks")
+
         if count_notes == 0 and count_trash == 0:
             raise NothingToExportError
 
@@ -56,11 +65,16 @@ class NoteExporter(object):
             show_pos=True,
             file=get_progress_output(),
         ) as notebooks_bar:
-            for notebook in notebooks_bar:
-                if self.storage.notebooks.get_notebook_notes_count(notebook.guid) == 0:
+            for nb in notebooks_bar:
+                if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
+                    nb_info = log_format_notebook(nb)
+                    logger.debug(f"Exporting notebook {nb_info}")
+
+                if self.storage.notebooks.get_notebook_notes_count(nb.guid) == 0:
+                    logger.debug("Notebook is empty, skip")
                     continue
 
-                self._export_notes(notebook, single_notes)
+                self._export_notes(nb, single_notes)
 
     def _export_notes(self, notebook: Notebook, single_notes: bool) -> None:
         parent_dir = [notebook.stack] if notebook.stack else []
@@ -106,6 +120,8 @@ def _write_export_file(
     file_path: str, note_source: Union[Iterable[Note], Note]
 ) -> None:
     with open(file_path, "w", encoding="utf-8") as f:
+        logger.debug(f"Writing file {file_path}")
+
         now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
         f.write(ENEX_HEAD.format(export_date=now))
@@ -113,9 +129,15 @@ def _write_export_file(
         note_formatter = NoteFormatter()
 
         if isinstance(note_source, Note):
+            if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
+                n_info = log_format_note(note_source)
+                logger.debug(f"Exporting note {n_info}")
             f.write(note_formatter.format_note(note_source))
         else:
-            for note in note_source:
+            for note in note_source:  # noqa: WPS440
+                if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
+                    n_info = log_format_note(note)
+                    logger.debug(f"Exporting note {n_info}")
                 f.write(note_formatter.format_note(note))
 
         f.write(ENEX_TAIL)

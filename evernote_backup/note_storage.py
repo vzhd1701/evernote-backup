@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import logging
 import lzma
 import os
 import pickle
@@ -9,6 +10,9 @@ from typing import Iterable, Iterator, Tuple, Union
 from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.config import CURRENT_DB_VERSION
+from evernote_backup.log_util import log_format_note, log_format_notebook
+
+logger = logging.getLogger(__name__)
 
 DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
                         guid TEXT PRIMARY KEY,
@@ -107,10 +111,15 @@ class SqliteStorage(object):
 
 class NoteBookStorage(SqliteStorage):
     def add_notebooks(self, notebooks: Iterable[Notebook]) -> None:
+        if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
+            for nb in notebooks:
+                nb_info = log_format_notebook(nb)
+                logger.debug(f"Adding/updating notebook {nb_info}")
+
         with self.db as con:
             con.executemany(
                 "replace into notebooks(guid, name, stack) values (?, ?, ?)",
-                ((nb.guid, nb.name, nb.stack) for nb in notebooks),
+                ((nb.guid, nb.name, nb.stack) for nb in notebooks),  # noqa: WPS441
             )
 
     def iter_notebooks(self) -> Iterator[Notebook]:
@@ -145,6 +154,11 @@ class NoteBookStorage(SqliteStorage):
 
 class NoteStorage(SqliteStorage):
     def add_notes_for_sync(self, notes: Iterable[Note]) -> None:
+        if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
+            for note in notes:
+                n_info = log_format_note(note)
+                logger.debug(f"Scheduling note for sync {n_info}")
+
         with self.db as con:
             con.executemany(
                 "replace into notes(guid, title) values (?, ?)",
@@ -152,6 +166,10 @@ class NoteStorage(SqliteStorage):
             )
 
     def add_note(self, note: Note) -> None:
+        if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
+            n_info = log_format_note(note)
+            logger.debug(f"Adding/updating note {n_info}")
+
         note_deflated = lzma.compress(pickle.dumps(note))
 
         with self.db as con:
