@@ -125,10 +125,11 @@ In case your auth token that you initialized your database with expires, you hav
 
 ## Dependencies
 
-- `evernote3` - to access Evernote API
-- `oauth2` - to perform OAuth authentication
-- `xmltodict` - to convert Evernote internal representation of notes into XML
-- `click` - to create a CLI interface
+- [evernote3](https://github.com/evernote/evernote-sdk-python3) - to access Evernote API
+- [oauth2](https://github.com/joestump/python-oauth2) - to perform OAuth authentication
+- [xmltodict](https://github.com/martinblech/xmltodict) - to convert Evernote internal representation of notes into XML
+- [click](https://github.com/pallets/click) - to create a CLI interface
+- [click-option-group](https://github.com/click-contrib/click-option-group) - to add mutually exclusive options in сlick
 
 ## Alternative tools
 
