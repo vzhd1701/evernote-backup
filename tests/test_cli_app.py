@@ -28,6 +28,25 @@ def test_cli_quiet(is_quiet, log_level_expected, cli_invoker, mocker):
 
 
 @pytest.mark.parametrize(
+    "is_verbose,log_level_expected",
+    [
+        (True, logging.DEBUG),
+        (False, logging.INFO),
+    ],
+)
+def test_cli_verbose(is_verbose, log_level_expected, cli_invoker, mocker):
+    logger_mock = mocker.patch("evernote_backup.cli.logger")
+    mocker.patch("evernote_backup.cli.cli_app")
+
+    if is_verbose:
+        cli_invoker("--verbose", "init-db")
+    else:
+        cli_invoker("init-db")
+
+    logger_mock.setLevel.assert_called_once_with(log_level_expected)
+
+
+@pytest.mark.parametrize(
     "is_tty,log_format",
     [
         (False, "%(asctime)s | [%(levelname)s] | %(message)s"),

@@ -4,6 +4,7 @@ import traceback
 from typing import Optional
 
 import click
+from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 
 from evernote_backup import cli_app
 from evernote_backup.cli_app_click_util import (
@@ -87,14 +88,21 @@ opt_database = click.option(
 
 
 @click.group(cls=NaturalOrderGroup)
-@click.option(
+@optgroup.group("Verbosity", cls=MutuallyExclusiveOptionGroup)  # type: ignore
+@optgroup.option(  # type: ignore
     "--quiet",
     "-q",
     is_flag=True,
-    help="Quiet mode, output only in case of critical errors.",
+    help="Quiet mode, output only critical errors.",
+)
+@optgroup.option(  # type: ignore
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Verbose mode, output debug information.",
 )
 @click.version_option(__version__)
-def cli(quiet: bool) -> None:
+def cli(quiet: bool, verbose: bool) -> None:
     """Evernote backup & export
 
     \b
@@ -117,6 +125,8 @@ def cli(quiet: bool) -> None:
 
     if quiet:
         logger.setLevel(logging.CRITICAL)
+    elif verbose:
+        logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
 

@@ -38,6 +38,7 @@ evernote3 = "^1.25.14"
 xmltodict = "^0.12.0"
 click = "^8.0.1"
 oauth2 = "^1.9.0"
+click-option-group = "^0.5.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.3"
