@@ -13,10 +13,11 @@ def test_get_sync_client_token_expired_error(mock_evernote_client):
     mock_evernote_client.fake_is_token_expired = True
     network_error_retry_count = 50
     max_chunk_results = 200
+    fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_app_auth.get_sync_client(
-            "fake_token", "evernote", network_error_retry_count, max_chunk_results
+            fake_token, "evernote", network_error_retry_count, max_chunk_results
         )
     assert str(excinfo.value) == "Authentication token expired or revoked!"
 
@@ -25,10 +26,11 @@ def test_get_sync_client_token_invalid_error(mock_evernote_client):
     mock_evernote_client.fake_is_token_invalid = True
     network_error_retry_count = 50
     max_chunk_results = 200
+    fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_app_auth.get_sync_client(
-            "fake_token", "evernote", network_error_retry_count, max_chunk_results
+            fake_token, "evernote", network_error_retry_count, max_chunk_results
         )
     assert str(excinfo.value) == "Invalid authentication token!"
 
@@ -37,10 +39,11 @@ def test_get_sync_client_unexpected_error(mock_evernote_client):
     mock_evernote_client.fake_auth_verify_unexpected_error = True
     network_error_retry_count = 50
     max_chunk_results = 200
+    fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     with pytest.raises(EDAMUserException):
         cli_app_auth.get_sync_client(
-            "fake_token", "evernote", network_error_retry_count, max_chunk_results
+            fake_token, "evernote", network_error_retry_count, max_chunk_results
         )
 
 

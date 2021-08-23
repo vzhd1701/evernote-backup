@@ -1,13 +1,17 @@
+import logging
 from typing import Dict, Iterator, Optional
 
+from evernote.edam.error.ttypes import EDAMNotFoundException
 from evernote.edam.notestore import NoteStore
 from evernote.edam.notestore.ttypes import SyncChunk
-from evernote.edam.type.ttypes import Note
+from evernote.edam.type.ttypes import LinkedNotebook, Note
 
 from evernote_backup.evernote_client import EvernoteClient
 
+logger = logging.getLogger(__name__)
 
-class EvernoteClientSync(EvernoteClient):
+
+class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
     def __init__(
         self,
         backend: str,
@@ -22,6 +26,7 @@ class EvernoteClientSync(EvernoteClient):
         )
 
         self._tags: Optional[dict] = None
+        self._linked_notebooks: Optional[dict] = None
         self.max_chunk_results = max_chunk_results
 
     def get_note(self, note_guid: str) -> Note:
@@ -41,6 +46,7 @@ class EvernoteClientSync(EvernoteClient):
             includeNoteAttributes=True,
             includeNotebooks=True,
             includeExpunged=True,
+            includeLinkedNotebooks=True,
         )
 
         while True:
@@ -51,9 +57,54 @@ class EvernoteClientSync(EvernoteClient):
             yield chunk
 
             after_usn = chunk.chunkHighUSN
-
             if chunk.chunkHighUSN == chunk.updateCount:
                 return
+
+    def iter_linked_notebook_sync_chunks(
+        self, l_notebook: LinkedNotebook, after_usn: int
+    ) -> Iterator[SyncChunk]:
+        ln_note_store = self.get_note_store(l_notebook.shardId)
+        is_full_sync = False
+
+        while True:
+            try:
+                chunk = ln_note_store.getLinkedNotebookSyncChunk(
+                    l_notebook, after_usn, self.max_chunk_results, is_full_sync
+                )
+            except EDAMNotFoundException:
+                # Happens when linked notebook was unshared
+                # just skip it, since expunging removed notebook will alter account data
+                logger.warning(
+                    f"Linked notebook '{l_notebook.shareName}' [{l_notebook.guid}]"
+                    f" is not accessible, skipping..."
+                )
+                return
+
+            if after_usn == chunk.updateCount:
+                return
+
+            yield chunk
+
+            after_usn = chunk.chunkHighUSN
+            if chunk.chunkHighUSN == chunk.updateCount:
+                return
+
+    def auth_linked_notebook(self, l_notebook_guid: str) -> str:
+        l_notebook = self.linked_notebooks[l_notebook_guid]
+
+        ln_note_store = self.get_note_store(l_notebook.shardId)
+
+        auth_res = ln_note_store.authenticateToSharedNotebook(l_notebook.shareKey)
+
+        return str(auth_res.authenticationToken)
+
+    @property
+    def linked_notebooks(self) -> Dict[str, LinkedNotebook]:
+        if self._linked_notebooks is None:
+            self._linked_notebooks = {
+                ln.guid: ln for ln in self.note_store.listLinkedNotebooks()
+            }
+        return self._linked_notebooks
 
     @property
     def tags(self) -> Dict[str, str]:

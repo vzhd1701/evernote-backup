@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 from evernote.edam.error.ttypes import (
     EDAMErrorCode,
+    EDAMNotFoundException,
     EDAMSystemException,
     EDAMUserException,
 )
@@ -19,12 +20,21 @@ class FakeEvernoteValues(MagicMock):
         super().__init__(*args, **kwargs)
 
         self.fake_user = None
+
         self.fake_tags = []
         self.fake_notebooks = []
+        self.fake_linked_notebooks = []
         self.fake_notes = []
         self.fake_expunged_notebooks = []
+        self.fake_expunged_linked_notebooks = []
         self.fake_expunged_notes = []
         self.fake_usn = 100
+
+        self.fake_l_notebooks = []
+        self.fake_l_notes = []
+        self.fake_l_expunged_notebooks = []
+        self.fake_l_expunged_notes = []
+        self.fake_l_usn = 100
 
         self.fake_valid_username = None
         self.fake_valid_password = None
@@ -38,12 +48,14 @@ class FakeEvernoteValues(MagicMock):
         self.fake_auth_invalid_ota = False
 
         self.fake_auth_token = None
+        self.fake_linked_notebook_auth_token = None
         self.fake_twofactor_req = False
         self.fake_twofactor_hint = None
 
         self.fake_auth_verify_unexpected_error = False
         self.fake_auth_unexpected_error = False
         self.fake_auth_twofactor_unexpected_error = False
+        self.fake_auth_linked_notebook_error = False
 
         self.last_maxEntries = None
         self.fake_network_counter = 0
@@ -146,6 +158,9 @@ class FakeEvernoteNoteStore(MagicMock):
         withResourcesRecognition,
         withResourcesAlternateData,
     ):
+        if authenticationToken == self.fake_values.fake_linked_notebook_auth_token:
+            return next(n for n in self.fake_values.fake_l_notes if n.guid == guid)
+
         return next(n for n in self.fake_values.fake_notes if n.guid == guid)
 
     def getFilteredSyncChunk(self, authenticationToken, afterUSN, maxEntries, filter):
@@ -156,6 +171,9 @@ class FakeEvernoteNoteStore(MagicMock):
         fake_chunk.notebooks = self.fake_values.fake_notebooks
         fake_chunk.notes = self.fake_values.fake_notes
         fake_chunk.expungedNotebooks = self.fake_values.fake_expunged_notebooks
+        fake_chunk.expungedLinkedNotebooks = (
+            self.fake_values.fake_expunged_linked_notebooks
+        )
         fake_chunk.expungedNotes = self.fake_values.fake_expunged_notes
 
         # This will result in only 1 iteration of chunks
@@ -163,6 +181,36 @@ class FakeEvernoteNoteStore(MagicMock):
         fake_chunk.updateCount = self.fake_values.fake_usn
 
         return fake_chunk
+
+    def getLinkedNotebookSyncChunk(
+        self, authenticationToken, linkedNotebook, afterUSN, maxEntries, fullSyncOnly
+    ):
+        if self.fake_values.fake_auth_linked_notebook_error:
+            raise EDAMNotFoundException
+
+        self.fake_values.last_maxEntries = maxEntries
+
+        fake_chunk = MagicMock()
+
+        fake_chunk.notebooks = self.fake_values.fake_l_notebooks
+        fake_chunk.notes = self.fake_values.fake_l_notes
+        fake_chunk.expungedNotebooks = self.fake_values.fake_l_expunged_notebooks
+        fake_chunk.expungedLinkedNotebooks = []
+        fake_chunk.expungedNotes = self.fake_values.fake_l_expunged_notes
+
+        # This will result in only 1 iteration of chunks
+        fake_chunk.chunkHighUSN = self.fake_values.fake_l_usn
+        fake_chunk.updateCount = self.fake_values.fake_l_usn
+
+        return fake_chunk
+
+    def listLinkedNotebooks(self, authenticationToken):
+        return self.fake_values.fake_linked_notebooks
+
+    def authenticateToSharedNotebook(self, shareKeyOrGlobalId, authenticationToken):
+        return MagicMock(
+            authenticationToken=self.fake_values.fake_linked_notebook_auth_token,
+        )
 
 
 @pytest.fixture()

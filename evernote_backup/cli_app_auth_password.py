@@ -10,7 +10,7 @@ from evernote_backup.cli_app_util import (
     unscramble,
 )
 from evernote_backup.config import API_DATA
-from evernote_backup.evernote_client import EvernoteClientAuth
+from evernote_backup.evernote_client_auth import EvernoteClientAuth
 from evernote_backup.evernote_client_util import EvernoteAuthError
 
 
