@@ -1,3 +1,9 @@
+## 1.6.2 (2021-08-24)
+
+### Fix
+
+- fix support for linked notebooks
+
 ## 1.6.1 (2021-08-23)
 
 ### Fix
