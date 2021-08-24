@@ -196,7 +196,47 @@ def test_sync_add_linked_notebook_note(cli_invoker, mock_evernote_client, fake_s
         )
     )
 
-    mock_evernote_client.fake_linked_notebooks.append(LinkedNotebook(guid="id3"))
+    mock_evernote_client.fake_linked_notebooks.append(
+        LinkedNotebook(guid="id3", shardId="s100")
+    )
+
+    mock_evernote_client.fake_linked_notebook_auth_token = (
+        "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    )
+
+    cli_invoker("sync", "--database", "fake_db")
+
+    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notes = list(fake_storage.notes.iter_notes("nbid1"))
+
+    assert result_notebooks == mock_evernote_client.fake_l_notebooks
+    assert result_notes == mock_evernote_client.fake_l_notes
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_add_linked_notebook_note_public(
+    cli_invoker, mock_evernote_client, fake_storage
+):
+    mock_evernote_client.fake_l_notebooks.append(
+        Notebook(
+            guid="nbid1",
+            name="name1",
+        ),
+    )
+
+    mock_evernote_client.fake_l_notes.append(
+        Note(
+            guid="id1",
+            title="title1",
+            content="body1",
+            notebookGuid="nbid1",
+            active=True,
+        )
+    )
+
+    mock_evernote_client.fake_linked_notebooks.append(
+        LinkedNotebook(guid="id3", shardId="s100", uri="public_uri")
+    )
 
     mock_evernote_client.fake_linked_notebook_auth_token = (
         "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
@@ -230,7 +270,9 @@ def test_sync_expunge_linked_notebook_note(
             active=True,
         )
     )
-    mock_evernote_client.fake_linked_notebooks.append(LinkedNotebook(guid="id3"))
+    mock_evernote_client.fake_linked_notebooks.append(
+        LinkedNotebook(guid="id3", shardId="s100")
+    )
     mock_evernote_client.fake_linked_notebook_auth_token = (
         "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     )

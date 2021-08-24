@@ -1,12 +1,17 @@
 import time
 from http.client import HTTPException
-from typing import Any, Callable, Union
+from typing import Any, Callable, NamedTuple, Union
 
 from evernote.edam.error.ttypes import (
     EDAMErrorCode,
     EDAMSystemException,
     EDAMUserException,
 )
+
+
+class NotebookAuth(NamedTuple):
+    token: str
+    shard: str
 
 
 class EvernoteAuthError(Exception):

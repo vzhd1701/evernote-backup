@@ -7,6 +7,7 @@ from evernote.edam.notestore.ttypes import SyncChunk
 from evernote.edam.type.ttypes import LinkedNotebook, Note
 
 from evernote_backup.evernote_client import EvernoteClient
+from evernote_backup.evernote_client_util import NotebookAuth
 
 logger = logging.getLogger(__name__)
 
@@ -89,14 +90,29 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
             if chunk.chunkHighUSN == chunk.updateCount:
                 return
 
-    def auth_linked_notebook(self, l_notebook_guid: str) -> str:
+    def auth_linked_notebook(
+        self, l_notebook_guid: str, notebook_guid: str
+    ) -> NotebookAuth:
         l_notebook = self.linked_notebooks[l_notebook_guid]
+        is_notebook_public = l_notebook.shareKey is None and l_notebook.uri is not None
+
+        if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
+            ln_info = f"{l_notebook.shareName} [{l_notebook.guid}]"
+            if is_notebook_public:
+                ln_info += " [PUBLIC]"  # noqa: WPS336
+
+            logger.debug(f"Requesting access to linked notebook {ln_info}")
 
         ln_note_store = self.get_note_store(l_notebook.shardId)
 
-        auth_res = ln_note_store.authenticateToSharedNotebook(l_notebook.shareKey)
+        if is_notebook_public:
+            auth_token = self.token
+        else:
+            auth_token = ln_note_store.authenticateToSharedNotebook(
+                notebook_guid
+            ).authenticationToken
 
-        return str(auth_res.authenticationToken)
+        return NotebookAuth(token=auth_token, shard=l_notebook.shardId)
 
     @property
     def linked_notebooks(self) -> Dict[str, LinkedNotebook]:

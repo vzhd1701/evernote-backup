@@ -143,9 +143,8 @@ def test_linked_notebook_deleted(fake_storage):
 
     fake_storage.notebooks.expunge_linked_notebooks([test_l_notebook.guid])
 
-    result = fake_storage.notebooks.get_notebook_by_linked_guid(test_l_notebook.guid)
-
-    assert result is None
+    with pytest.raises(ValueError):
+        fake_storage.notebooks.get_notebook_by_linked_guid(test_l_notebook.guid)
 
 
 def test_notebook_note_count(fake_storage):

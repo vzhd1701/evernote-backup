@@ -13,6 +13,7 @@ from evernote.edam.error.ttypes import (
 
 from evernote_backup import cli_app, note_storage
 from evernote_backup.cli import cli
+from evernote_backup.token_util import get_token_shard
 
 
 class FakeEvernoteValues(MagicMock):
@@ -143,6 +144,11 @@ class FakeEvernoteUserStore(MagicMock):
 class FakeEvernoteNoteStore(MagicMock):
     fake_values = None
 
+    def __init__(self, iprot, oprot=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.shard = iprot.trans.path[len("/edam/note/") :]
+
     def getSyncState(self, authenticationToken):
         return MagicMock(updateCount=self.fake_values.fake_usn)
 
@@ -158,7 +164,11 @@ class FakeEvernoteNoteStore(MagicMock):
         withResourcesRecognition,
         withResourcesAlternateData,
     ):
-        if authenticationToken == self.fake_values.fake_linked_notebook_auth_token:
+        # if authenticationToken == self.fake_values.fake_linked_notebook_auth_token:
+
+        # If client shard is different, means we are trying to get note from linked nb
+        token_shard = get_token_shard(authenticationToken)
+        if token_shard != self.shard:
             return next(n for n in self.fake_values.fake_l_notes if n.guid == guid)
 
         return next(n for n in self.fake_values.fake_notes if n.guid == guid)

@@ -11,6 +11,7 @@ from evernote.edam.type.ttypes import LinkedNotebook, Note
 
 from evernote_backup.cli_app_util import chunks, get_progress_output
 from evernote_backup.evernote_client_sync import EvernoteClientSync
+from evernote_backup.evernote_client_util import NotebookAuth
 from evernote_backup.note_storage import NoteForSync, SqliteStorage
 
 logger = logging.getLogger(__name__)
@@ -47,23 +48,29 @@ class NoteClientWorker(object):
 
         self._thread_data = threading.local()
 
-    def __call__(self, note_id: str, token: str = None) -> Note:
+    def __call__(self, note_id: str, auth_data: NotebookAuth = None) -> Note:
         if self.stop:
             raise WorkerStopException
 
-        if token is None:
-            token = self.token
+        if auth_data is None:
+            auth_data = NotebookAuth(token=self.token, shard="")
+
+        client_id = auth_data.shard + auth_data.token
 
         try:
-            note_client = self.clients[token]
+            note_client = self.clients[client_id]
         except KeyError:
             note_client = EvernoteClientSync(
-                token=token,
+                token=auth_data.token,
                 backend=self.backend,
                 network_error_retry_count=self.network_error_retry_count,
                 max_chunk_results=self.max_chunk_results,
             )
-            self.clients[token] = note_client
+
+            if auth_data.shard:
+                note_client.shard = auth_data.shard
+
+            self.clients[client_id] = note_client
 
         return note_client.get_note(note_id)
 
@@ -100,7 +107,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
             self.note_client.network_error_retry_count,
             self.note_client.max_chunk_results,
         )
-        self.linked_notebooks_auth: Dict[str, str] = {}
+        self.linked_notebooks_auth: Dict[str, NotebookAuth] = {}
 
     def sync(self) -> None:
         self._raise_on_wrong_user()
@@ -144,16 +151,17 @@ class NoteSynchronizer(object):  # noqa: WPS214
         }
 
         if linked_notebooks:
-            logger.debug(
+            logger.info(
                 "Requesting access to {0} linked notebooks...".format(
                     len(linked_notebooks)
                 )
             )
 
-            self.linked_notebooks_auth = {
-                n_guid: self.note_client.auth_linked_notebook(n_guid)
-                for n_guid in linked_notebooks
-            }
+            for ln_guid in linked_notebooks:
+                nb = self.storage.notebooks.get_notebook_by_linked_guid(ln_guid)
+                auth_token = self.note_client.auth_linked_notebook(ln_guid, nb.guid)
+
+                self.linked_notebooks_auth[ln_guid] = auth_token
 
     def _raise_on_wrong_user(self) -> None:
         remote_user = self.note_client.user
@@ -236,17 +244,22 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
         if expunged_linked_notebooks:
             for l_notebook_guid in expunged_linked_notebooks:
-                notebook = self.storage.notebooks.get_notebook_by_linked_guid(
-                    l_notebook_guid
-                )
-
-                if notebook:
-                    self.storage.notebooks.expunge_notebooks((notebook.guid,))
-                    self.storage.notes.expunge_notes_by_notebook(notebook.guid)
+                self._expunge_linked_assoc(l_notebook_guid)
 
             self.storage.notebooks.expunge_linked_notebooks(expunged_linked_notebooks)
 
             self._count_expunged_linked_notebooks += len(expunged_linked_notebooks)
+
+    def _expunge_linked_assoc(self, l_notebook_guid: str) -> None:
+        try:
+            notebook = self.storage.notebooks.get_notebook_by_linked_guid(
+                l_notebook_guid
+            )
+        except ValueError:
+            return
+
+        self.storage.notebooks.expunge_notebooks((notebook.guid,))
+        self.storage.notes.expunge_notes_by_notebook(notebook.guid)
 
     def _download_scheduled_notes(self, notes_to_sync: Tuple[NoteForSync, ...]) -> None:
         with ThreadPoolExecutor(max_workers=self.max_download_workers) as executor:

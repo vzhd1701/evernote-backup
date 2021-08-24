@@ -186,7 +186,7 @@ class NoteBookStorage(SqliteStorage):  # noqa: WPS214
         if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
             logger.debug(
                 f"Adding/updating linked notebook {l_notebook.shareName}"
-                " [{l_notebook.guid}] -> [{notebook.guid}]"
+                f" [{l_notebook.guid}] -> [{notebook.guid}]"
             )
 
         with self.db as con:
@@ -195,7 +195,7 @@ class NoteBookStorage(SqliteStorage):  # noqa: WPS214
                 (l_notebook.guid, notebook.guid),
             )
 
-    def get_notebook_by_linked_guid(self, l_notebook_guid: str) -> Optional[Notebook]:
+    def get_notebook_by_linked_guid(self, l_notebook_guid: str) -> Notebook:
         with self.db as con:
             cur = con.execute(
                 "select notebooks.guid, notebooks.name, notebooks.stack"
@@ -209,7 +209,9 @@ class NoteBookStorage(SqliteStorage):  # noqa: WPS214
             row = cur.fetchone()
 
             if row is None:
-                return None
+                raise ValueError(
+                    f"No local notebooks found for linked notebook {l_notebook_guid}"
+                )
 
             return Notebook(
                 guid=row["guid"],
