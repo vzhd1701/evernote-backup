@@ -26,7 +26,9 @@ def unscramble(scrambled_data: bytes) -> List[str]:
 
 
 def get_progress_output() -> Optional[TextIO]:
-    if not is_console_interactive():
+    is_verbose_mode = click.get_current_context().find_root().params["verbose"]
+
+    if not is_console_interactive() or is_verbose_mode:
         return io.StringIO()
 
     return None

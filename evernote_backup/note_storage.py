@@ -185,7 +185,7 @@ class NoteBookStorage(SqliteStorage):  # noqa: WPS214
     ) -> None:
         if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
             logger.debug(
-                f"Adding/updating linked notebook {l_notebook.shareName}"
+                f"Adding/updating linked notebook '{l_notebook.shareName}'"
                 f" [{l_notebook.guid}] -> [{notebook.guid}]"
             )
 

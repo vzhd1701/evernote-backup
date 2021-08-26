@@ -31,6 +31,8 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         self.max_chunk_results = max_chunk_results
 
     def get_note(self, note_guid: str) -> Note:
+        logger.debug(f"Downloading note [{note_guid}]")
+
         note = self.note_store.getNote(
             note_guid, True, True, True, True  # noqa: WPS425
         )

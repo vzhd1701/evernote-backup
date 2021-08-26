@@ -125,7 +125,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
         notes_to_sync = self.storage.notes.get_notes_for_sync()
 
         if notes_to_sync:
-            logger.info("{0} notes to download...".format(len(notes_to_sync)))
+            logger.info("{0} note(s) to download...".format(len(notes_to_sync)))
 
             self._authorize_linked_notebooks_for_notes(notes_to_sync)
             self._download_scheduled_notes(notes_to_sync)
@@ -152,7 +152,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
         if linked_notebooks:
             logger.info(
-                "Requesting access to {0} linked notebooks...".format(
+                "Requesting access to {0} linked notebook(s)...".format(
                     len(linked_notebooks)
                 )
             )
@@ -262,6 +262,8 @@ class NoteSynchronizer(object):  # noqa: WPS214
         self.storage.notes.expunge_notes_by_notebook(notebook.guid)
 
     def _download_scheduled_notes(self, notes_to_sync: Tuple[NoteForSync, ...]) -> None:
+        logger.info("Downloading {0} note(s)...".format(len(notes_to_sync)))
+
         with ThreadPoolExecutor(max_workers=self.max_download_workers) as executor:
             with progressbar(
                 length=len(notes_to_sync),
