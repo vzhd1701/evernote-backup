@@ -50,6 +50,7 @@ def test_sync_add_note(cli_invoker, mock_evernote_client, fake_storage):
         content="body1",
         notebookGuid="nbid1",
         active=True,
+        contentLength=100,
     )
 
     mock_evernote_client.fake_notes.append(test_note)
@@ -120,6 +121,7 @@ def test_sync_add_note_with_tags(cli_invoker, mock_evernote_client, fake_storage
             content="body1",
             notebookGuid="nbid1",
             active=True,
+            contentLength=100,
             tagGuids=["tid1", "tid2"],
         )
     )
@@ -131,6 +133,7 @@ def test_sync_add_note_with_tags(cli_invoker, mock_evernote_client, fake_storage
             content="body1",
             notebookGuid="nbid1",
             active=True,
+            contentLength=100,
             tagGuids=["tid1", "tid2"],
             tagNames=["tag1", "tag2"],
         )
@@ -236,6 +239,7 @@ def test_sync_add_linked_notebook_note(cli_invoker, mock_evernote_client, fake_s
             title="title1",
             content="body1",
             notebookGuid="nbid1",
+            contentLength=100,
             active=True,
         )
     )
@@ -274,6 +278,7 @@ def test_sync_add_linked_notebook_note_public(
             title="title1",
             content="body1",
             notebookGuid="nbid1",
+            contentLength=100,
             active=True,
         )
     )
@@ -311,6 +316,7 @@ def test_sync_expunge_linked_notebook_note(
             title="title1",
             content="body1",
             notebookGuid="nbid1",
+            contentLength=100,
             active=True,
         )
     )
@@ -363,6 +369,7 @@ def test_sync_add_linked_notebook_note_error_no_access(
             title="title1",
             content="body1",
             notebookGuid="nbid1",
+            contentLength=100,
             active=True,
         )
     )
@@ -435,6 +442,7 @@ def test_sync_expunge_notes(cli_invoker, mock_evernote_client, fake_storage):
             title="test",
             content="test",
             notebookGuid="test",
+            contentLength=100,
             active=True,
         ),
         Note(
@@ -442,6 +450,7 @@ def test_sync_expunge_notes(cli_invoker, mock_evernote_client, fake_storage):
             title="test",
             content="test",
             notebookGuid="test",
+            contentLength=100,
             active=True,
         ),
         Note(
@@ -449,6 +458,7 @@ def test_sync_expunge_notes(cli_invoker, mock_evernote_client, fake_storage):
             title="test",
             content="test",
             notebookGuid="test",
+            contentLength=100,
             active=True,
         ),
     ]
@@ -505,6 +515,7 @@ def test_sync_interrupt_download(
             title="test",
             content="test",
             notebookGuid="test",
+            contentLength=100,
             active=True,
         )
 
@@ -577,6 +588,7 @@ def test_sync_custom_max_chunk_results(cli_invoker, mock_evernote_client, fake_s
         title="title1",
         content="body1",
         notebookGuid="nbid1",
+        contentLength=100,
         active=True,
     )
 
@@ -611,6 +623,7 @@ def test_sync_custom_max_download_workers(
         title="title1",
         content="body1",
         notebookGuid="nbid1",
+        contentLength=100,
         active=True,
     )
 
@@ -653,6 +666,7 @@ def test_sync_massive_note_count(
             title=f"title{i}",
             content="body1",
             notebookGuid="nbid1",
+            contentLength=100,
             active=True,
         )
 

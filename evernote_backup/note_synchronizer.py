@@ -32,13 +32,67 @@ class WorkerStopException(Exception):
     """Raise when workers are stopped"""
 
 
+def get_note_size(note: Note) -> int:
+    size = note.contentLength
+
+    size += sum(r.data.size for r in note.resources or [])
+
+    return int(size)
+
+
+class NoteClientMemoryManager(object):
+    def __init__(self, download_cache_memory_limit: int) -> None:
+        self.memory_limit = download_cache_memory_limit * 1024 * 1024
+
+        self.memory = 0
+        self.memory_lock = threading.Lock()
+
+        self.memory_cond = threading.Condition()
+
+    def wait_till_enough_memory(self) -> None:
+        with self.memory_cond:
+            self.memory_cond.wait_for(self._is_enough_memory)
+
+    def reset_memory(self) -> None:
+        with self.memory_lock:
+            self.memory = 0
+
+        with self.memory_cond:
+            self.memory_cond.notify_all()
+
+    def add_note_size(self, note: Note) -> None:
+        with self.memory_lock:
+            self.memory += get_note_size(note)
+
+    def sub_note_size(self, note: Note) -> None:
+        with self.memory_lock:
+            self.memory -= get_note_size(note)
+
+        with self.memory_cond:
+            if self._is_enough_memory():
+                self.memory_cond.notify_all()
+
+    def report_memory(self) -> None:
+        with self.memory_lock:
+            memory_percent = round(self.memory / self.memory_limit, 3)
+
+        memory_total = self.memory_limit / (1024 * 1024)
+
+        logger.debug(f"Memory consumed: {memory_percent}% [LIMIT {memory_total} MB]")
+
+    def _is_enough_memory(self) -> bool:
+        with self.memory_lock:
+            return self.memory < self.memory_limit
+
+
 class NoteClientWorker(object):
-    def __init__(
+    def __init__(  # noqa: WPS211
         self,
         token: str,
         backend: str,
         network_error_retry_count: int,
         max_chunk_results: int,
+        download_cache_memory_limit: int,
     ) -> None:
         self.stop = False
         self.token = token
@@ -46,9 +100,13 @@ class NoteClientWorker(object):
         self.network_error_retry_count = network_error_retry_count
         self.max_chunk_results = max_chunk_results
 
+        self.memory_manager = NoteClientMemoryManager(download_cache_memory_limit)
+
         self._thread_data = threading.local()
 
     def __call__(self, note_id: str, auth_data: NotebookAuth = None) -> Note:
+        self.memory_manager.wait_till_enough_memory()
+
         if self.stop:
             raise WorkerStopException
 
@@ -72,7 +130,12 @@ class NoteClientWorker(object):
 
             self.clients[client_id] = note_client
 
-        return note_client.get_note(note_id)
+        note = note_client.get_note(note_id)
+
+        self.memory_manager.add_note_size(note)
+        self.memory_manager.report_memory()
+
+        return note
 
     @property
     def clients(self) -> Any:
@@ -89,6 +152,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
         note_client: EvernoteClientSync,
         note_storage: SqliteStorage,
         max_download_workers: int,
+        download_cache_memory_limit: int,
     ) -> None:
         self._count_updated_notebooks = 0
         self._count_updated_notes = 0
@@ -106,6 +170,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
             self.note_client.backend,
             self.note_client.network_error_retry_count,
             self.note_client.max_chunk_results,
+            download_cache_memory_limit,
         )
         self.linked_notebooks_auth: Dict[str, NotebookAuth] = {}
 
@@ -305,12 +370,17 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
                 note = note_f.result(timeout=120)  # noqa: WPS432
                 self.storage.notes.add_note(note)
+
+                self.note_worker.memory_manager.sub_note_size(note)
+
                 notes_bar.update(1, note)
 
         except (KeyboardInterrupt, Exception):
             logger.warning("Aborting, please wait...")
 
             self.note_worker.stop = True
+            self.note_worker.memory_manager.reset_memory()
+
             wait(note_futures, timeout=30, return_when=FIRST_EXCEPTION)  # noqa: WPS432
 
             raise

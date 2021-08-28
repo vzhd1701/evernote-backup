@@ -101,6 +101,7 @@ def sync(
     database: str,
     max_chunk_results: int,
     max_download_workers: int,
+    download_cache_memory_limit: int,
     network_retry_count: int,
 ) -> None:
     storage = get_storage(database)
@@ -114,7 +115,9 @@ def sync(
         auth_token, backend, network_retry_count, max_chunk_results
     )
 
-    note_synchronizer = NoteSynchronizer(note_client, storage, max_download_workers)
+    note_synchronizer = NoteSynchronizer(
+        note_client, storage, max_download_workers, download_cache_memory_limit
+    )
 
     try:
         note_synchronizer.sync()

@@ -172,8 +172,18 @@ def init_db(
     show_default=True,
     type=click.IntRange(1, config_defaults.SYNC_MAX_DOWNLOAD_WORKERS_SANE_LIMIT),
     help=(
-        "Max number of parallel downloads."
-        " (Advanced option, don't set too high to avoid rate limits.)"
+        "Max number of parallel downloads. Don't set too high to avoid rate limits."
+        " (Advanced option)"
+    ),
+)
+@click.option(
+    "--download-cache-memory-limit",
+    default=config_defaults.SYNC_DOWNLOAD_CACHE_MEMORY_LIMIT,
+    show_default=True,
+    type=click.IntRange(1),
+    help=(
+        "Cache size in MB for notes stored in memory before writing to disk."
+        " (Advanced option)"
     ),
 )
 @opt_network_retry_count
@@ -181,6 +191,7 @@ def sync(
     database: str,
     max_chunk_results: int,
     max_download_workers: int,
+    download_cache_memory_limit: int,
     network_retry_count: int,
 ) -> None:
     """Sync local database with Evernote, downloading all notes."""
@@ -189,6 +200,7 @@ def sync(
         database=database,
         max_chunk_results=max_chunk_results,
         max_download_workers=max_download_workers,
+        download_cache_memory_limit=download_cache_memory_limit,
         network_retry_count=network_retry_count,
     )
 
