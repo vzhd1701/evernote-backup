@@ -6,7 +6,7 @@ from typing import Optional
 import click
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 
-from evernote_backup import cli_app
+from evernote_backup import cli_app, config_defaults
 from evernote_backup.cli_app_click_util import (
     DIR_ONLY,
     FILE_ONLY,
@@ -14,16 +14,6 @@ from evernote_backup.cli_app_click_util import (
     group_options,
 )
 from evernote_backup.cli_app_util import ProgramTerminatedError, is_output_to_terminal
-from evernote_backup.config_defaults import (
-    BACKEND,
-    DATABASE_NAME,
-    NETWORK_ERROR_RETRY_COUNT,
-    OAUTH_LOCAL_PORT,
-    SYNC_CHUNK_MAX_RESULTS,
-    SYNC_CHUNK_MAX_RESULTS_SERVER_LIMIT,
-    SYNC_MAX_DOWNLOAD_WORKERS,
-    SYNC_MAX_DOWNLOAD_WORKERS_SANE_LIMIT,
-)
 from evernote_backup.version import __version__
 
 logger = logging.getLogger()
@@ -54,7 +44,7 @@ opt_oauth = click.option(
 
 opt_oauth_port = click.option(
     "--oauth-port",
-    default=OAUTH_LOCAL_PORT,
+    default=config_defaults.OAUTH_LOCAL_PORT,
     show_default=True,
     help="OAuth local server port. (Advanced option, use with --oauth.)",
 )
@@ -70,7 +60,7 @@ opt_token = click.option(
 
 opt_network_retry_count = click.option(
     "--network-retry-count",
-    default=NETWORK_ERROR_RETRY_COUNT,
+    default=config_defaults.NETWORK_ERROR_RETRY_COUNT,
     show_default=True,
     type=click.IntRange(1),
     help=("Network error retry count. (Advanced option)"),
@@ -79,7 +69,7 @@ opt_network_retry_count = click.option(
 opt_database = click.option(
     "--database",
     "-d",
-    default=DATABASE_NAME,
+    default=config_defaults.DATABASE_NAME,
     show_default=True,
     required=True,
     type=FILE_ONLY,
@@ -141,7 +131,7 @@ def cli(quiet: bool, verbose: bool) -> None:
 )
 @click.option(
     "--backend",
-    default=BACKEND,
+    default=config_defaults.BACKEND,
     show_default=True,
     type=click.Choice(["evernote", "evernote:sandbox", "china", "china:sandbox"]),
     help="API backend to connect to. If you are using Yinxiang, select 'china'.",
@@ -177,16 +167,16 @@ def init_db(
 @opt_database
 @click.option(
     "--max-chunk-results",
-    default=SYNC_CHUNK_MAX_RESULTS,
-    type=click.IntRange(1, SYNC_CHUNK_MAX_RESULTS_SERVER_LIMIT),
+    default=config_defaults.SYNC_CHUNK_MAX_RESULTS,
+    type=click.IntRange(1, config_defaults.SYNC_CHUNK_MAX_RESULTS_SERVER_LIMIT),
     show_default=True,
     help="Max entries per sync chunk. (Advanced option)",
 )
 @click.option(
     "--max-download-workers",
-    default=SYNC_MAX_DOWNLOAD_WORKERS,
+    default=config_defaults.SYNC_MAX_DOWNLOAD_WORKERS,
     show_default=True,
-    type=click.IntRange(1, SYNC_MAX_DOWNLOAD_WORKERS_SANE_LIMIT),
+    type=click.IntRange(1, config_defaults.SYNC_MAX_DOWNLOAD_WORKERS_SANE_LIMIT),
     help=(
         "Max number of parallel downloads."
         " (Advanced option, don't set too high to avoid rate limits.)"
