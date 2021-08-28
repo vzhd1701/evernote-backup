@@ -1,3 +1,16 @@
+## 1.6.3 (2021-08-28)
+
+### Fix
+
+- add memory limit when downloading notes
+- improve handling exceptions when downloading notes
+- add more log messages
+- add more log messages
+
+### Refactor
+
+- move default config into single import
+
 ## 1.6.2 (2021-08-24)
 
 ### Fix
