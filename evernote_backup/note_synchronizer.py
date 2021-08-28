@@ -2,7 +2,7 @@
 
 import logging
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed, wait
+from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, as_completed, wait
 from typing import Any, Dict, Iterable, List, Tuple
 
 from click import progressbar
@@ -294,13 +294,23 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
         try:
             for note_f in as_completed(note_futures):
-                note = note_f.result()
+                f_exc = note_f.exception()
+                if f_exc is not None:
+                    logger.critical(
+                        f"Exception caught while downloading note"
+                        f" '{note_futures[note_f]}', terminating!"
+                    )
+
+                    raise f_exc
+
+                note = note_f.result(timeout=120)  # noqa: WPS432
                 self.storage.notes.add_note(note)
                 notes_bar.update(1, note)
-        except KeyboardInterrupt:
-            self.note_worker.stop = True
 
+        except (KeyboardInterrupt, Exception):
             logger.warning("Aborting, please wait...")
-            wait(note_futures)
+
+            self.note_worker.stop = True
+            wait(note_futures, timeout=30, return_when=FIRST_EXCEPTION)  # noqa: WPS432
 
             raise

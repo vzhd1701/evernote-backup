@@ -475,6 +475,38 @@ def test_sync_interrupt_download(
     cli_invoker("sync", "--database", "fake_db")
 
 
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_exception_while_download(
+    cli_invoker, mock_evernote_client, fake_storage, mocker
+):
+    test_notes = [Note(guid=f"id{i}", title="test") for i in range(100)]
+
+    mock_evernote_client.fake_notes.extend(test_notes)
+
+    def fake_get_note(note_guid):
+        if note_guid == "id10":
+            raise RuntimeError("Test error")
+
+        return Note(
+            guid=note_guid,
+            title="test",
+            content="test",
+            notebookGuid="test",
+            contentLength=100,
+            active=True,
+        )
+
+    mock_get_note = mocker.patch(
+        "evernote_backup.evernote_client_sync.EvernoteClientSync.get_note"
+    )
+    mock_get_note.side_effect = fake_get_note
+
+    with pytest.raises(RuntimeError) as excinfo:
+        cli_invoker("sync", "--database", "fake_db")
+
+    assert str(excinfo.value) == "Test error"
+
+
 @pytest.mark.usefixtures("mock_evernote_client")
 @pytest.mark.usefixtures("fake_init_db")
 def test_old_db_error(cli_invoker, mock_evernote_client, fake_storage):
