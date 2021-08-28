@@ -263,6 +263,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
     def _download_scheduled_notes(self, notes_to_sync: Tuple[NoteForSync, ...]) -> None:
         logger.info("Downloading {0} note(s)...".format(len(notes_to_sync)))
+        logger.debug(f"Sync worker threads: {self.max_download_workers}")
 
         with ThreadPoolExecutor(max_workers=self.max_download_workers) as executor:
             with progressbar(

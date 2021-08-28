@@ -3,6 +3,7 @@ import logging
 import os
 
 import pytest
+from evernote.edam.error.ttypes import EDAMSystemException
 
 from evernote_backup import cli as cli_module
 from evernote_backup.cli_app_util import ProgramTerminatedError, get_progress_output
@@ -49,7 +50,7 @@ def test_cli_verbose(is_verbose, log_level_expected, cli_invoker, mocker):
 @pytest.mark.parametrize(
     "is_tty,log_format",
     [
-        (False, "%(asctime)s | [%(levelname)s] | %(message)s"),
+        (False, "%(asctime)s | [%(levelname)s] | %(thread)d | %(message)s"),
         (True, "%(message)s"),
     ],
 )
@@ -82,6 +83,27 @@ def test_cli_program_error_unexpected(mocker, caplog):
 
     assert "test2" in caplog.messages[0]
     assert "Traceback" in caplog.messages[0]
+
+
+def test_cli_program_error_unexpected_edam(mocker, caplog):
+    cli_mock = mocker.patch("evernote_backup.cli.cli")
+    cli_mock.side_effect = EDAMSystemException(errorCode=100)
+
+    with pytest.raises(SystemExit):
+        cli_module.main()
+
+    assert "EDAMSystemException" in caplog.messages[0]
+    assert "Traceback" in caplog.messages[0]
+
+
+def test_cli_program_error_rate_limit(mocker, caplog):
+    cli_mock = mocker.patch("evernote_backup.cli.cli")
+    cli_mock.side_effect = EDAMSystemException(errorCode=19, rateLimitDuration=10)
+
+    with pytest.raises(SystemExit):
+        cli_module.main()
+
+    assert "Rate limit reached" in caplog.messages[0]
 
 
 @pytest.mark.parametrize(

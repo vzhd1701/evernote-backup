@@ -7,6 +7,7 @@ from evernote.edam.error.ttypes import EDAMUserException
 from evernote_backup import cli_app_auth, cli_app_util
 from evernote_backup.cli_app_click_util import NaturalOrderGroup
 from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.log_util import get_time_txt
 
 
 def test_get_sync_client_token_expired_error(mock_evernote_client):
@@ -80,3 +81,15 @@ def test_natural_order_group():
     ]
 
     pass
+
+
+@pytest.mark.parametrize(
+    "time_seconds,time_txt",
+    [
+        (10, "0:10"),
+        (65, "01:05"),
+        (3605, "01:00:05"),
+    ],
+)
+def test_cli_test_tty(time_seconds, time_txt):
+    assert get_time_txt(time_seconds) == time_txt

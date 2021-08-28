@@ -40,6 +40,8 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         if note.tagGuids:
             note.tagNames = [self.tags[t] for t in note.tagGuids]
 
+        logger.debug(f"Finished downloading note [{note.guid}]")
+
         return note
 
     def iter_sync_chunks(self, after_usn: int) -> Iterator[SyncChunk]:

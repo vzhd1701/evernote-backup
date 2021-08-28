@@ -280,6 +280,8 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                 ),
             )
 
+        logger.debug(f"Added note [{note.guid}]")
+
     def iter_notes(self, notebook_guid: str) -> Iterator[Note]:
         with self.db as con:
             cur = con.execute(

@@ -5,6 +5,7 @@ from typing import Optional
 
 import click
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
+from evernote.edam.error.ttypes import EDAMErrorCode, EDAMSystemException
 
 from evernote_backup import cli_app, config_defaults
 from evernote_backup.cli_app_click_util import (
@@ -13,7 +14,8 @@ from evernote_backup.cli_app_click_util import (
     NaturalOrderGroup,
     group_options,
 )
-from evernote_backup.cli_app_util import ProgramTerminatedError, is_output_to_terminal
+from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.log_util import get_time_txt, init_logging, init_logging_format
 from evernote_backup.version import __version__
 
 logger = logging.getLogger()
@@ -102,16 +104,8 @@ def cli(quiet: bool, verbose: bool) -> None:
     evernote-backup export output_dir/
     """
 
-    if is_output_to_terminal():
-        log_format = "%(message)s"
-    else:
-        log_format = "%(asctime)s | [%(levelname)s] | %(message)s"
-
-    for h in logging.root.handlers[:]:
-        logging.root.removeHandler(h)
-        h.close()
-
-    logging.basicConfig(format=log_format)
+    init_logging()
+    init_logging_format()
 
     if quiet:
         logger.setLevel(logging.CRITICAL)
@@ -266,6 +260,15 @@ def main() -> None:
         cli()
     except ProgramTerminatedError as e:
         logger.critical(e)
+        sys.exit(1)
+    except EDAMSystemException as e:
+        if e.errorCode != EDAMErrorCode.RATE_LIMIT_REACHED:
+            logger.critical(traceback.format_exc())
+            sys.exit(1)
+
+        time_left = get_time_txt(e.rateLimitDuration)
+
+        logger.critical(f"Rate limit reached. Restart program in {time_left}.")
         sys.exit(1)
     except Exception:
         logger.critical(traceback.format_exc())
