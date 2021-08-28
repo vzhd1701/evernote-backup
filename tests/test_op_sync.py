@@ -1,7 +1,15 @@
 import time
+from hashlib import md5
 
 import pytest
-from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook, Tag
+from evernote.edam.type.ttypes import (
+    Data,
+    LinkedNotebook,
+    Note,
+    Notebook,
+    Resource,
+    Tag,
+)
 
 from evernote_backup import note_synchronizer
 from evernote_backup.cli_app_util import ProgramTerminatedError
@@ -42,6 +50,42 @@ def test_sync_add_note(cli_invoker, mock_evernote_client, fake_storage):
         content="body1",
         notebookGuid="nbid1",
         active=True,
+    )
+
+    mock_evernote_client.fake_notes.append(test_note)
+
+    cli_invoker("sync", "--database", "fake_db")
+
+    result_notes = list(fake_storage.notes.iter_notes("nbid1"))
+
+    assert result_notes == [test_note]
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_add_note_with_res(cli_invoker, mock_evernote_client, fake_storage):
+    mock_evernote_client.fake_notebooks.append(
+        Notebook(
+            guid="nbid1",
+            name="name1",
+            stack="stack1",
+            serviceUpdated=1000,
+        ),
+    )
+
+    test_note = Note(
+        guid="id1",
+        title="title1",
+        content="body1",
+        notebookGuid="nbid1",
+        active=True,
+        contentLength=100,
+        resources=[
+            Resource(
+                guid="rid2",
+                noteGuid="id1",
+                data=Data(bodyHash=md5(b"000").digest(), size=3, body=b"000"),
+            )
+        ],
     )
 
     mock_evernote_client.fake_notes.append(test_note)
