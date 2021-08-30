@@ -1,0 +1,49 @@
+name: release_containers
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  release_ghcr:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Get tag version
+      run: echo "TAG_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+    - name: Publish Docker image to GitHub Container Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: ${{ github.repository }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        tags: "latest,${{ env.TAG_VERSION }}"
+
+  release_docker:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Get tag version
+      run: echo "TAG_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+    - name: Publish Docker image to Docker Container Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: ${{ github.repository }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        tags: "latest,${{ env.TAG_VERSION }}"
+
+    - name: Update Docker Hub Description
+      uses: peter-evans/dockerhub-description@v2
+      with:
+        repository: ${{ github.repository }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
