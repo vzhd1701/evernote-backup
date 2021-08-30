@@ -1,3 +1,9 @@
+## 1.6.4 (2021-08-30)
+
+### Fix
+
+- add support for shared notebooks with tags
+
 ## 1.6.3 (2021-08-28)
 
 ### Fix
