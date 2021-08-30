@@ -27,8 +27,11 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         )
 
         self._tags: Optional[dict] = None
+        self._notebook_tags: Dict[str, Dict[str, str]] = {}
         self._linked_notebooks: Optional[dict] = None
         self.max_chunk_results = max_chunk_results
+
+        self.shared_mode = False
 
     def get_note(self, note_guid: str) -> Note:
         logger.debug(f"Downloading note [{note_guid}]")
@@ -38,7 +41,11 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         )
 
         if note.tagGuids:
-            note.tagNames = [self.tags[t] for t in note.tagGuids]
+            if self.shared_mode:
+                nb_tags = self.list_notebook_tags(note.notebookGuid)
+                note.tagNames = [nb_tags[t] for t in note.tagGuids]
+            else:
+                note.tagNames = [self.tags[t] for t in note.tagGuids]
 
         logger.debug(f"Finished downloading note [{note.guid}]")
 
@@ -131,6 +138,14 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         if self._tags is None:
             self._tags = {t.guid: t.name for t in self.note_store.listTags()}
         return self._tags
+
+    def list_notebook_tags(self, notebook_guid: str) -> Dict[str, str]:
+        if notebook_guid not in self._notebook_tags:
+            self._notebook_tags[notebook_guid] = {
+                t.guid: t.name
+                for t in self.note_store.listTagsByNotebook(notebook_guid)
+            }
+        return self._notebook_tags[notebook_guid]
 
     def get_remote_usn(self) -> int:
         return int(self.note_store.getSyncState().updateCount)

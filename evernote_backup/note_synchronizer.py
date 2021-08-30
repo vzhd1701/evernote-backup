@@ -76,7 +76,7 @@ class NoteClientMemoryManager(object):
         with self.memory_lock:
             memory_percent = round(self.memory / self.memory_limit, 3)
 
-        memory_total = self.memory_limit / (1024 * 1024)
+        memory_total = self.memory_limit // (1024 * 1024)
 
         logger.debug(f"Memory consumed: {memory_percent}% [LIMIT {memory_total} MB]")
 
@@ -127,6 +127,7 @@ class NoteClientWorker(object):
 
             if auth_data.shard:
                 note_client.shard = auth_data.shard
+                note_client.shared_mode = True
 
             self.clients[client_id] = note_client
 
@@ -363,7 +364,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
                 if f_exc is not None:
                     logger.critical(
                         f"Exception caught while downloading note"
-                        f" '{note_futures[note_f]}', terminating!"
+                        f" '{note_futures[note_f]}'!"
                     )
 
                     raise f_exc

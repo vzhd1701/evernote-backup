@@ -301,6 +301,62 @@ def test_sync_add_linked_notebook_note_public(
 
 
 @pytest.mark.usefixtures("fake_init_db")
+def test_sync_add_linked_notebook_note_with_tag(
+    cli_invoker, mock_evernote_client, fake_storage
+):
+    mock_evernote_client.fake_l_notebooks.append(
+        Notebook(
+            guid="nbid1",
+            name="name1",
+        ),
+    )
+
+    mock_evernote_client.fake_l_tags = [
+        Tag(guid="tid1", name="tag1"),
+        Tag(guid="tid2", name="tag2"),
+    ]
+
+    mock_evernote_client.fake_l_notes.append(
+        Note(
+            guid="id1",
+            title="title1",
+            content="body1",
+            notebookGuid="nbid1",
+            active=True,
+            contentLength=100,
+            tagGuids=["tid1", "tid2"],
+        )
+    )
+
+    expected_notes = [
+        Note(
+            guid="id1",
+            title="title1",
+            content="body1",
+            notebookGuid="nbid1",
+            active=True,
+            contentLength=100,
+            tagGuids=["tid1", "tid2"],
+            tagNames=["tag1", "tag2"],
+        )
+    ]
+
+    mock_evernote_client.fake_linked_notebooks.append(
+        LinkedNotebook(guid="id3", shardId="s100")
+    )
+
+    mock_evernote_client.fake_linked_notebook_auth_token = (
+        "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    )
+
+    cli_invoker("sync", "--database", "fake_db")
+
+    result_notes = list(fake_storage.notes.iter_notes("nbid1"))
+
+    assert result_notes == expected_notes
+
+
+@pytest.mark.usefixtures("fake_init_db")
 def test_sync_expunge_linked_notebook_note(
     cli_invoker, mock_evernote_client, fake_storage
 ):

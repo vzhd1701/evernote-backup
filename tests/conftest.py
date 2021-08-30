@@ -32,6 +32,7 @@ class FakeEvernoteValues(MagicMock):
         self.fake_usn = 100
 
         self.fake_l_notebooks = []
+        self.fake_l_tags = []
         self.fake_l_notes = []
         self.fake_l_expunged_notebooks = []
         self.fake_l_expunged_notes = []
@@ -221,6 +222,9 @@ class FakeEvernoteNoteStore(MagicMock):
         return MagicMock(
             authenticationToken=self.fake_values.fake_linked_notebook_auth_token,
         )
+
+    def listTagsByNotebook(self, authenticationToken, notebookGuid):
+        return self.fake_values.fake_l_tags
 
 
 @pytest.fixture()
