@@ -1,3 +1,9 @@
+## 1.6.5 (2021-09-09)
+
+### Fix
+
+- add download retry on bad data from server
+
 ## 1.6.4 (2021-08-30)
 
 ### Fix
