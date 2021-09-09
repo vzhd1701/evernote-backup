@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import struct
 import threading
 from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, as_completed, wait
 from typing import Any, Dict, Iterable, List, Tuple
@@ -103,6 +104,7 @@ class NoteClientWorker(object):
         self.memory_manager = NoteClientMemoryManager(download_cache_memory_limit)
 
         self._thread_data = threading.local()
+        self._note_client: EvernoteClientSync
 
     def __call__(self, note_id: str, auth_data: NotebookAuth = None) -> Note:
         self.memory_manager.wait_till_enough_memory()
@@ -116,9 +118,9 @@ class NoteClientWorker(object):
         client_id = auth_data.shard + auth_data.token
 
         try:
-            note_client = self.clients[client_id]
+            self._note_client = self.clients[client_id]
         except KeyError:
-            note_client = EvernoteClientSync(
+            self._note_client = EvernoteClientSync(
                 token=auth_data.token,
                 backend=self.backend,
                 network_error_retry_count=self.network_error_retry_count,
@@ -126,17 +128,33 @@ class NoteClientWorker(object):
             )
 
             if auth_data.shard:
-                note_client.shard = auth_data.shard
-                note_client.shared_mode = True
+                self._note_client.shard = auth_data.shard
+                self._note_client.shared_mode = True
 
-            self.clients[client_id] = note_client
+            self.clients[client_id] = self._note_client
 
-        note = note_client.get_note(note_id)
+        note = self.download_note(note_id)
 
         self.memory_manager.add_note_size(note)
         self.memory_manager.report_memory()
 
         return note
+
+    def download_note(self, note_id: str) -> Note:
+        retry_count = 5
+
+        for _ in range(retry_count):
+            try:
+                return self._note_client.get_note(note_id)
+            except struct.error:
+                logger.debug(
+                    f"Remote server returned bad data"
+                    f" while downloading note [{note_id}], retrying..."
+                )
+
+        raise RuntimeError(
+            f"Failed to download note [{note_id}] after {retry_count} attempts!"
+        )
 
     @property
     def clients(self) -> Any:

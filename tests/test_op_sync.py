@@ -1,3 +1,4 @@
+import struct
 import time
 from hashlib import md5
 
@@ -616,6 +617,94 @@ def test_sync_exception_while_download(
         cli_invoker("sync", "--database", "fake_db")
 
     assert str(excinfo.value) == "Test error"
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_exception_while_download_retry_fail(
+    cli_invoker, mock_evernote_client, fake_storage, mocker
+):
+    test_notes = [Note(guid=f"id{i}", title="test") for i in range(100)]
+
+    mock_evernote_client.fake_notes.extend(test_notes)
+
+    def fake_get_note(note_guid):
+        if note_guid == "id10":
+            raise struct.error
+
+        return Note(
+            guid=note_guid,
+            title="test",
+            content="test",
+            notebookGuid="test",
+            contentLength=100,
+            active=True,
+        )
+
+    mock_get_note = mocker.patch(
+        "evernote_backup.evernote_client_sync.EvernoteClientSync.get_note"
+    )
+    mock_get_note.side_effect = fake_get_note
+
+    with pytest.raises(RuntimeError) as excinfo:
+        cli_invoker("sync", "--database", "fake_db")
+
+    assert "Failed to download note" in str(excinfo.value)
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_exception_while_download_retry(
+    cli_invoker, mock_evernote_client, fake_storage, mocker
+):
+    mock_evernote_client.fake_notebooks.append(
+        Notebook(
+            guid="nbid1",
+            name="name1",
+            stack="stack1",
+            serviceUpdated=1000,
+        ),
+    )
+
+    test_notes = [
+        Note(
+            guid=f"id{i}",
+            title="test",
+            content="test",
+            notebookGuid="nbid1",
+            contentLength=100,
+            active=True,
+        )
+        for i in range(10)
+    ]
+
+    mock_evernote_client.fake_notes.extend(test_notes)
+
+    retry_count = 3
+
+    def fake_get_note(note_guid):
+        nonlocal retry_count
+        if note_guid == "id3" and retry_count > 0:
+            retry_count -= 1
+            raise struct.error
+
+        return Note(
+            guid=note_guid,
+            title="test",
+            content="test",
+            notebookGuid="nbid1",
+            contentLength=100,
+            active=True,
+        )
+
+    mock_get_note = mocker.patch(
+        "evernote_backup.evernote_client_sync.EvernoteClientSync.get_note"
+    )
+    mock_get_note.side_effect = fake_get_note
+
+    cli_invoker("sync", "--database", "fake_db")
+
+    result_notes = list(fake_storage.notes.iter_notes("nbid1"))
+
+    assert set(result_notes) == set(test_notes)
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
