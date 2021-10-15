@@ -10,6 +10,7 @@ on:
       - "*.md"
       - ".pre-commit-config.yaml"
       - "tox.ini"
+      - "pyproject.toml"
       - "evernote_backup/version.py"
 
 jobs:
