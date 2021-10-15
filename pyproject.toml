@@ -47,20 +47,10 @@ pytest-mock = "^3.5.1"
 black = "^20.8b1"
 isort = "^5.8.0"
 pre-commit = "^2.12.0"
-commitizen = "^2.17.2"
 flakehell = "^0.9.0"
 wemake-python-styleguide = "^0.15.2"
 xmltodict = "^0.12.0"
 mypy = "^0.812"
-
-[tool.commitizen]
-name = "cz_conventional_commits"
-version = "1.6.5"
-tag_format = "$version"
-version_files = [
-  "pyproject.toml:version",
-  "evernote_backup/version.py"
-]
 
 [tool.flakehell]
 base = "https://raw.githubusercontent.com/wemake-services/wemake-python-styleguide/master/styles/flakehell.toml"

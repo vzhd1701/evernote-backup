@@ -23,12 +23,6 @@ repos:
     #    additional_dependencies:
     #    - mdformat-gfm
 
--   repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.17.2
-    hooks:
-    -   id: commitizen
-        stages: [commit-msg]
-
 -   repo: local
     hooks:
     -   id: isort
