@@ -51,6 +51,7 @@ flakehell = "^0.9.0"
 wemake-python-styleguide = "^0.15.2"
 xmltodict = "^0.12.0"
 mypy = "^0.812"
+mdformat = "0.7.7"
 
 [tool.flakehell]
 base = "https://raw.githubusercontent.com/wemake-services/wemake-python-styleguide/master/styles/flakehell.toml"

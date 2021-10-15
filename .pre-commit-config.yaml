@@ -17,7 +17,7 @@ repos:
     -   id: no-commit-to-branch
 
 -   repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.3  # Use the ref you want to point at
+    rev: 0.7.7  # Use the ref you want to point at
     hooks:
     -   id: mdformat
     #    additional_dependencies:
