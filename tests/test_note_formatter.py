@@ -164,7 +164,7 @@ def test_formatter_xml_note():
     assert formatted_note == expected_xml_note
 
 
-def test_note_from_future(monkeypatch, mocker):
+def test_note_from_future(mocker):
     formatter = NoteFormatter()
 
     # 9999-12-31 23:59:59
