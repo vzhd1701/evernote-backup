@@ -54,10 +54,10 @@ def _slice_str(text: str, width: int) -> str:
 
 
 # https://github.com/arrow-py/arrow/blob/10e8970baabeefd8c2f31814d66b11421ac128f1/arrow/constants.py
-def _get_max_timestamp() -> int:
+def _get_max_timestamp() -> int:  # pragma: no cover
     try:
         return int(datetime.max.timestamp())
-    except (OverflowError, ValueError, OSError):  # pragma: no cover
+    except (OverflowError, ValueError, OSError):
         is_64bits = sys.maxsize > 2 ** 32  # noqa: WPS114
         return int(
             datetime(3000, 1, 1, 23, 59, 59, 999999).timestamp()
