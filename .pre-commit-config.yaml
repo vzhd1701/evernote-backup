@@ -12,6 +12,7 @@ repos:
     -   id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
     -   id: mixed-line-ending
+        args: ['--fix=lf']
     -   id: check-toml
     -   id: check-yaml
     -   id: no-commit-to-branch
