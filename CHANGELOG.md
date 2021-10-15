@@ -1,3 +1,9 @@
+### [1.6.6](https://github.com/vzhd1701/evernote-backup/compare/1.6.5...1.6.6) (2021-10-15)
+
+### Bug Fixes
+
+- add support for notes from the distant future ([d352455](https://github.com/vzhd1701/evernote-backup/commit/d352455c9220fdb7911894456d67ea93caf8760f)), closes [#4](https://github.com/vzhd1701/evernote-backup/issues/4)
+
 ### [1.6.5](https://github.com/vzhd1701/evernote-backup/compare/1.6.4...1.6.5) (2021-09-09)
 
 ### Fix
