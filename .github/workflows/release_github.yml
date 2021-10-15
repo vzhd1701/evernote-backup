@@ -1,6 +1,12 @@
 name: release_github
 
 on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release after build'
+        required: true
+        default: 'no'
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
@@ -173,6 +179,7 @@ jobs:
 
   release:
     needs: [build_binaries, build_binaries_mac, make_changelog]
+    if: github.event_name == 'push' || github.event.inputs.release == 'yes'
     runs-on: ubuntu-latest
     steps:
       - name: Load release python packages
