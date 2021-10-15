@@ -157,7 +157,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Extract release changelog
-        run: sed "1,/### \[/d;/### \[/Q" CHANGELOG.md > release_changelog
+        run: |
+          sed "0,/### \[/d;/### \[/Q" CHANGELOG.md > release_changelog
+          echo -n "**Full Changelog**: " >> release_changelog
+          sed -n 's/### \[.*\](\(.*\)) (.*/\1/p' CHANGELOG.md | head -1 >> release_changelog
 
       - name: Load release python packages
         uses: actions/download-artifact@v2
