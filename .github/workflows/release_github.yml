@@ -16,33 +16,6 @@ env:
   BUILD_POETRY_VERSION: 1.1.11
 
 jobs:
-  make_changelog:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Get tag version
-        run: echo "TAG_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-
-      - name: Get latest changelog version
-        run: echo "TAG_VERSION_CH=$(head -1 CHANGELOG.md | cut -f 2 -d ' ')" >> $GITHUB_ENV
-
-      - name: Create dummy release_changelog
-        run: touch release_changelog
-
-      - name: Extract and prepare changelog for latest version
-        if: env.TAG_VERSION == env.TAG_VERSION_CH
-        run: |
-          csplit --suppress-matched -zs -f chlog -n 1 CHANGELOG.md /^##\ / {*}
-          sed -e 's/^### /## /' chlog0 > release_changelog
-
-      - name: Save release changelog
-        uses: actions/upload-artifact@v2
-        with:
-          name: release_changelog
-          path: release_changelog
-
   build_python:
     runs-on: ubuntu-latest
     env:
@@ -178,10 +151,14 @@ jobs:
           path: dist_bin
 
   release:
-    needs: [build_binaries, build_binaries_mac, make_changelog]
     if: github.event_name == 'push' || github.event.inputs.release == 'yes'
+    needs: [build_binaries, build_binaries_mac]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+      - name: Extract release changelog
+        run: sed "1,/### \[/d;/### \[/Q" CHANGELOG.md > release_changelog
+
       - name: Load release python packages
         uses: actions/download-artifact@v2
         with:
@@ -217,11 +194,6 @@ jobs:
         with:
           name: release_dist_bin_macos_x64
           path: dist
-
-      - name: Load release changelog
-        uses: actions/download-artifact@v2
-        with:
-          name: release_changelog
 
       - name: Create Release
         uses: ncipollo/release-action@v1
