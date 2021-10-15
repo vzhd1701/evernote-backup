@@ -120,6 +120,10 @@ wemake-python-styleguide = ["-WPS211"]
 # I like it this way
 wemake-python-styleguide = ["-WPS410"]
 
+[tool.flakehell.exceptions."evernote_backup/note_formatter_util.py"]
+# Time algorithm
+wemake-python-styleguide = ["-WPS432", "-WPS509", "-WPS221"]
+
 [tool.black]
 line-length = 88
 
