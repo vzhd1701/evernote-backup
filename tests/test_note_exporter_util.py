@@ -4,6 +4,7 @@ import pytest
 
 from evernote_backup import note_exporter_util
 from evernote_backup.note_exporter_util import (
+    MAX_FILE_NAME_LEN,
     SafePath,
     _get_non_existant_name,
     _get_safe_path,
@@ -63,8 +64,10 @@ def test_get_safe_path():
 def test_safe_path_long_file_name(tmp_path):
     """Test that SafePath trims a long file name with extension"""
     test_dir = tmp_path / "test"
-    long_file_name = "X" * 255 + ".ext"
-    expected_file_name = "X" * 251 + ".ext"
+
+    test_ext = ".ext"
+    long_file_name = "X" * MAX_FILE_NAME_LEN + test_ext
+    expected_file_name = "X" * (MAX_FILE_NAME_LEN - len(test_ext)) + test_ext
     expected_file = tmp_path / "test" / "test1" / expected_file_name
 
     safe_path = SafePath(str(test_dir))
@@ -79,8 +82,11 @@ def test_safe_path_long_file_name(tmp_path):
 def test_safe_path_long_file_name_no_ext(tmp_path):
     """Test that SafePath trims a long file name with no extension"""
     test_dir = tmp_path / "test"
-    long_file_name = "X" * 260
-    expected_file_name = "X" * 255
+
+    slightly_longer_than_supported = MAX_FILE_NAME_LEN + 10
+
+    long_file_name = "X" * slightly_longer_than_supported
+    expected_file_name = "X" * MAX_FILE_NAME_LEN
     expected_file = tmp_path / "test" / "test1" / expected_file_name
 
     safe_path = SafePath(str(test_dir))
@@ -95,7 +101,7 @@ def test_safe_path_long_file_name_no_ext(tmp_path):
 def test_safe_path_long_file_name_invalid(tmp_path):
     """Test that SafePath raises ValueError if path is too long but cannot be trimmed"""
     test_dir = tmp_path / "test"
-    bad_file_name = "X" + "." + "x" * 255
+    bad_file_name = "X" + "." + "x" * MAX_FILE_NAME_LEN
 
     safe_path = SafePath(str(test_dir))
     with pytest.raises(ValueError):

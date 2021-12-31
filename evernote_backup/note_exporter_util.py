@@ -1,7 +1,6 @@
 import os
 from typing import Dict
 
-
 MAX_FILE_NAME_LEN = 255
 
 
@@ -82,25 +81,28 @@ def _get_non_existant_name(safe_name: str, target_dir: str) -> str:
     return safe_name
 
 
-def _trim_name(safe_name: str, max_len=MAX_FILE_NAME_LEN) -> str:
-    """ Trim file name to 255 characters while maintaining extension
-        255 characters is max file name length on linux and macOS
-        Windows has a path limit of 260 characters which includes
-        the entire path (drive letter, path, and file name)
-        This does not trim the path length, just the file name
+def _trim_name(safe_name: str, max_len: int = MAX_FILE_NAME_LEN) -> str:
+    """Trim file name to 255 characters while maintaining extension
+    255 characters is max file name length on linux and macOS
+    Windows has a path limit of 260 characters which includes
+    the entire path (drive letter, path, and file name)
+    This does not trim the path length, just the file name
 
-        max_len: if provided, trims to this length otherwise MAX_FILE_NAME_LEN
+    max_len: if provided, trims to this length otherwise MAX_FILE_NAME_LEN
 
-        Raises: ValueError if the file name is too long and cannot be trimmed
+    Raises: ValueError if the file name is too long and cannot be trimmed
     """
     if len(safe_name) <= max_len:
         return safe_name
 
+    name, ext = os.path.splitext(safe_name)
+
     drop_chars = len(safe_name) - max_len
-    file_parts = safe_name.rsplit(".", 1)
-    if len(file_parts) != 2:
-        return f"{file_parts[0][:-drop_chars]}"
-    if len(file_parts[0]) > drop_chars:
-        return f"{file_parts[0][:-drop_chars]}.{file_parts[1]}"
-    else:
-        raise ValueError("File name is too long but cannot be safely trimmed: {safe_name}")  # noqa: E501
+    trimmed_name = name[:-drop_chars]
+
+    if not ext:
+        return trimmed_name
+    if len(name) > drop_chars:
+        return f"{trimmed_name}{ext}"
+
+    raise ValueError(f"File name is too long but cannot be safely trimmed: {safe_name}")
