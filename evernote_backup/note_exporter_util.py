@@ -2,6 +2,9 @@ import os
 from typing import Dict
 
 
+MAX_FILE_NAME_LEN = 255
+
+
 class SafePath(object):
     """Ensures path for tuples of directory names that may contain bad symbols
 
@@ -65,9 +68,39 @@ def _replace_bad_characters(string: str) -> str:
 
 
 def _get_non_existant_name(safe_name: str, target_dir: str) -> str:
+    safe_name = _trim_name(safe_name)
     i = 0
     o_name, o_ext = os.path.splitext(safe_name)
     while os.path.exists(os.path.join(target_dir, safe_name)):
         i += 1
         safe_name = f"{o_name} ({i}){o_ext}"
+        if len(safe_name) > MAX_FILE_NAME_LEN:
+            max_len = MAX_FILE_NAME_LEN - len(f" ({i}){o_ext}")
+            o_name = _trim_name(o_name, max_len)
+            safe_name = f"{o_name} ({i}){o_ext}"
+
     return safe_name
+
+
+def _trim_name(safe_name: str, max_len=MAX_FILE_NAME_LEN) -> str:
+    """ Trim file name to 255 characters while maintaining extension
+        255 characters is max file name length on linux and macOS
+        Windows has a path limit of 260 characters which includes
+        the entire path (drive letter, path, and file name)
+        This does not trim the path length, just the file name
+
+        max_len: if provided, trims to this length otherwise MAX_FILE_NAME_LEN
+
+        Raises: ValueError if the file name is too long and cannot be trimmed
+    """
+    if len(safe_name) <= max_len:
+        return safe_name
+
+    drop_chars = len(safe_name) - max_len
+    file_parts = safe_name.rsplit(".", 1)
+    if len(file_parts) != 2:
+        return f"{file_parts[0][:-drop_chars]}"
+    if len(file_parts[0]) > drop_chars:
+        return f"{file_parts[0][:-drop_chars]}.{file_parts[1]}"
+    else:
+        raise ValueError("File name is too long but cannot be safely trimmed: {safe_name}")  # noqa: E501
