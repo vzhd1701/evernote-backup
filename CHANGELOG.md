@@ -1,3 +1,9 @@
+### [1.6.7](https://github.com/vzhd1701/evernote-backup/compare/1.6.6...1.6.7) (2021-12-31)
+
+### Bug Fixes
+
+- add support for long filenames on export ([8bea1e6](https://github.com/vzhd1701/evernote-backup/commit/8bea1e614ce82455fed64f610c35996317830669))
+
 ### [1.6.6](https://github.com/vzhd1701/evernote-backup/compare/1.6.5...1.6.6) (2021-10-15)
 
 ### Bug Fixes
