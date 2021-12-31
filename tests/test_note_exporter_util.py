@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from evernote_backup import note_exporter_util
 from evernote_backup.note_exporter_util import (
     SafePath,
@@ -56,6 +58,64 @@ def test_get_safe_path():
     result = _get_safe_path(*test_path)
 
     assert expected_result == result
+
+
+def test_safe_path_long_file_name(tmp_path):
+    """Test that SafePath trims a long file name with extension"""
+    test_dir = tmp_path / "test"
+    long_file_name = "X" * 255 + ".ext"
+    expected_file_name = "X" * 251 + ".ext"
+    expected_file = tmp_path / "test" / "test1" / expected_file_name
+
+    safe_path = SafePath(str(test_dir))
+    result_file_path = safe_path.get_file("test1", long_file_name)
+
+    expected_file.touch()
+
+    assert expected_file.is_file()
+    assert result_file_path == str(expected_file)
+
+
+def test_safe_path_long_file_name_no_ext(tmp_path):
+    """Test that SafePath trims a long file name with no extension"""
+    test_dir = tmp_path / "test"
+    long_file_name = "X" * 260
+    expected_file_name = "X" * 255
+    expected_file = tmp_path / "test" / "test1" / expected_file_name
+
+    safe_path = SafePath(str(test_dir))
+    result_file_path = safe_path.get_file("test1", long_file_name)
+
+    expected_file.touch()
+
+    assert expected_file.is_file()
+    assert result_file_path == str(expected_file)
+
+
+def test_safe_path_long_file_name_invalid(tmp_path):
+    """Test that SafePath raises ValueError if path is too long but cannot be trimmed"""
+    test_dir = tmp_path / "test"
+    bad_file_name = "X" + "." + "x" * 255
+
+    safe_path = SafePath(str(test_dir))
+    with pytest.raises(ValueError):
+        safe_path.get_file("test1", bad_file_name)
+
+
+def test_safe_path_no_trim(tmp_path):
+    """Test that the SafePath does not trim the path if the path is not too long"""
+    test_dir = tmp_path / "test"
+    max_file_name = "X" * 251 + ".ext"
+    expected_file_name = max_file_name
+    expected_file = tmp_path / "test" / "test1" / expected_file_name
+
+    safe_path = SafePath(str(test_dir))
+    result_file_path = safe_path.get_file("test1", max_file_name)
+
+    expected_file.touch()
+
+    assert expected_file.is_file()
+    assert result_file_path == str(expected_file)
 
 
 def test_get_non_existant_name_first(mocker):

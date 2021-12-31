@@ -44,6 +44,8 @@ def _get_safe_path(target_dir: str, new_name: str) -> str:
 
     safe_name = _get_non_existant_name(safe_name, target_dir)
 
+    safe_name = _trim_name(safe_name)
+
     return os.path.join(target_dir, safe_name)
 
 
@@ -71,3 +73,26 @@ def _get_non_existant_name(safe_name: str, target_dir: str) -> str:
         i += 1
         safe_name = f"{o_name} ({i}){o_ext}"
     return safe_name
+
+
+def _trim_name(safe_name: str) -> str:
+    """ Trim file name to 255 characters while maintaining extension
+        255 characters is max file name length on linux and macOS
+        Windows has a path limit of 260 characters which includes
+        the entire path (drive letter, path, and file name)
+        This does not trim the path length, just the file name
+
+        Raises: ValueError if the file name is too long and cannot be trimmed
+    """
+    max_file_name_length = 255
+    if len(safe_name) <= max_file_name_length:
+        return safe_name
+
+    drop_chars = len(safe_name) - max_file_name_length
+    file_parts = safe_name.rsplit(".", 1)
+    if len(file_parts) != 2:
+        return f"{file_parts[0][:-drop_chars]}"
+    if len(file_parts[0]) > drop_chars:
+        return f"{file_parts[0][:-drop_chars]}.{file_parts[1]}"
+    else:
+        raise ValueError("File name is too long but cannot be safely trimmed: {safe_name}")  # noqa: E501
