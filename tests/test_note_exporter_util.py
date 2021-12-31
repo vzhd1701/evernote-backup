@@ -140,6 +140,26 @@ def test_get_non_existant_name(mocker):
     assert expected_filename == result_filename
 
 
+def test_get_non_existant_name_trim(mocker):
+    """Test _get_non_existant_name() trims the file name if it is too long"""
+    initial_name = "X" * 255 + ".ext"
+    expected_filename = "X" * 251 + ".ext"
+    result_filename = _get_non_existant_name(initial_name, "fake_dir")
+
+    assert expected_filename == result_filename
+
+
+def test_get_non_existant_name_trim_bad_name(mocker):
+    """Test _get_non_existant_name() trims the file name if it is too long after incrementing"""
+    mock_file_check = mocker.patch("evernote_backup.note_exporter_util.os.path.exists")
+    mock_file_check.side_effect = [True, True, False]
+    initial_name = "X" * 251 + ".ext"
+    expected_filename = "X" * 247 + " (2).ext"
+    result_filename = _get_non_existant_name(initial_name, "fake_dir")
+
+    assert expected_filename == result_filename
+
+
 def test_replace_bad_characters():
     initial_name = r'test<>:"/\|?*'
     expected_filename = r"test_________"
