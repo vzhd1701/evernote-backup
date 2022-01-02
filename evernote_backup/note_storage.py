@@ -5,7 +5,7 @@ import lzma
 import os
 import pickle
 import sqlite3
-from typing import Iterable, Iterator, NamedTuple, Optional, Tuple, Union
+from typing import Iterable, Iterator, List, NamedTuple, Optional, Tuple, Union
 
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
@@ -283,15 +283,15 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
         logger.debug(f"Added note [{note.guid}]")
 
     def iter_notes(self, notebook_guid: str) -> Iterator[Note]:
-        with self.db as con:
-            cur = con.execute(
-                "select raw_note"
-                " from notes where notebook_guid=? and is_active=1"
-                " order by title COLLATE NOCASE",
-                (notebook_guid,),
-            )
+        for note_guid in self._get_notes_by_notebook(notebook_guid):
+            with self.db as con:
+                cur = con.execute(
+                    "select raw_note from notes where guid=?", (note_guid,)
+                )
 
-            yield from (pickle.loads(lzma.decompress(row["raw_note"])) for row in cur)
+                row = cur.fetchone()
+
+                yield pickle.loads(lzma.decompress(row["raw_note"]))
 
     def iter_notes_trash(self) -> Iterator[Note]:
         with self.db as con:
@@ -339,6 +339,24 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
             )
 
             return int(cur.fetchone()[0])
+
+    def _get_notes_by_notebook(self, notebook_guid: str) -> List[str]:
+        """Due to wrong idx_notes index, SQLite creates a temporary table on
+            from notes where notebook_guid=? and is_active=1
+            order by title COLLATE NOCASE
+        which may cause a memory leak. This method sorts notes alphabetically
+        to prevent SQLite from creating a sort table."""
+
+        with self.db as con:
+            cur = con.execute(
+                "select guid, title"
+                " from notes where notebook_guid=? and is_active=1",
+                (notebook_guid,),
+            )
+
+            sorted_notes = sorted(cur, key=lambda x: x["title"])  # type: ignore
+
+            return [r["guid"] for r in sorted_notes]
 
 
 class ConfigStorage(SqliteStorage):
