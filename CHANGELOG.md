@@ -1,3 +1,9 @@
+### [1.6.8](https://github.com/vzhd1701/evernote-backup/compare/1.6.7...1.6.8) (2022-01-02)
+
+### Bug Fixes
+
+- prevent memory leak on export ([19e9430](https://github.com/vzhd1701/evernote-backup/commit/19e94303bf6927df9b627e15f5f3367399bd5981))
+
 ### [1.6.7](https://github.com/vzhd1701/evernote-backup/compare/1.6.6...1.6.7) (2021-12-31)
 
 ### Bug Fixes
