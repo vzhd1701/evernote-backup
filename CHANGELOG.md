@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/vzhd1701/evernote-backup/compare/1.6.8...1.7.0) (2022-01-31)
+
+### Features
+
+- add --no-export-date option ([030ddfc](https://github.com/vzhd1701/evernote-backup/commit/030ddfca9b06767afed2183cc86bd69625ad4caa))
+
 ### [1.6.8](https://github.com/vzhd1701/evernote-backup/compare/1.6.7...1.6.8) (2022-01-02)
 
 ### Bug Fixes
