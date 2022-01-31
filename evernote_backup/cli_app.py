@@ -134,6 +134,7 @@ def export(
     database: str,
     single_notes: bool,
     include_trash: bool,
+    no_export_date: bool,
     output_path: str,
 ) -> None:
     storage = get_storage(database)
@@ -143,7 +144,7 @@ def export(
     exporter = NoteExporter(storage, output_path)
 
     try:
-        exporter.export_notebooks(single_notes, include_trash)
+        exporter.export_notebooks(single_notes, include_trash, no_export_date)
     except NothingToExportError:
         raise ProgramTerminatedError(
             "Database is empty, nothing to export."

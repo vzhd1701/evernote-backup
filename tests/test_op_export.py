@@ -187,3 +187,74 @@ def test_export_yes_trash_single_notes(cli_invoker, fake_storage, tmp_path):
     book1_path = test_out_path / "Trash" / "title1.enex"
 
     assert book1_path.is_file()
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_export_yes_export_date(cli_invoker, fake_storage, tmp_path):
+    test_out_path = tmp_path / "test_out"
+
+    test_notebooks = [
+        Notebook(guid="nbid1", name="name1", stack=None),
+    ]
+
+    fake_storage.notebooks.add_notebooks(test_notebooks)
+
+    fake_storage.notes.add_note(
+        Note(
+            guid="id1",
+            title="title1",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+        )
+    )
+
+    cli_invoker(
+        "export",
+        "--database",
+        "fake_db",
+        str(test_out_path),
+    )
+
+    book1_path = test_out_path / "name1.enex"
+
+    with open(book1_path, "r") as f:
+        book1_xml = f.read()
+
+    assert "export-date" in book1_xml
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_export_no_export_date(cli_invoker, fake_storage, tmp_path):
+    test_out_path = tmp_path / "test_out"
+
+    test_notebooks = [
+        Notebook(guid="nbid1", name="name1", stack=None),
+    ]
+
+    fake_storage.notebooks.add_notebooks(test_notebooks)
+
+    fake_storage.notes.add_note(
+        Note(
+            guid="id1",
+            title="title1",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+        )
+    )
+
+    cli_invoker(
+        "export",
+        "--database",
+        "fake_db",
+        "--no-export-date",
+        str(test_out_path),
+    )
+
+    book1_path = test_out_path / "name1.enex"
+
+    with open(book1_path, "r") as f:
+        book1_xml = f.read()
+
+    assert "export-date" not in book1_xml
