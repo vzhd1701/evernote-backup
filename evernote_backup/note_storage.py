@@ -48,7 +48,7 @@ DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
                      ON notes(title COLLATE NOCASE);
                     CREATE INDEX IF NOT EXISTS idx_notebooks_linked
                      ON notebooks_linked(guid, notebook_guid);
-                    CREATE INDEX IF NOT EXISTS idx_notes_raw
+                    CREATE INDEX IF NOT EXISTS idx_notes_raw_null
                      ON notes(guid) WHERE raw_note IS NULL;
 """
 
