@@ -1,3 +1,9 @@
+### [1.7.1](https://github.com/vzhd1701/evernote-backup/compare/1.7.0...1.7.1) (2022-02-14)
+
+### Bug Fixes
+
+- add index to speed up download with >10k notes DB ([2dbb599](https://github.com/vzhd1701/evernote-backup/commit/2dbb599ad251f19b21684c3f7f30d156b78639e3)), closes [#14](https://github.com/vzhd1701/evernote-backup/issues/14)
+
 ## [1.7.0](https://github.com/vzhd1701/evernote-backup/compare/1.6.8...1.7.0) (2022-01-31)
 
 ### Features
