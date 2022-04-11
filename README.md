@@ -122,6 +122,12 @@ After first initialization, you can schedule `evernote-backup sync` command to k
 
 In case your auth token that you initialized your database with expires, you have an option to re-authorize it by running the `evernote-backup reauth` command. It has the same options as the `init-db` command.
 
+## Getting help
+
+If you found a bug or have a feature request, please [open a new issue](https://github.com/vzhd1701/evernote-backup/issues/new/choose).
+
+If you have a question about the program or have difficulty using it, you are welcome to [the discussions page](https://github.com/vzhd1701/evernote-backup/discussions). You can also mail me directly, I'm always happy to help.
+
 ## Dependencies
 
 - [evernote3](https://github.com/evernote/evernote-sdk-python3) - to access Evernote API
