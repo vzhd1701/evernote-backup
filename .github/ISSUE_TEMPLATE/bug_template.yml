@@ -1,0 +1,38 @@
+name: Bug Report
+description: Report a bug in evernote-backup
+title: "[Bug]: "
+labels: "bug"
+body:
+- type: input
+  attributes:
+    label: evernote-backup version
+    description: What version of evernote-backup are you using? If unsure, run `evernote-backup --version`
+  validations:
+    required: true
+- type: dropdown
+  attributes:
+    label: What OS are you using?
+    options:
+      - Windows
+      - Linux
+      - MacOS
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: OS Version / Linux distribution
+    description: What OS version or Linux distribution version are you using?
+    placeholder: "e.g. Windows 10, Ubuntu 20.04"
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Bug description
+    description: A clear description of the bug and how to reproduce it.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Log excerpt
+    description: If possible, please attach log excerpt with `--verbose` mode
+    render: shell
