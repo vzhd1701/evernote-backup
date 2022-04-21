@@ -9,6 +9,9 @@ from evernote_backup.evernote_client_oauth import (
     OAuthDeclinedError,
 )
 
+FAKE_OAUTH_PORT = 10500
+FAKE_OAUTH_HOST = "localhost"
+
 
 @pytest.fixture
 def mock_evernote_oauth_client(mock_oauth_client):
@@ -19,9 +22,8 @@ def mock_evernote_oauth_client(mock_oauth_client):
 
 @pytest.mark.usefixtures("mock_oauth_http_server")
 def test_get_auth_token(mock_oauth_client, mock_evernote_oauth_client):
-    fake_oauth_port = 10500
     oauth_handler = EvernoteOAuthCallbackHandler(
-        mock_evernote_oauth_client, fake_oauth_port
+        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
     )
     oauth_handler.get_oauth_url()
 
@@ -33,15 +35,14 @@ def test_get_auth_token(mock_oauth_client, mock_evernote_oauth_client):
 def test_server_no_docker(
     mock_oauth_client, mock_evernote_oauth_client, mock_oauth_http_server, mocker
 ):
-    fake_oauth_port = 10500
     oauth_handler = EvernoteOAuthCallbackHandler(
-        mock_evernote_oauth_client, fake_oauth_port
+        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
     )
     oauth_handler.get_oauth_url()
 
     oauth_handler.wait_for_token()
 
-    mock_oauth_http_server.assert_any_call(("localhost", fake_oauth_port), mocker.ANY)
+    mock_oauth_http_server.assert_any_call((FAKE_OAUTH_HOST, FAKE_OAUTH_PORT), mocker.ANY)
 
 
 def test_server_yes_docker(
@@ -49,15 +50,14 @@ def test_server_yes_docker(
 ):
     os.environ["INSIDE_DOCKER_CONTAINER"] = "1"
 
-    fake_oauth_port = 10500
     oauth_handler = EvernoteOAuthCallbackHandler(
-        mock_evernote_oauth_client, fake_oauth_port
+        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
     )
     oauth_handler.get_oauth_url()
 
     oauth_handler.wait_for_token()
 
-    mock_oauth_http_server.assert_any_call(("0.0.0.0", fake_oauth_port), mocker.ANY)
+    mock_oauth_http_server.assert_any_call(("0.0.0.0", FAKE_OAUTH_PORT), mocker.ANY)
 
     del os.environ["INSIDE_DOCKER_CONTAINER"]
 
@@ -65,9 +65,8 @@ def test_server_yes_docker(
 @pytest.mark.usefixtures("mock_oauth_http_server")
 def test_get_auth_token_url(mock_oauth_client, mock_evernote_oauth_client):
     expected_url = "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
-    fake_oauth_port = 10500
     oauth_handler = EvernoteOAuthCallbackHandler(
-        mock_evernote_oauth_client, fake_oauth_port
+        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
     )
 
     url = oauth_handler.get_oauth_url()
@@ -79,9 +78,8 @@ def test_get_auth_token_url(mock_oauth_client, mock_evernote_oauth_client):
 def test_get_auth_token_declined(mock_oauth_client, mock_evernote_oauth_client):
     del mock_oauth_client.fake_callback_response["oauth_verifier"]
 
-    fake_oauth_port = 10500
     oauth_handler = EvernoteOAuthCallbackHandler(
-        mock_evernote_oauth_client, fake_oauth_port
+        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
     )
     oauth_handler.get_oauth_url()
 
@@ -103,9 +101,8 @@ def test_get_auth_token_interrupted(
         side_effect=KeyboardInterrupt,
     )
 
-    fake_oauth_port = 10500
     oauth_handler = EvernoteOAuthCallbackHandler(
-        mock_evernote_oauth_client, fake_oauth_port
+        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
     )
     oauth_handler.get_oauth_url()
 
