@@ -51,6 +51,13 @@ opt_oauth_port = click.option(
     help="OAuth local server port. (Advanced option, use with --oauth.)",
 )
 
+opt_oauth_host = click.option(
+    "--oauth-host",
+    default=config_defaults.OAUTH_HOST,
+    show_default=True,
+    help="Oauth host. (Advanced option, use with --oauth.)"
+)
+
 opt_token = click.option(
     "--token",
     "-t",
@@ -117,7 +124,7 @@ def cli(quiet: bool, verbose: bool) -> None:
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_oauth, opt_oauth_port, opt_token)
+@group_options(opt_user, opt_password, opt_oauth, opt_oauth_port, opt_oauth_host, opt_token)
 @click.option(
     "--force",
     is_flag=True,
@@ -137,6 +144,7 @@ def init_db(
     password: Optional[str],
     oauth: bool,
     oauth_port: int,
+    oauth_host: str,
     token: Optional[str],
     force: bool,
     backend: str,
@@ -150,6 +158,7 @@ def init_db(
         auth_password=password,
         auth_is_oauth=oauth,
         auth_oauth_port=oauth_port,
+        auth_oauth_host=oauth_host,
         auth_token=token,
         force=force,
         backend=backend,
@@ -253,7 +262,7 @@ click.password_option()
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_oauth, opt_oauth_port, opt_token)
+@group_options(opt_user, opt_password, opt_oauth, opt_oauth_port, opt_oauth_host, opt_token)
 @opt_network_retry_count
 def reauth(
     database: str,
@@ -261,6 +270,7 @@ def reauth(
     password: Optional[str],
     oauth: bool,
     oauth_port: int,
+    oauth_host: str,
     token: Optional[str],
     network_retry_count: int,
 ) -> None:
@@ -272,6 +282,7 @@ def reauth(
         auth_password=password,
         auth_is_oauth=oauth,
         auth_oauth_port=oauth_port,
+        auth_oauth_host=oauth_host,
         auth_token=token,
         network_retry_count=network_retry_count,
     )
