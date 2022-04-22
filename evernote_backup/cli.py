@@ -55,7 +55,7 @@ opt_oauth_host = click.option(
     "--oauth-host",
     default=config_defaults.OAUTH_HOST,
     show_default=True,
-    help="Oauth host. (Advanced option, use with --oauth.)"
+    help="OAuth local server host. (Advanced option, use with --oauth.)",
 )
 
 opt_token = click.option(
@@ -124,7 +124,9 @@ def cli(quiet: bool, verbose: bool) -> None:
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_oauth, opt_oauth_port, opt_oauth_host, opt_token)
+@group_options(
+    opt_user, opt_password, opt_oauth, opt_oauth_port, opt_oauth_host, opt_token
+)
 @click.option(
     "--force",
     is_flag=True,
@@ -262,7 +264,9 @@ click.password_option()
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_oauth, opt_oauth_port, opt_oauth_host, opt_token)
+@group_options(
+    opt_user, opt_password, opt_oauth, opt_oauth_port, opt_oauth_host, opt_token
+)
 @opt_network_retry_count
 def reauth(
     database: str,

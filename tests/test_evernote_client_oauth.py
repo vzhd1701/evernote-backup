@@ -42,7 +42,9 @@ def test_server_no_docker(
 
     oauth_handler.wait_for_token()
 
-    mock_oauth_http_server.assert_any_call((FAKE_OAUTH_HOST, FAKE_OAUTH_PORT), mocker.ANY)
+    mock_oauth_http_server.assert_any_call(
+        (FAKE_OAUTH_HOST, FAKE_OAUTH_PORT), mocker.ANY
+    )
 
 
 def test_server_yes_docker(
