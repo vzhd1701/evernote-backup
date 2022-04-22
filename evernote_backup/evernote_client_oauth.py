@@ -55,10 +55,10 @@ class StoppableHTTPServer(HTTPServer):
 
 
 class EvernoteOAuthCallbackHandler(object):
-    def __init__(self, oauth_client: "EvernoteOAuthClient", oauth_port: int) -> None:
+    def __init__(self, oauth_client: "EvernoteOAuthClient", oauth_port: int, server_host: str) -> None:
         self.client = oauth_client
 
-        self.server_host = "localhost"
+        self.server_host = server_host
         self.server_port = oauth_port
         self.oauth_token: dict = {}
 

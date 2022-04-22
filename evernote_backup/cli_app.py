@@ -24,6 +24,7 @@ def init_db(
     auth_password: Optional[str],
     auth_is_oauth: bool,
     auth_oauth_port: int,
+    auth_oauth_host: str,
     auth_token: Optional[str],
     force: bool,
     backend: str,
@@ -38,6 +39,7 @@ def init_db(
             auth_password,
             auth_is_oauth,
             auth_oauth_port,
+            auth_oauth_host,
             backend,
             network_retry_count,
         )
@@ -63,6 +65,7 @@ def reauth(
     auth_password: Optional[str],
     auth_is_oauth: bool,
     auth_oauth_port: int,
+    auth_oauth_host: str,
     auth_token: Optional[str],
     network_retry_count: int,
 ) -> None:
@@ -78,6 +81,7 @@ def reauth(
             auth_password,
             auth_is_oauth,
             auth_oauth_port,
+            auth_oauth_host,
             backend,
             network_retry_count,
         )

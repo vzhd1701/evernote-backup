@@ -34,7 +34,7 @@ def prompt_ota(delivery_hint: str) -> str:
     return str(click.prompt(f"Enter one-time code{one_time_hint}"))
 
 
-def evernote_login_oauth(backend: str, oauth_port: int) -> str:
+def evernote_login_oauth(backend: str, oauth_port: int, oauth_host: str) -> str:
     if not is_output_to_terminal():
         raise ProgramTerminatedError("OAuth requires user input!")
 
@@ -47,7 +47,7 @@ def evernote_login_oauth(backend: str, oauth_port: int) -> str:
 
     oauth_client = get_oauth_client(backend)
 
-    oauth_handler = EvernoteOAuthCallbackHandler(oauth_client, oauth_port)
+    oauth_handler = EvernoteOAuthCallbackHandler(oauth_client, oauth_port, oauth_host)
 
     oauth_url = oauth_handler.get_oauth_url()
 

@@ -277,6 +277,7 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
         auth_password=None,
         auth_is_oauth=False,
         auth_oauth_port=10500,
+        auth_oauth_host="localhost",
         auth_token=fake_token,
         force=False,
         backend="evernote",

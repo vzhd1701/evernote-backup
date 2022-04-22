@@ -41,13 +41,14 @@ def get_auth_token(
     auth_password: Optional[str],
     auth_is_oauth: bool,
     auth_oauth_port: int,
+    auth_oauth_host: str,
     backend: str,
     network_retry_count: int,
 ) -> str:
     logger.info("Logging in to Evernote...")
 
     if auth_is_oauth:
-        return evernote_login_oauth(backend, auth_oauth_port)
+        return evernote_login_oauth(backend, auth_oauth_port, auth_oauth_host)
 
     return evernote_login_password(
         auth_user,
