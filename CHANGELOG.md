@@ -1,3 +1,9 @@
+## [1.8.0](https://github.com/vzhd1701/evernote-backup/compare/1.7.1...1.8.0) (2022-04-22)
+
+### Features
+
+- add --oauth-host option ([0b6b8a6](https://github.com/vzhd1701/evernote-backup/commit/0b6b8a60a29a07af0a35c00c8bcec7b65c9c0868))
+
 ### [1.7.1](https://github.com/vzhd1701/evernote-backup/compare/1.7.0...1.7.1) (2022-02-14)
 
 ### Bug Fixes
