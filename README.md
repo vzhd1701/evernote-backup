@@ -23,6 +23,8 @@ Backup your notes & notebooks from Evernote locally and export them at any time!
 $ pip install evernote-backup
 ```
 
+**Python 3.7 or later required.**
+
 Or, since **evernote-backup** is a standalone tool, it might be more convenient to install it using [**pipx**](https://github.com/pipxproject/pipx):
 
 ```bash
