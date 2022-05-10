@@ -62,7 +62,6 @@ class NoteExporter(object):
 
         with progressbar(
             notebooks,
-            item_show_func=lambda x: str(x.name) if x else "",
             show_pos=True,
             file=get_progress_output(),
         ) as notebooks_bar:

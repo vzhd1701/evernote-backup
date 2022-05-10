@@ -354,7 +354,6 @@ class NoteSynchronizer(object):  # noqa: WPS214
                 length=len(notes_to_sync),
                 show_pos=True,
                 file=get_progress_output(),
-                item_show_func=lambda x: x.title if x else "",  # type: ignore
             ) as notes_bar:
                 for notes_to_sync_chunk in chunks(notes_to_sync, THREAD_CHUNK_SIZE):
                     self._process_download_chunk(
