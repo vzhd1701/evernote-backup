@@ -1,6 +1,6 @@
 FROM debian:buster-slim AS build
 
-ENV BUILD_POETRY_VERSION=1.1.11
+ENV BUILD_POETRY_VERSION=1.1.13
 
 RUN apt-get update && \
     apt-get install --no-install-suggests --no-install-recommends --yes python3-venv python3-pip && \
