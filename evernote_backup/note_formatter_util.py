@@ -58,7 +58,7 @@ def _get_max_timestamp() -> int:  # pragma: no cover
     try:
         return int(datetime.max.timestamp())
     except (OverflowError, ValueError, OSError):
-        is_64bits = sys.maxsize > 2 ** 32  # noqa: WPS114
+        is_64bits = sys.maxsize > 2**32  # noqa: WPS114
         return int(
             datetime(3000, 1, 1, 23, 59, 59, 999999).timestamp()
             if is_64bits
