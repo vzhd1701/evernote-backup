@@ -17,13 +17,6 @@ repos:
     -   id: check-yaml
     -   id: no-commit-to-branch
 
--   repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.7  # Use the ref you want to point at
-    hooks:
-    -   id: mdformat
-    #    additional_dependencies:
-    #    - mdformat-gfm
-
 -   repo: local
     hooks:
     -   id: isort
@@ -39,6 +32,13 @@ repos:
         language: system
         entry: poetry run black
         types: [python]
+
+    -   id: mdformat
+        name: mdformat
+        stages: [commit]
+        language: system
+        entry: poetry run mdformat
+        types: [markdown]
 
     -   id: flakehell
         name: flakehell
