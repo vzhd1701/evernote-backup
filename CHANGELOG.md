@@ -1,3 +1,9 @@
+### [1.8.1](https://github.com/vzhd1701/evernote-backup/compare/1.8.0...1.8.1) (2022-05-10)
+
+### Bug Fixes
+
+- hide current item name on progress to avoid glitches ([19925b4](https://github.com/vzhd1701/evernote-backup/commit/19925b46bebe3d914c3e0fd723ff517e58cd0443)), closes [#18](https://github.com/vzhd1701/evernote-backup/issues/18)
+
 ## [1.8.0](https://github.com/vzhd1701/evernote-backup/compare/1.7.1...1.8.0) (2022-04-22)
 
 ### Features
