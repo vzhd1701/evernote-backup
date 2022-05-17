@@ -40,13 +40,6 @@ repos:
         entry: poetry run mdformat
         types: [markdown]
 
-    -   id: flakehell
-        name: flakehell
-        stages: [commit]
-        language: system
-        entry: poetry run flakehell lint
-        types: [python]
-
     -   id: pytest
         name: pytest
         stages: [commit]
