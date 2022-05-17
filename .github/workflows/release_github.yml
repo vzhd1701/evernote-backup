@@ -204,4 +204,4 @@ jobs:
           bodyFile: release_changelog
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
-          draft: false
+          draft: true
