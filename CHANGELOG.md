@@ -1,3 +1,9 @@
+## [1.9.0](https://github.com/vzhd1701/evernote-backup/compare/1.8.1...1.9.0) (2022-05-17)
+
+### Features
+
+- add --overwrite flag to export mode ([5a88b76](https://github.com/vzhd1701/evernote-backup/commit/5a88b76f9d6e92cd66549cb65e4715473a0dd3c3)), closes [#19](https://github.com/vzhd1701/evernote-backup/issues/19)
+
 ### [1.8.1](https://github.com/vzhd1701/evernote-backup/compare/1.8.0...1.8.1) (2022-05-10)
 
 ### Bug Fixes
