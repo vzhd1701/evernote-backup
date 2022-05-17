@@ -1,6 +1,8 @@
 name: tests
 
 on:
+  workflow_dispatch:
+  pull_request:
   push:
     branches:
       - '**'
@@ -9,20 +11,20 @@ on:
     paths-ignore:
       - "*.md"
       - ".pre-commit-config.yaml"
-      - "tox.ini"
       - "pyproject.toml"
-      - "evernote_backup/version.py"
+      - "**/version.py"
+
+env:
+  BUILD_POETRY_VERSION: 1.1.13
+  PACKAGE_NAME: evernote_backup
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-    env:
-      BUILD_POETRY_VERSION: 1.1.13
-      POETRY_VIRTUALENVS_CREATE: false
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -32,28 +34,37 @@ jobs:
         with:
            python-version: ${{ matrix.python-version }}
 
-      - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: abatilo/actions-poetry@v2.0.0
-        with:
-          poetry-version: ${{ env.BUILD_POETRY_VERSION }}
-
-      - name: Set up Poetry cache for Python dependencies
+      - name: Load cached Poetry installation
         uses: actions/cache@v2
-        if: startsWith(runner.os, 'Linux')
         with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: ${{ runner.os }}-poetry-
+          path: ~/.local
+          key: dotlocal-${{ matrix.os }}-${{ env.BUILD_POETRY_VERSION }}
+
+      - name: Install Poetry ${{ env.BUILD_POETRY_VERSION }}
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.BUILD_POETRY_VERSION }}
+          installer-parallel: false
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
-        run: |
-            poetry install
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
 
       - name: Run tests
         run: |
-            poetry run pytest --cov-report=xml --cov=evernote_backup tests/
+            poetry run pytest --cov-report=xml --cov=${{ env.PACKAGE_NAME }} tests/
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
-        if: matrix.python-version == '3.9'
-        #if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
