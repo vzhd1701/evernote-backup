@@ -1,6 +1,7 @@
 import logging
 import sys
 import traceback
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -232,9 +233,14 @@ def sync(
     "--no-export-date",
     is_flag=True,
     help=(
-        "Don't timestamp exported enex files."
+        "Don't timestamp exported ENEX files."
         " (e.g. to prevent backup chunking with zero changes)"
     ),
+)
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    help="Overwrite existing ENEX files.",
 )
 @click.argument(
     "output_path",
@@ -246,7 +252,8 @@ def export(
     single_notes: bool,
     include_trash: bool,
     no_export_date: bool,
-    output_path: str,
+    overwrite: bool,
+    output_path: Path,
 ) -> None:
     """Export all notes from local database into ENEX files."""
 
@@ -255,6 +262,7 @@ def export(
         single_notes=single_notes,
         include_trash=include_trash,
         no_export_date=no_export_date,
+        overwrite=overwrite,
         output_path=output_path,
     )
 

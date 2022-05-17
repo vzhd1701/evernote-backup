@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Iterable, List, Union
 
 from click import progressbar
@@ -26,20 +27,30 @@ class NothingToExportError(Exception):
 
 
 class NoteExporter(object):
-    def __init__(self, storage: SqliteStorage, target_dir: str) -> None:
-        self.storage = storage
-        self.safe_paths = SafePath(target_dir)
-
-    def export_notebooks(
-        self, single_notes: bool, export_trash: bool, no_export_date: bool
+    def __init__(
+        self,
+        storage: SqliteStorage,
+        target_dir: Path,
+        single_notes: bool,
+        export_trash: bool,
+        no_export_date: bool,
+        overwrite: bool,
     ) -> None:
+        self.storage = storage
+        self.safe_paths = SafePath(target_dir, overwrite)
+
+        self.single_notes = single_notes
+        self.export_trash = export_trash
+        self.no_export_date = no_export_date
+
+    def export_notebooks(self) -> None:
         count_notes = self.storage.notes.get_notes_count()
         count_trash = self.storage.notes.get_notes_count(is_active=False)
 
         if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
             logger.debug(f"Notes to export: {count_notes}")
             logger.debug(f"Trashed notes: {count_trash}")
-            if single_notes:
+            if self.single_notes:
                 logger.debug("Export mode: single notes")
             else:
                 logger.debug("Export mode: notebooks")
@@ -50,14 +61,14 @@ class NoteExporter(object):
         if count_notes > 0:
             logger.info("Exporting notes...")
 
-            self._export_active(single_notes, no_export_date)
+            self._export_active()
 
-        if count_trash > 0 and export_trash:
+        if count_trash > 0 and self.export_trash:
             logger.info("Exporting trash...")
 
-            self._export_trash(single_notes, no_export_date)
+            self._export_trash()
 
-    def _export_active(self, single_notes: bool, no_export_date: bool) -> None:
+    def _export_active(self) -> None:
         notebooks = tuple(self.storage.notebooks.iter_notebooks())
 
         with progressbar(
@@ -74,56 +85,45 @@ class NoteExporter(object):
                     logger.debug("Notebook is empty, skip")
                     continue
 
-                self._export_notes(nb, single_notes, no_export_date)
+                self._export_notes(nb)
 
-    def _export_notes(
-        self, notebook: Notebook, single_notes: bool, no_export_date: bool
-    ) -> None:
+    def _export_notes(self, notebook: Notebook) -> None:
         parent_dir = [notebook.stack] if notebook.stack else []
 
         notes_source = self.storage.notes.iter_notes(notebook.guid)
 
-        if single_notes:
+        if self.single_notes:
             parent_dir.append(notebook.name)
-            self._output_single_notes(parent_dir, notes_source, no_export_date)
+            self._output_single_notes(parent_dir, notes_source)
         else:
-            self._output_notebook(
-                parent_dir, notebook.name, notes_source, no_export_date
-            )
+            self._output_notebook(parent_dir, notebook.name, notes_source)
 
-    def _export_trash(self, single_notes: bool, no_export_date: bool) -> None:
+    def _export_trash(self) -> None:
         notes_source = self.storage.notes.iter_notes_trash()
 
-        if single_notes:
-            self._output_single_notes(["Trash"], notes_source, no_export_date)
+        if self.single_notes:
+            self._output_single_notes(["Trash"], notes_source)
         else:
-            self._output_notebook([], "Trash", notes_source, no_export_date)
+            self._output_notebook([], "Trash", notes_source)
 
     def _output_single_notes(
-        self,
-        parent_dir: List[str],
-        notes_source: Iterable[Note],
-        no_export_date: bool,
+        self, parent_dir: List[str], notes_source: Iterable[Note]
     ) -> None:
         for note in notes_source:
             note_path = self.safe_paths.get_file(*parent_dir, f"{note.title}.enex")
 
-            _write_export_file(note_path, note, no_export_date)
+            _write_export_file(note_path, note, self.no_export_date)
 
     def _output_notebook(
-        self,
-        parent_dir: List[str],
-        notebook_name: str,
-        notes_source: Iterable[Note],
-        no_export_date: bool,
+        self, parent_dir: List[str], notebook_name: str, notes_source: Iterable[Note]
     ) -> None:
         notebook_path = self.safe_paths.get_file(*parent_dir, f"{notebook_name}.enex")
 
-        _write_export_file(notebook_path, notes_source, no_export_date)
+        _write_export_file(notebook_path, notes_source, self.no_export_date)
 
 
 def _write_export_file(
-    file_path: str, note_source: Union[Iterable[Note], Note], no_export_date: bool
+    file_path: Path, note_source: Union[Iterable[Note], Note], no_export_date: bool
 ) -> None:
     with open(file_path, "w", encoding="utf-8") as f:
         logger.debug(f"Writing file {file_path}")

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from pathlib import Path
 from typing import Optional
 
 from evernote_backup.cli_app_auth import get_auth_token, get_sync_client
@@ -139,16 +140,24 @@ def export(
     single_notes: bool,
     include_trash: bool,
     no_export_date: bool,
-    output_path: str,
+    overwrite: bool,
+    output_path: Path,
 ) -> None:
     storage = get_storage(database)
 
     raise_on_old_database_version(storage)
 
-    exporter = NoteExporter(storage, output_path)
+    exporter = NoteExporter(
+        storage=storage,
+        target_dir=output_path,
+        single_notes=single_notes,
+        export_trash=include_trash,
+        no_export_date=no_export_date,
+        overwrite=overwrite,
+    )
 
     try:
-        exporter.export_notebooks(single_notes, include_trash, no_export_date)
+        exporter.export_notebooks()
     except NothingToExportError:
         raise ProgramTerminatedError(
             "Database is empty, nothing to export."

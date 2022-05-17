@@ -1,3 +1,4 @@
+import pathlib
 from typing import Any, Callable, List
 
 import click
@@ -6,12 +7,14 @@ DIR_ONLY = click.Path(
     file_okay=False,
     writable=True,
     resolve_path=True,
+    path_type=pathlib.Path,
 )
 
 FILE_ONLY = click.Path(
     dir_okay=False,
     writable=True,
     resolve_path=True,
+    path_type=pathlib.Path,
 )
 
 
