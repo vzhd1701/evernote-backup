@@ -2,9 +2,9 @@
 
 import logging
 import lzma
-import os
 import pickle
 import sqlite3
+from pathlib import Path
 from typing import Iterable, Iterator, List, NamedTuple, Optional, Tuple, Union
 
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
@@ -57,11 +57,11 @@ class DatabaseResyncRequiredError(Exception):
     """Raise when database update requires resync"""
 
 
-def initialize_db(filename: str) -> None:
-    if os.path.exists(filename):
+def initialize_db(database_path: Path) -> None:
+    if database_path.exists():
         raise FileExistsError
 
-    db = sqlite3.connect(filename)
+    db = sqlite3.connect(database_path)
 
     with db as con:
         con.executescript(DB_SCHEMA)
@@ -70,11 +70,11 @@ def initialize_db(filename: str) -> None:
 
 
 class SqliteStorage(object):
-    def __init__(self, database: Union[str, sqlite3.Connection]) -> None:
+    def __init__(self, database: Union[Path, sqlite3.Connection]) -> None:
         if isinstance(database, sqlite3.Connection):
             self.db = database
         else:
-            if not os.path.exists(database):
+            if not database.exists():
                 raise FileNotFoundError("Database file does not exist.")
 
             self.db = sqlite3.connect(database)

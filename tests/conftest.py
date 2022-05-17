@@ -1,5 +1,6 @@
 import sqlite3
 import urllib.parse
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -272,7 +273,7 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
     mock_evernote_client.fake_user = "fake_user"
 
     cli_app.init_db(
-        database="fake_db",
+        database=Path("fake_db"),
         auth_user=None,
         auth_password=None,
         auth_is_oauth=False,

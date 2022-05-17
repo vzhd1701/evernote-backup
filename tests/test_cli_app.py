@@ -1,6 +1,5 @@
 import io
 import logging
-import os
 
 import pytest
 from evernote.edam.error.ttypes import EDAMSystemException

@@ -1,15 +1,18 @@
-import os
+import logging
+from pathlib import Path
 
-from evernote_backup.cli_app_util import ProgramTerminatedError, logger
+from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.note_storage import (
     DatabaseResyncRequiredError,
     SqliteStorage,
     initialize_db,
 )
 
+logger = logging.getLogger(__name__)
 
-def get_storage(database_path: str) -> SqliteStorage:
-    logger.info("Reading database {0}...".format(os.path.basename(database_path)))
+
+def get_storage(database_path: Path) -> SqliteStorage:
+    logger.info("Reading database {0}...".format(database_path.name))
 
     try:
         return SqliteStorage(database_path)
@@ -29,20 +32,20 @@ def raise_on_old_database_version(storage: SqliteStorage) -> None:
         )
 
 
-def raise_on_existing_database(database_path: str) -> None:
-    if os.path.exists(database_path):
+def raise_on_existing_database(database_path: Path) -> None:
+    if database_path.exists():
         raise ProgramTerminatedError(
             "Database already exists."
             " Use --force option to overwrite existing database file."
         )
 
 
-def initialize_storage(database_path: str, force: bool) -> SqliteStorage:
-    logger.info("Initializing database {0}...".format(os.path.basename(database_path)))
+def initialize_storage(database_path: Path, force: bool) -> SqliteStorage:
+    logger.info("Initializing database {0}...".format(database_path.name))
 
     if force:
-        if os.path.exists(database_path):
-            os.remove(database_path)
+        if database_path.exists():
+            database_path.unlink()
     else:
         raise_on_existing_database(database_path)
 

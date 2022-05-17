@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
@@ -6,11 +8,11 @@ from evernote_backup.note_storage import NoteForSync, SqliteStorage, initialize_
 
 def test_database_file_missing():
     with pytest.raises(FileNotFoundError):
-        SqliteStorage("fake_file")
+        SqliteStorage(Path("fake_file"))
 
 
 def test_database_file_opened(tmp_path):
-    test_db_path = str(tmp_path / "test.db")
+    test_db_path = tmp_path / "test.db"
 
     initialize_db(test_db_path)
 
@@ -20,7 +22,7 @@ def test_database_file_opened(tmp_path):
 
 
 def test_init_existing_file(tmp_path):
-    test_db_path = str(tmp_path / "test.db")
+    test_db_path = tmp_path / "test.db"
 
     initialize_db(test_db_path)
 
@@ -31,7 +33,7 @@ def test_init_existing_file(tmp_path):
 def test_init_db(tmp_path):
     test_db_path = tmp_path / "test.db"
 
-    initialize_db(str(test_db_path))
+    initialize_db(test_db_path)
 
     assert test_db_path.is_file()
     assert test_db_path.stat().st_size > 0

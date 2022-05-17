@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def init_db(
-    database: str,
+    database: Path,
     auth_user: Optional[str],
     auth_password: Optional[str],
     auth_is_oauth: bool,
@@ -61,7 +61,7 @@ def init_db(
 
 
 def reauth(
-    database: str,
+    database: Path,
     auth_user: Optional[str],
     auth_password: Optional[str],
     auth_is_oauth: bool,
@@ -103,7 +103,7 @@ def reauth(
 
 
 def sync(
-    database: str,
+    database: Path,
     max_chunk_results: int,
     max_download_workers: int,
     download_cache_memory_limit: int,
@@ -136,7 +136,7 @@ def sync(
 
 
 def export(
-    database: str,
+    database: Path,
     single_notes: bool,
     include_trash: bool,
     no_export_date: bool,

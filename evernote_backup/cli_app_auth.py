@@ -1,11 +1,14 @@
+import logging
 from typing import Optional
 
 from evernote_backup.cli_app_auth_oauth import evernote_login_oauth
 from evernote_backup.cli_app_auth_password import evernote_login_password
-from evernote_backup.cli_app_util import ProgramTerminatedError, logger
+from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import EvernoteAuthError
 from evernote_backup.token_util import get_token_expiration_date
+
+logger = logging.getLogger(__name__)
 
 
 def get_sync_client(

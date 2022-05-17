@@ -142,7 +142,7 @@ def cli(quiet: bool, verbose: bool) -> None:
 )
 @opt_network_retry_count
 def init_db(
-    database: str,
+    database: Path,
     user: Optional[str],
     password: Optional[str],
     oauth: bool,
@@ -200,7 +200,7 @@ def init_db(
 )
 @opt_network_retry_count
 def sync(
-    database: str,
+    database: Path,
     max_chunk_results: int,
     max_download_workers: int,
     download_cache_memory_limit: int,
@@ -248,7 +248,7 @@ def sync(
     type=DIR_ONLY,
 )
 def export(
-    database: str,
+    database: Path,
     single_notes: bool,
     include_trash: bool,
     no_export_date: bool,
@@ -277,7 +277,7 @@ click.password_option()
 )
 @opt_network_retry_count
 def reauth(
-    database: str,
+    database: Path,
     user: Optional[str],
     password: Optional[str],
     oauth: bool,

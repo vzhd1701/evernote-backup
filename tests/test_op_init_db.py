@@ -27,7 +27,7 @@ def test_init_db_existing_file_force(tmp_path, cli_invoker, fake_token):
 
 
 def test_init_db_new_file(tmp_path, cli_invoker, mock_evernote_client, fake_token):
-    test_db_path = str(tmp_path / "test.db")
+    test_db_path = tmp_path / "test.db"
 
     mock_evernote_client.fake_user = "user1"
 
@@ -49,7 +49,7 @@ def test_init_db_new_file(tmp_path, cli_invoker, mock_evernote_client, fake_toke
 def test_init_db_new_file_backend(
     backend, tmp_path, cli_invoker, mock_evernote_client, fake_token
 ):
-    test_db_path = str(tmp_path / "test.db")
+    test_db_path = tmp_path / "test.db"
 
     mock_evernote_client.fake_user = "user1"
 
