@@ -20,7 +20,7 @@ Backup your notes & notebooks from Evernote locally and export them at any time!
 ### With [Homebrew](https://brew.sh/)
 
 ```bash
-$ brew install vzhd1701/tap/evernote-backup
+$ brew install evernote-backup
 ```
 
 ### With PIP
