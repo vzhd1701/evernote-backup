@@ -25,7 +25,7 @@ Backup your notes & notebooks from Evernote locally and export them at any time!
 $ brew install evernote-backup
 ```
 
-### With [PIPX](https://github.com/pipxproject/pipx) (Recommended for Linux & Windows)
+### With [PIPX](https://github.com/pypa/pipx) (Recommended for Linux & Windows)
 
 ```shell
 $ pipx install evernote-backup
