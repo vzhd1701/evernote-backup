@@ -91,25 +91,44 @@ def _get_non_existant_name(file_name: str, target_dir: Path) -> str:
 def _trim_name(file_name: str, max_len: int = MAX_FILE_NAME_LEN) -> str:
     """Trim file name to 255 characters while maintaining extension
     255 characters is max file name length on linux and macOS
-    Windows has a path limit of 260 characters which includes
-    the entire path (drive letter, path, and file name)
-    This does not trim the path length, just the file name
+    Windows has a filename limit of 260 bytes
+
+    Assuming character is one byte
+    Trimming only stem, extensions stays untouched
 
     max_len: if provided, trims to this length otherwise MAX_FILE_NAME_LEN
 
     Raises: ValueError if the file name is too long and cannot be trimmed
     """
-    if len(file_name) <= max_len:
+    if len(file_name.encode("utf-8")) <= max_len:
         return file_name
 
     orig = Path(file_name)
 
-    drop_chars = len(file_name) - max_len
-    trimmed_name = orig.stem[:-drop_chars]
+    if orig.suffix:
+        max_len_name = max_len - len(orig.suffix.encode("utf-8"))
+    else:
+        max_len_name = max_len
 
-    if not orig.suffix:
-        return trimmed_name
-    if len(orig.stem) > drop_chars:
-        return f"{trimmed_name}{orig.suffix}"
+    trimmed_name = _trim_string(orig.stem, max_len_name)
 
-    raise ValueError(f"File name is too long but cannot be safely trimmed: {file_name}")
+    result_name = f"{trimmed_name}{orig.suffix}"
+
+    if len(result_name.encode("utf-8")) > max_len:
+        raise ValueError(
+            f"File name is too long but cannot be safely trimmed: {file_name}"
+        )
+
+    return result_name
+
+
+def _trim_string(string: str, max_len: int) -> str:
+    if max_len <= 0:
+        return ""
+
+    chars = list(string)
+
+    while sum(len(c.encode("utf-8")) for c in chars) > max_len:
+        chars.pop(-1)
+
+    return "".join(chars)

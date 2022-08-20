@@ -321,6 +321,37 @@ def test_export_single_notes_over_existing_overwrite(
 
 
 @pytest.mark.usefixtures("fake_init_db")
+def test_export_single_notes_super_long_name(cli_invoker, fake_storage, tmp_path):
+    test_out_path = tmp_path / "test_out"
+
+    test_long_title = "😁" * 300
+    expected_note_name = f"{'😁' * 62}.enex"
+
+    test_notebooks = [Notebook(guid="nbid1", name="name1", stack=None)]
+
+    test_notes = [
+        Note(
+            guid="id1",
+            title=test_long_title,
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+        )
+    ]
+
+    fake_storage.notebooks.add_notebooks(test_notebooks)
+
+    for note in test_notes:
+        fake_storage.notes.add_note(note)
+
+    cli_invoker("export", "--database", "fake_db", "--single-notes", str(test_out_path))
+
+    note_path = test_out_path / "name1" / expected_note_name
+
+    assert note_path.is_file()
+
+
+@pytest.mark.usefixtures("fake_init_db")
 def test_export_no_trash(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 

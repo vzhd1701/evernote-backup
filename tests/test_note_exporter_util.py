@@ -111,7 +111,7 @@ def test_safe_path_long_file_name(tmp_path):
     safe_path = SafePath(test_dir)
     result_file_path = safe_path.get_file("test1", long_file_name)
 
-    expected_file.touch()
+    result_file_path.touch()
 
     assert expected_file.is_file()
     assert result_file_path == expected_file
@@ -136,7 +136,7 @@ def test_safe_path_long_file_name_existing(tmp_path):
     safe_path = SafePath(test_dir)
     result_file_path = safe_path.get_file(long_file_name)
 
-    expected_file.touch()
+    result_file_path.touch()
 
     assert expected_file.is_file()
     assert result_file_path == expected_file
@@ -155,7 +155,26 @@ def test_safe_path_long_file_name_no_ext(tmp_path):
     safe_path = SafePath(test_dir)
     result_file_path = safe_path.get_file("test1", long_file_name)
 
-    expected_file.touch()
+    result_file_path.touch()
+
+    assert expected_file.is_file()
+    assert result_file_path == expected_file
+
+
+def test_safe_path_long_file_name_no_ext_unicode(tmp_path):
+    """Test that SafePath trims a long file name with no extension"""
+    test_dir = tmp_path / "test"
+
+    slightly_longer_than_supported = MAX_FILE_NAME_LEN * 2
+
+    long_file_name = "😁" * slightly_longer_than_supported
+    expected_file_name = "😁" * (MAX_FILE_NAME_LEN // len("😁".encode("utf-8")))
+    expected_file = tmp_path / "test" / "test1" / expected_file_name
+
+    safe_path = SafePath(test_dir)
+    result_file_path = safe_path.get_file("test1", long_file_name)
+
+    result_file_path.touch()
 
     assert expected_file.is_file()
     assert result_file_path == expected_file
