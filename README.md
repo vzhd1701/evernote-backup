@@ -15,38 +15,40 @@ Backup your notes & notebooks from Evernote locally and export them at any time!
 
 ## Installation
 
+### Using portable binary
+
 [**Download the latest release**](https://github.com/vzhd1701/evernote-backup/releases/latest) for your OS.
 
-### With [Homebrew](https://brew.sh/)
+### With [Homebrew](https://brew.sh/) (Recommended for macOS)
 
 ```bash
 $ brew install evernote-backup
 ```
 
+### With [PIPX](https://github.com/pipxproject/pipx) (Recommended for Linux & Windows)
+
+```shell
+$ pipx install evernote-backup
+```
+
 ### With PIP
 
 ```bash
-$ pip install evernote-backup
+$ pip install --user evernote-backup
 ```
 
 **Python 3.7 or later required.**
 
-Or, since **evernote-backup** is a standalone tool, it might be more convenient to install it using [**pipx**](https://github.com/pipxproject/pipx):
-
-```bash
-$ pipx install evernote-backup
-```
-
 ### With Docker
 
 ```bash
-$ docker run --rm -t -v "$PWD":/tmp ghcr.io/vzhd1701/evernote-backup:latest
+$ docker run --rm -t -v "$PWD":/tmp vzhd1701/evernote-backup:latest
 ```
 
 To log in to Evernote using OAuth with Docker, you'll have to forward port 10500 for a callback:
 
 ```bash
-$ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 ghcr.io/vzhd1701/evernote-backup:latest init-db --oauth
+$ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 vzhd1701/evernote-backup:latest init-db --oauth
 ```
 
 ## Usage
