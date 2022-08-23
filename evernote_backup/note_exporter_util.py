@@ -50,7 +50,7 @@ class SafePath(object):
 
 def _get_safe_path(target_dir: Path, new_name: str, overwrite: bool = False) -> Path:
     file_name = _replace_bad_characters(new_name)
-    file_name = _trim_name(file_name)
+    file_name = _trim_name(Path(file_name).stem, Path(file_name).suffix)
 
     if not overwrite:
         file_name = _get_non_existant_name(file_name, target_dir)
@@ -76,19 +76,23 @@ def _replace_bad_characters(string: str) -> str:
 def _get_non_existant_name(file_name: str, target_dir: Path) -> str:
     i = 0
     orig = Path(file_name)
+
     while (target_dir / file_name).exists():
         i += 1
-        file_name = f"{orig.stem} ({i}){orig.suffix}"
-        if len(file_name) > MAX_FILE_NAME_LEN:
-            max_len = MAX_FILE_NAME_LEN - len(f" ({i}){orig.suffix}")
 
-            trimmed_name = _trim_name(orig.stem, max_len)
-            file_name = f"{trimmed_name} ({i}){orig.suffix}"
+        suffix = f" ({i}){orig.suffix}"
+        file_name = f"{orig.stem}{suffix}"
+
+        if len(file_name.encode("utf-8")) > MAX_FILE_NAME_LEN:
+            max_len = MAX_FILE_NAME_LEN - len(suffix.encode("utf-8"))
+
+            trimmed_name = _trim_name(orig.stem, "", max_len)
+            file_name = f"{trimmed_name}{suffix}"
 
     return file_name
 
 
-def _trim_name(file_name: str, max_len: int = MAX_FILE_NAME_LEN) -> str:
+def _trim_name(file_name: str, file_ext: str, max_len: int = MAX_FILE_NAME_LEN) -> str:
     """Trim file name to 255 characters while maintaining extension
     255 characters is max file name length on linux and macOS
     Windows has a filename limit of 260 bytes
@@ -100,19 +104,19 @@ def _trim_name(file_name: str, max_len: int = MAX_FILE_NAME_LEN) -> str:
 
     Raises: ValueError if the file name is too long and cannot be trimmed
     """
-    if len(file_name.encode("utf-8")) <= max_len:
-        return file_name
+    orig_name = f"{file_name}{file_ext}"
 
-    orig = Path(file_name)
+    if len(orig_name.encode("utf-8")) <= max_len:
+        return orig_name
 
-    if orig.suffix:
-        max_len_name = max_len - len(orig.suffix.encode("utf-8"))
+    if file_ext:
+        max_len_name = max_len - len(file_ext.encode("utf-8"))
     else:
         max_len_name = max_len
 
-    trimmed_name = _trim_string(orig.stem, max_len_name)
+    trimmed_name = _trim_string(file_name, max_len_name)
 
-    result_name = f"{trimmed_name}{orig.suffix}"
+    result_name = f"{trimmed_name}{file_ext}"
 
     if len(result_name.encode("utf-8")) > max_len:
         raise ValueError(
