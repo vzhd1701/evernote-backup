@@ -1,3 +1,9 @@
+### [1.9.2](https://github.com/vzhd1701/evernote-backup/compare/1.9.1...1.9.2) (2022-08-23)
+
+### Bug Fixes
+
+- fix crash on repeated export with long filenames ([692a93a](https://github.com/vzhd1701/evernote-backup/commit/692a93ab168d7bfa2bd72dccf8856999b367be52)), closes [#26](https://github.com/vzhd1701/evernote-backup/issues/26)
+
 ### [1.9.1](https://github.com/vzhd1701/evernote-backup/compare/1.9.0...1.9.1) (2022-08-20)
 
 ### Bug Fixes
