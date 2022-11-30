@@ -15,7 +15,7 @@ on:
       - "**/version.py"
 
 env:
-  BUILD_POETRY_VERSION: 1.1.13
+  BUILD_POETRY_VERSION: 1.2.2
   PACKAGE_NAME: evernote_backup
 
 jobs:
@@ -35,13 +35,14 @@ jobs:
            python-version: ${{ matrix.python-version }}
 
       - name: Load cached Poetry installation
+        if: matrix.os != 'windows-latest'
         uses: actions/cache@v2
         with:
           path: ~/.local
-          key: dotlocal-${{ matrix.os }}-${{ env.BUILD_POETRY_VERSION }}
+          key: dotlocal-${{ matrix.os }}-${{ matrix.python-version }}-${{ env.BUILD_POETRY_VERSION }}
 
       - name: Install Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@v1.3.3
         with:
           version: ${{ env.BUILD_POETRY_VERSION }}
           installer-parallel: false
@@ -57,11 +58,12 @@ jobs:
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        shell: bash
         run: poetry install --no-interaction --no-root
 
       - name: Run tests
-        run: |
-            poetry run pytest --cov-report=xml --cov=${{ env.PACKAGE_NAME }} tests/
+        shell: bash
+        run: poetry run pytest --cov-report=xml --cov=${{ env.PACKAGE_NAME }} tests/
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1

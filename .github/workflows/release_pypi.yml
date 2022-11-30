@@ -7,10 +7,11 @@ on:
 
 env:
   BUILD_PYTHON_VERSION: 3.8
-  BUILD_POETRY_VERSION: 1.1.13
+  BUILD_POETRY_VERSION: 1.2.2
+  PACKAGE_NAME: evernote-backup
 
 jobs:
-  release:
+  publish_pypi:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,10 +22,10 @@ jobs:
         with:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
-      - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: abatilo/actions-poetry@v2.0.0
+      - name: Install Poetry ${{ env.BUILD_POETRY_VERSION }}
+        uses: snok/install-poetry@v1
         with:
-          poetry-version: ${{ env.BUILD_POETRY_VERSION }}
+          version: ${{ env.BUILD_POETRY_VERSION }}
 
       - name: Build project for distribution
         run: poetry build
@@ -34,8 +35,12 @@ jobs:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: poetry publish
 
+  publish_tap:
+    needs: [publish_pypi]
+    runs-on: ubuntu-latest
+    steps:
       - name: Update Homebrew formula
         uses: dawidd6/action-homebrew-bump-formula@v3
         with:
-          token: ${{secrets.BREW_BUMP_TOKEN}}
-          formula: evernote-backup
+          token: ${{ secrets.BREW_BUMP_TOKEN }}
+          formula: ${{ env.PACKAGE_NAME }}
