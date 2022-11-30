@@ -13,7 +13,9 @@ on:
 
 env:
   BUILD_PYTHON_VERSION: 3.8
-  BUILD_POETRY_VERSION: 1.1.13
+  BUILD_POETRY_VERSION: 1.2.2
+  PACKAGE_NAME: evernote-backup
+  MODULE_NAME: evernote_backup
 
 jobs:
   build_python:
@@ -35,7 +37,7 @@ jobs:
           poetry-version: ${{ env.BUILD_POETRY_VERSION }}
 
       - name: Export requirements
-        run: poetry export -f requirements.txt --output requirements.txt
+        run: poetry export --without-hashes -f requirements.txt --output requirements.txt
 
       - name: Build project for distribution
         run: poetry build
@@ -52,24 +54,45 @@ jobs:
           name: release_dist_python
           path: dist
 
-  build_binaries_mac:
+  build_binaries:
     needs: build_python
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            OS_CODE: macos
+          - os: ubuntu-latest
+            OS_CODE: linux
+          - os: windows-latest
+            OS_CODE: win
+
     steps:
       - uses: actions/checkout@v2
 
-      - name: Get tag version
-        run: echo "TAG_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Get version
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          APP_VERSION=$(perl -n -e'/^__version__ = "([^"]+)"$/ && print $1' ${{ env.MODULE_NAME }}/version.py)
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+      - name: Get version
+        if: matrix.os != 'macos-latest'
+        shell: bash
+        run: |
+          APP_VERSION=$(sed -n 's/^__version__ = "\([^"]\+\)"$/\1/p' ${{ env.MODULE_NAME }}/version.py)
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
       - name: Load release python requirements
         uses: actions/download-artifact@v2
         with:
           name: release_dist_reqs
 
-      - name: Set up Python 3.8
+      - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
       - name: Install dependencies
         run: |
@@ -77,82 +100,35 @@ jobs:
           pip install pyinstaller
           pip install -r requirements.txt
 
-      - name: Build with pyinstaller for macos
-        run: pyinstaller evernote-backup.spec
+      - name: Build with pyinstaller
+        run: pyinstaller ${{ env.PACKAGE_NAME }}.spec
 
       - name: Make directory for bins
         run: mkdir dist_bin
 
       - name: Pack up binary for macos
-        run: zip -q -j dist_bin/bin_evernote_backup_${TAG_VERSION}_macos_x64.zip ./dist/evernote-backup
-
-      - name: Save release binaries for macos x64
-        uses: actions/upload-artifact@v2
-        with:
-          name: release_dist_bin_macos_x64
-          path: dist_bin
-
-  build_binaries:
-    needs: build_python
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: [windows, linux]
-        arch: [32, 64]
-        include:
-          - os: windows
-            image: "cdrx/pyinstaller-windows"
-          - os: linux
-            image: "cdrx/pyinstaller-linux"
-          - arch: 32
-            arch_code: "x86"
-            image_tag: "python3-32bit"
-          - arch: 64
-            arch_code: "x64"
-            image_tag: "python3"
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Get tag version
-        run: echo "TAG_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-
-      - name: Load release python requirements
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_reqs
-
-      - name: Build binary for ${{ matrix.os }} ${{ matrix.arch_code }}
-        env:
-          IMAGE: ${{ matrix.image }}
-          IMAGE_TAG: ${{ matrix.image_tag }}
-        run: docker run -v "$(pwd):/src/" ${IMAGE}:${IMAGE_TAG}
-
-      - name: Make directory for bins
-        run: mkdir dist_bin
-
-      - name: Pack up binary for windows
-        if: matrix.os == 'windows'
-        env:
-          BUILD_ARCH: ${{ matrix.arch_code }}
-        run: zip -q -j dist_bin/bin_evernote_backup_${TAG_VERSION}_win_${BUILD_ARCH}.zip ./dist/windows/evernote-backup.exe
+        if: matrix.os == 'macos-latest'
+        run: zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}
 
       - name: Pack up binary for linux
-        if: matrix.os == 'linux'
-        env:
-          BUILD_ARCH: ${{ matrix.arch_code }}
-        run: tar -zcvf dist_bin/bin_evernote_backup_${TAG_VERSION}_linux_${BUILD_ARCH}.tar.gz -C ./dist/linux evernote-backup
+        if: matrix.os == 'ubuntu-latest'
+        run: tar -zcvf dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.tar.gz -C ./dist ${{ env.PACKAGE_NAME }}
 
-      - name: Save release binaries for ${{ matrix.os }} ${{ matrix.arch_code }}
+      - name: Pack up binary for windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install zip
+          zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}.exe
+
+      - name: Save release binaries for ${{ matrix.OS_CODE }}
         uses: actions/upload-artifact@v2
         with:
-          name: release_dist_bin_${{ matrix.os }}_${{ matrix.arch_code }}
+          name: release_dist_bin_${{ matrix.OS_CODE }}
           path: dist_bin
 
   release:
     if: github.event_name == 'push' || github.event.inputs.release == 'yes'
-    needs: [build_binaries, build_binaries_mac]
+    needs: [build_binaries]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -162,40 +138,33 @@ jobs:
           echo -n "**Full Changelog**: " >> release_changelog
           sed -n 's/### \[.*\](\(.*\)) (.*/\1/p' CHANGELOG.md | head -1 >> release_changelog
 
+      - name: Get tag version
+        run: |
+          APP_VERSION=$(sed -n 's/^__version__ = "\([^"]\+\)"$/\1/p' ${{ env.MODULE_NAME }}/version.py)
+          echo "TAG_VERSION=v$APP_VERSION" >> $GITHUB_ENV
+
       - name: Load release python packages
         uses: actions/download-artifact@v2
         with:
           name: release_dist_python
           path: dist
 
-      - name: Load release binaries for linux x86
+      - name: Load release binaries for linux
         uses: actions/download-artifact@v2
         with:
-          name: release_dist_bin_linux_x86
+          name: release_dist_bin_linux
           path: dist
 
-      - name: Load release binaries for linux x64
+      - name: Load release binaries for windows
         uses: actions/download-artifact@v2
         with:
-          name: release_dist_bin_linux_x64
+          name: release_dist_bin_win
           path: dist
 
-      - name: Load release binaries for windows x86
+      - name: Load release binaries for macos
         uses: actions/download-artifact@v2
         with:
-          name: release_dist_bin_windows_x86
-          path: dist
-
-      - name: Load release binaries for windows x64
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_bin_windows_x64
-          path: dist
-
-      - name: Load release binaries for macos x64
-        uses: actions/download-artifact@v2
-        with:
-          name: release_dist_bin_macos_x64
+          name: release_dist_bin_macos
           path: dist
 
       - name: Create Release
@@ -204,4 +173,5 @@ jobs:
           bodyFile: release_changelog
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.TAG_VERSION }}
           draft: true
