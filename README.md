@@ -100,7 +100,7 @@ Synchronization completed!
 
 You can interrupt this process at any point. It will continue from where it's left off when you will rerun `evernote-backup sync`.
 
-**evernote-backup** keeps track of the sync state and downloads only new changes that have been made since the last run. So every sync will go pretty fast, but you'll have to wait for a bit on the first run if you have a lot of notes in your account.
+**evernote-backup** keeps track of the sync state and downloads only new changes that have been made since the last run. So every sync will go pretty fast, but you'll have to wait for a bit on the first run if you have a lot of notes in your account. Syncing uses the Evernote Cloud API.
 
 ### Step 3. Exporting `*.enex` files
 
@@ -118,6 +118,8 @@ By default, **evernote-backup** will export notes by packing them into notebooks
 
 To also include **trashed** notes in export, use the `--include-trash` flag.
 
+Exporting is performed wholly offline, and does not require access to the Evernote Cloud API to convert the notes.
+
 That's it! So to export all your Evernote data, you will have to run three commands:
 
 ```console
@@ -126,7 +128,7 @@ $ evernote-backup sync
 $ evernote-backup export output_dir/
 ```
 
-After first initialization, you can schedule `evernote-backup sync` command to keep your local database always up-to-date.
+After first initialization, you can schedule `evernote-backup sync` command to keep your local database always up-to-date. However, `evernote-backup export` will always re-export all notebooks to the specified output directory.
 
 ### How to refresh expired token
 
