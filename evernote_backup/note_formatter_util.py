@@ -11,6 +11,8 @@ def fmt_time(timestamp: Optional[int]) -> Optional[str]:
     timestamp //= 1000
 
     if timestamp < _get_max_timestamp():
+        if timestamp < 0:
+            timestamp = 0
         date = datetime.utcfromtimestamp(timestamp)
     else:
         date = _date_from_future(timestamp)
