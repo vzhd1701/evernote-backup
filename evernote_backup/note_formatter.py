@@ -2,6 +2,8 @@
 
 import re
 import uuid
+import hashlib
+import binascii
 from typing import Optional
 
 import xmltodict
@@ -66,9 +68,14 @@ class NoteFormatter(object):
         return str(note_template)
 
     def _fmt_resource(self, resource: Resource) -> dict:
+        # Create MD5 hash
+        md5 = hashlib.md5()
+        md5.update(resource.data.body)
+        md5_hash = binascii.hexlify(md5.digest()).decode()
         return {
             "data": {
                 "@encoding": "base64",
+                "@hash": md5_hash,
                 "#text": self._fmt_raw(fmt_binary(resource.data.body)),
             },
             "mime": resource.mime,
