@@ -1,14 +1,13 @@
-FROM debian:buster-slim AS build
+FROM debian:12-slim AS build
 
-ENV BUILD_POETRY_VERSION=1.2.2
+ENV BUILD_POETRY_VERSION=1.6.1
 
 RUN apt-get update && \
     apt-get install --no-install-suggests --no-install-recommends --yes python3-venv python3-pip && \
-    pip3 install --upgrade pip && \
     python3 -m venv /venv && \
     /venv/bin/pip install --upgrade pip
 
-RUN pip3 install poetry==$BUILD_POETRY_VERSION
+RUN pip3 install --break-system-packages poetry==$BUILD_POETRY_VERSION
 
 FROM build AS build-venv
 
@@ -18,7 +17,7 @@ WORKDIR /app
 RUN poetry build --no-interaction -f wheel
 RUN /venv/bin/pip install --disable-pip-version-check dist/*.whl
 
-FROM gcr.io/distroless/python3-debian10
+FROM gcr.io/distroless/python3-debian12
 
 ENV INSIDE_DOCKER_CONTAINER=1
 
