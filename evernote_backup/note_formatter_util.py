@@ -18,7 +18,7 @@ def fmt_time(timestamp: Optional[int]) -> Optional[str]:
     else:
         date = datetime.utcfromtimestamp(timestamp)
 
-    return date.strftime("%Y%m%dT%H%M%SZ")
+    return date.strftime(f"{date.year:04}%m%dT%H%M%SZ")
 
 
 def fmt_binary(binary_data: bytes) -> str:
