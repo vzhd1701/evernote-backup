@@ -1,6 +1,6 @@
 import base64
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 
@@ -10,12 +10,15 @@ def fmt_time(timestamp: Optional[int]) -> Optional[str]:
 
     timestamp //= 1000
 
-    if timestamp < _get_max_timestamp():
-        date = datetime.utcfromtimestamp(timestamp)
-    else:
+    # https://dev.evernote.com/doc/reference/Types.html#Typedef_Timestamp
+    if timestamp < 0:
+        date = _date_from_past(timestamp)
+    elif timestamp >= _get_max_timestamp():
         date = _date_from_future(timestamp)
+    else:
+        date = datetime.utcfromtimestamp(timestamp)
 
-    return date.strftime("%Y%m%dT%H%M%SZ")
+    return date.strftime(f"{date.year:04}%m%dT%H%M%SZ")
 
 
 def fmt_binary(binary_data: bytes) -> str:
@@ -80,13 +83,23 @@ def _date_from_future(timestamp: int) -> datetime:  # noqa: WPS210
     m = mp + (3 if mp < 10 else -9)
     y += m <= 2
 
-    day_time = datetime.utcfromtimestamp(timestamp % 86400)
+    try:
+        day_time = datetime.utcfromtimestamp(timestamp % 86400)
 
-    return datetime(
-        year=y,
-        month=m,
-        day=d,
-        hour=day_time.hour,
-        minute=day_time.minute,
-        second=day_time.second,
-    )
+        return datetime(
+            year=y,
+            month=m,
+            day=d,
+            hour=day_time.hour,
+            minute=day_time.minute,
+            second=day_time.second,
+        )
+    except (OverflowError, ValueError, OSError):
+        return datetime.max
+
+
+def _date_from_past(timestamp: int) -> datetime:
+    try:
+        return datetime.utcfromtimestamp(0) - timedelta(seconds=abs(timestamp))
+    except (OverflowError, ValueError, OSError):
+        return datetime.min
