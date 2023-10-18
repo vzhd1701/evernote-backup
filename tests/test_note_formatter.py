@@ -168,7 +168,8 @@ def test_note_from_future(mocker):
     formatter = NoteFormatter()
 
     # 9999-12-31 23:59:59
-    end_of_times = 253402300799999
+    end_of_times_bad = 999999999999999
+    end_of_times = 243402300799999
 
     # Emulate windows limit
     mock_timestamp = mocker.patch(
@@ -178,11 +179,29 @@ def test_note_from_future(mocker):
 
     note_from_future = Note(
         title="test",
-        created=end_of_times,
+        created=end_of_times_bad,
         updated=end_of_times,
     )
 
     formatted_note = formatter.format_note(note_from_future)
 
     assert "<created>99991231T235959Z</created>" in formatted_note
-    assert "<updated>99991231T235959Z</updated>" in formatted_note
+    assert "<updated>96830210T061319Z</updated>" in formatted_note
+
+
+def test_note_from_past(mocker):
+    formatter = NoteFormatter()
+
+    before_times_bad = -999999999999999
+    before_times = -50000000000000
+
+    note_from_future = Note(
+        title="test",
+        created=before_times_bad,
+        updated=before_times,
+    )
+
+    formatted_note = formatter.format_note(note_from_future)
+
+    assert "<created>00010101T000000Z</created>" in formatted_note
+    assert "<updated>03850725T070640Z</updated>" in formatted_note
