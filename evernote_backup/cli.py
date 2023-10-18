@@ -89,13 +89,13 @@ opt_database = click.option(
 
 @click.group(cls=NaturalOrderGroup)
 @optgroup.group("Verbosity", cls=MutuallyExclusiveOptionGroup)  # type: ignore
-@optgroup.option(  # type: ignore
+@optgroup.option(
     "--quiet",
     "-q",
     is_flag=True,
     help="Quiet mode, output only critical errors.",
 )
-@optgroup.option(  # type: ignore
+@optgroup.option(
     "--verbose",
     "-v",
     is_flag=True,

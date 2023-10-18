@@ -363,7 +363,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                 (notebook_guid,),
             )
 
-            sorted_notes = sorted(cur, key=lambda x: x["title"])  # type: ignore
+            sorted_notes = sorted(cur, key=lambda x: x["title"])
 
             return [r["guid"] for r in sorted_notes]
 

@@ -81,7 +81,7 @@ class EvernoteClient(EvernoteClientBase):
             self._user = self.user_store.getUser().username
         return self._user
 
-    def get_note_store(self, shard_id: str = None) -> "Store":
+    def get_note_store(self, shard_id: Optional[str] = None) -> "Store":
         if shard_id is None:
             shard_id = self.shard
 

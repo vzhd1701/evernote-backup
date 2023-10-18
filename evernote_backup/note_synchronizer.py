@@ -4,7 +4,7 @@ import logging
 import struct
 import threading
 from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, as_completed, wait
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from click import progressbar
 from evernote.edam.notestore.ttypes import SyncChunk
@@ -106,7 +106,7 @@ class NoteClientWorker(object):
         self._thread_data = threading.local()
         self._note_client: EvernoteClientSync
 
-    def __call__(self, note_id: str, auth_data: NotebookAuth = None) -> Note:
+    def __call__(self, note_id: str, auth_data: Optional[NotebookAuth] = None) -> Note:
         self.memory_manager.wait_till_enough_memory()
 
         if self.stop:
@@ -263,7 +263,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
             return
 
         last_usn = current_usn
-        with progressbar(
+        with progressbar(  # type: ignore
             length=remote_usn - current_usn,
             show_pos=True,
             file=get_progress_output(),
@@ -350,7 +350,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
         logger.debug(f"Sync worker threads: {self.max_download_workers}")
 
         with ThreadPoolExecutor(max_workers=self.max_download_workers) as executor:
-            with progressbar(
+            with progressbar(  # type: ignore
                 length=len(notes_to_sync),
                 show_pos=True,
                 file=get_progress_output(),
