@@ -1,3 +1,10 @@
+### [1.9.3](https://github.com/vzhd1701/evernote-backup/compare/1.9.2...1.9.3) (2023-10-18)
+
+### Bug Fixes
+
+- add support for negative timestamps (close [#38](https://github.com/vzhd1701/evernote-backup/issues/38)) ([#48](https://github.com/vzhd1701/evernote-backup/issues/48)) ([244440d](https://github.com/vzhd1701/evernote-backup/commit/244440d6dfec8873159c77d741c5b01cecc2cc20))
+- change notebooks export log message to avoid confusion ([0a5840d](https://github.com/vzhd1701/evernote-backup/commit/0a5840d980c0d8b554b67fdf3e1a56d184d1ba79)), closes [#52](https://github.com/vzhd1701/evernote-backup/issues/52)
+
 ### [1.9.2](https://github.com/vzhd1701/evernote-backup/compare/1.9.1...1.9.2) (2022-08-23)
 
 ### Bug Fixes
