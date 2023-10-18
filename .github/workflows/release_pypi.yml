@@ -7,7 +7,7 @@ on:
 
 env:
   BUILD_PYTHON_VERSION: 3.8
-  BUILD_POETRY_VERSION: 1.2.2
+  BUILD_POETRY_VERSION: 1.6.1
   PACKAGE_NAME: evernote-backup
 
 jobs:
@@ -15,17 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
-      - name: Install Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: snok/install-poetry@v1
+      - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
+        uses: abatilo/actions-poetry@v2
         with:
-          version: ${{ env.BUILD_POETRY_VERSION }}
+          poetry-version: ${{ env.BUILD_POETRY_VERSION }}
 
       - name: Build project for distribution
         run: poetry build

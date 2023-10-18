@@ -15,7 +15,7 @@ on:
       - "**/version.py"
 
 env:
-  BUILD_POETRY_VERSION: 1.2.2
+  BUILD_POETRY_VERSION: 1.6.1
   PACKAGE_NAME: evernote_backup
 
 jobs:
@@ -23,35 +23,39 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
            python-version: ${{ matrix.python-version }}
 
       - name: Load cached Poetry installation
         if: matrix.os != 'windows-latest'
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.local
           key: dotlocal-${{ matrix.os }}-${{ matrix.python-version }}-${{ env.BUILD_POETRY_VERSION }}
 
-      - name: Install Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: snok/install-poetry@v1.3.3
+      - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
+        uses: abatilo/actions-poetry@v2
         with:
-          version: ${{ env.BUILD_POETRY_VERSION }}
-          installer-parallel: false
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+          poetry-version: ${{ env.BUILD_POETRY_VERSION }}
+
+      - name: Config Poetry
+        shell: bash
+        run: |
+          poetry config installer.parallel false
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
 
       - name: Load cached venv
         id: cached-poetry-dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .venv
           key: venv-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
@@ -66,7 +70,7 @@ jobs:
         run: poetry run pytest --cov-report=xml --cov=${{ env.PACKAGE_NAME }} tests/
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

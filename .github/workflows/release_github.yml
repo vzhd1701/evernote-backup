@@ -13,7 +13,7 @@ on:
 
 env:
   BUILD_PYTHON_VERSION: 3.8
-  BUILD_POETRY_VERSION: 1.2.2
+  BUILD_POETRY_VERSION: 1.6.1
   PACKAGE_NAME: evernote-backup
   MODULE_NAME: evernote_backup
 
@@ -24,15 +24,15 @@ jobs:
       POETRY_VIRTUALENVS_CREATE: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
       - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: abatilo/actions-poetry@v2.0.0
+        uses: abatilo/actions-poetry@v2
         with:
           poetry-version: ${{ env.BUILD_POETRY_VERSION }}
 
@@ -43,13 +43,13 @@ jobs:
         run: poetry build
 
       - name: Save release python requirements
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: release_dist_reqs
           path: requirements.txt
 
       - name: Save release python packages
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: release_dist_python
           path: dist
@@ -68,7 +68,7 @@ jobs:
             OS_CODE: win
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Get version
         if: matrix.os == 'macos-latest'
@@ -85,12 +85,12 @@ jobs:
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
       - name: Load release python requirements
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: release_dist_reqs
 
       - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
@@ -121,7 +121,7 @@ jobs:
           zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}.exe
 
       - name: Save release binaries for ${{ matrix.OS_CODE }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: release_dist_bin_${{ matrix.OS_CODE }}
           path: dist_bin
@@ -131,7 +131,7 @@ jobs:
     needs: [build_binaries]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Extract release changelog
         run: |
           sed "0,/### \[/d;/### \[/Q" CHANGELOG.md > release_changelog
@@ -144,25 +144,25 @@ jobs:
           echo "TAG_VERSION=v$APP_VERSION" >> $GITHUB_ENV
 
       - name: Load release python packages
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: release_dist_python
           path: dist
 
       - name: Load release binaries for linux
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: release_dist_bin_linux
           path: dist
 
       - name: Load release binaries for windows
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: release_dist_bin_win
           path: dist
 
       - name: Load release binaries for macos
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: release_dist_bin_macos
           path: dist
