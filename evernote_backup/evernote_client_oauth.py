@@ -123,7 +123,6 @@ class EvernoteOAuthClient(EvernoteClientBase):
         )
 
     def get_request_token(self, callback_url: str) -> dict:
-
         client = self._get_oauth_client()
 
         request_url = "{0}?oauth_callback={1}".format(
