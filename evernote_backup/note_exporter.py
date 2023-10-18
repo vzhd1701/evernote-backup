@@ -59,7 +59,7 @@ class NoteExporter(object):
             raise NothingToExportError
 
         if count_notes > 0:
-            logger.info("Exporting notes...")
+            logger.info("Exporting notebooks...")
 
             self._export_active()
 
