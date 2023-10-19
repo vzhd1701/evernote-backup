@@ -37,7 +37,7 @@ $ pipx install evernote-backup
 $ pip install --user evernote-backup
 ```
 
-**Python 3.7 or later required.**
+**Python 3.8 or later required.**
 
 ### With Docker
 
