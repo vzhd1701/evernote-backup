@@ -39,7 +39,10 @@ $ pip install --user evernote-backup
 
 **Python 3.8 or later required.**
 
-### With Docker
+### With [**Docker**](https://docs.docker.com/)
+
+[![Docker Image Size (amd64)](<https://img.shields.io/docker/image-size/vzhd1701/evernote-backup?arch=amd64&label=image%20size%20(amd64)>)](https://hub.docker.com/r/vzhd1701/evernote-backup)
+[![Docker Image Size (arm64)](<https://img.shields.io/docker/image-size/vzhd1701/evernote-backup?arch=arm64&label=image%20size%20(arm64)>)](https://hub.docker.com/r/vzhd1701/evernote-backup)
 
 ```bash
 $ docker run --rm -t -v "$PWD":/tmp vzhd1701/evernote-backup:latest
@@ -49,6 +52,17 @@ To log in to Evernote using OAuth with Docker, you'll have to forward port 10500
 
 ```bash
 $ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 vzhd1701/evernote-backup:latest init-db --oauth
+```
+
+### From source
+
+This project uses [poetry](https://python-poetry.org/) for dependency management and packaging. You will have to install it first. See [poetry official documentation](https://python-poetry.org/docs/) for instructions.
+
+```shell
+$ git clone https://github.com/vzhd1701/evernote-backup.git
+$ cd evernote-backup/
+$ poetry install
+$ poetry run evernote-backup
 ```
 
 ## Usage
