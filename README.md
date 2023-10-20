@@ -170,20 +170,20 @@ I've also combined a [bigger list](https://github.com/vzhd1701/evernote-backup/b
 
 ### Export
 
-Project                                                                |  Description                                                                                                      |  Language    |  Stars  |  Last commit
------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------|---------|-------------
-[ExportAllEverNote](https://github.com/dong-s/ExportAllEverNote)       |  Export notes in ENEX format driectly from your account                                                           |  Python      |  13     |  2020
-[evernote2](https://github.com/JackonYang/evernote2)                   |  Improved version of standard Evernote SDK. Also provides a tool for exporting notes driectly from your account  |  Python      |  1      |  2020
-[evernote-to-sqlite](https://github.com/dogsheep/evernote-to-sqlite)   |  Converts ENEX files into SQLite database                                                                         |  Python      |  20     |  2021
-[enote](https://github.com/tkjacobsen/enote)                           |  Utility that can backup Evernote notes and notebooks                                                             |  Python      |  12     |  2017
-[evernote-exporter](https://github.com/shawndaniel/evernote-exporter)  |  Export notes from old Evernote local database .exb format                                                        |  Python      |  28     |  2016
+Project                                                                |  Description                                                                                                      |  Language\
+-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------
+[ExportAllEverNote](https://github.com/dong-s/ExportAllEverNote)       |  Export notes in ENEX format driectly from your account                                                           |  Python\
+[evernote2](https://github.com/JackonYang/evernote2)                   |  Improved version of standard Evernote SDK. Also provides a tool for exporting notes driectly from your account   |  Python\
+[evernote-to-sqlite](https://github.com/dogsheep/evernote-to-sqlite)   |  Converts ENEX files into SQLite database                                                                         |  Python\
+[enote](https://github.com/tkjacobsen/enote)                           |  Utility that can backup Evernote notes and notebooks                                                             |  Python\
+[evernote-exporter](https://github.com/shawndaniel/evernote-exporter)  |  Export notes from old Evernote local database .exb format                                                        |  Python
 
 ### Export / Sync
 
-Project                                                                |  Description                                                                                                      |  Language    |  Stars  |  Last commit
------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------|---------|-------------
-[SyncToGit](https://github.com/KostyaEsmukov/SyncToGit)                |  Syncs your notes with their resources to the git repository in HTML format                                       |  Python      |  3      |  2020
-[evermark](https://github.com/akuma/evermark)                          |  A command line tool for syncing markdown notes to Evernote                                                       |  JavaScript  |  72     |  2018
-[eversync](https://github.com/yejianye/eversync)                       |  Sync your local directories with evernote notebooks                                                              |  Python      |  44     |  2017
-[EverMark](https://github.com/liuwons/EverMark)                        |  A tool that can sync local markdown/text notes to Evernote                                                       |  Python      |  50     |  2016
-[LocalEvernote](https://github.com/lwabish/LocalEvernote)              |  Syncs local directory containing notes in Markdown format with Evernote                                          |  Python      |  0      |  2021
+Project                                                                |  Description                                                                                                      |  Language\
+-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------
+[SyncToGit](https://github.com/KostyaEsmukov/SyncToGit)                |  Syncs your notes with their resources to the git repository in HTML format                                       |  Python\
+[evermark](https://github.com/akuma/evermark)                          |  A command line tool for syncing markdown notes to Evernote                                                       |  JavaScript\
+[eversync](https://github.com/yejianye/eversync)                       |  Sync your local directories with evernote notebooks                                                              |  Python\
+[EverMark](https://github.com/liuwons/EverMark)                        |  A tool that can sync local markdown/text notes to Evernote                                                       |  Python\
+[LocalEvernote](https://github.com/lwabish/LocalEvernote)              |  Syncs local directory containing notes in Markdown format with Evernote                                          |  Python
