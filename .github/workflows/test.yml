@@ -7,12 +7,13 @@ on:
     branches:
       - '**'
     tags-ignore:
-      - '*.*'
-    paths-ignore:
-      - "*.md"
-      - ".pre-commit-config.yaml"
-      - "pyproject.toml"
-      - "**/version.py"
+      - '**'
+    paths:
+      - '**.py'
+      - 'tests/**'
+      - 'poetry.lock'
+      - '.github/workflows/test.yml'
+      - '!**/version.py'
 
 env:
   BUILD_POETRY_VERSION: 1.6.1
@@ -63,7 +64,7 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         shell: bash
-        run: poetry install --no-interaction --no-root
+        run: poetry install --with test --no-interaction --no-root
 
       - name: Run tests
         shell: bash
