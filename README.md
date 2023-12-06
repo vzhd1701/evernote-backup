@@ -154,14 +154,6 @@ If you found a bug or have a feature request, please [open a new issue](https://
 
 If you have a question about the program or have difficulty using it, you are welcome to [the discussions page](https://github.com/vzhd1701/evernote-backup/discussions). You can also mail me directly, I'm always happy to help.
 
-## Dependencies
-
-- [evernote3](https://github.com/evernote/evernote-sdk-python3) - to access Evernote API
-- [oauth2](https://github.com/joestump/python-oauth2) - to perform OAuth authentication
-- [xmltodict](https://github.com/martinblech/xmltodict) - to convert Evernote internal representation of notes into XML
-- [click](https://github.com/pallets/click) - to create a CLI interface
-- [click-option-group](https://github.com/click-contrib/click-option-group) - to add mutually exclusive options in сlick
-
 ## Alternative tools
 
 **evernote-backup** is basically a clone of Evernote's original **ENScript** but simplified and stripped of its other functions. If you prefer to export your notes using Evernote's original tool, then you will need to take hold of [Evernote's legacy client](https://help.evernote.com/hc/en-us/articles/360052560314-Install-an-older-version-of-Evernote) and run the following commands:
