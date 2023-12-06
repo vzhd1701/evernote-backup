@@ -11,7 +11,9 @@ from evernote.edam.error.ttypes import (
     EDAMSystemException,
     EDAMUserException,
 )
+from requests_oauthlib.oauth1_session import TokenRequestDenied
 
+import evernote_backup
 from evernote_backup import cli_app, note_storage
 from evernote_backup.cli import cli
 from evernote_backup.token_util import get_token_shard
@@ -293,35 +295,41 @@ def fake_token():
 
 @pytest.fixture
 def mock_oauth_client(mocker):
-    oauth_mock = mocker.patch("evernote_backup.evernote_client_oauth.oauth2")
+    def fake_request(self, url, **request_kwargs):
+        if self._client.client.resource_owner_key is None:
+            token = {
+                "oauth_token": oauth_mock.fake_oauth_token_id,
+                "oauth_token_secret": oauth_mock.fake_oauth_secret,
+                "oauth_callback_confirmed": "true",
+            }
+        else:
+            if oauth_mock.fake_bad_response:
+                raise TokenRequestDenied(None, None)
+
+            token = {
+                "oauth_token": oauth_mock.fake_token,
+                "oauth_verifier": "FFF2",
+                "sandbox_lnb": "false",
+            }
+
+        self._populate_attributes(token)
+        self.token = token
+        return token
+
+    oauth_mock = mocker.patch.object(
+        evernote_backup.evernote_client_oauth.OAuth1Session,
+        "_fetch_token",
+        fake_request,
+    )
 
     oauth_mock.fake_oauth_token_id = "fake_app.FFF"
     oauth_mock.fake_oauth_secret = "FFF1"
-    oauth_mock.fake_request_url = (
-        f"oauth_token={oauth_mock.fake_oauth_token_id}&"
-        f"oauth_token_secret={oauth_mock.fake_oauth_secret}&"
-        f"oauth_callback_confirmed=true"
-    ).encode()
 
-    oauth_mock.fake_callback_response = {
-        "oauth_token": oauth_mock.fake_oauth_token_id,
-        "oauth_verifier": "FFF2",
-        "sandbox_lnb": "false",
-    }
+    oauth_mock.fake_callback_response = f"/?oauth_token={oauth_mock.fake_oauth_token_id}&oauth_verifier=FFF2&sandbox_lnb=false"
 
     oauth_mock.fake_token = "S=s100:U=fff:E=ffff:C=ffff:P=100:A=appname:V=2:H=ffffff"
 
-    def fake_request(url, method):
-        if method == "POST":
-            response = urllib.parse.urlencode(
-                {"oauth_token": oauth_mock.fake_token}
-            ).encode()
-        else:
-            response = oauth_mock.fake_request_url
-
-        return None, response
-
-    oauth_mock.Client().request.side_effect = fake_request
+    oauth_mock.fake_bad_response = False
 
     return oauth_mock
 

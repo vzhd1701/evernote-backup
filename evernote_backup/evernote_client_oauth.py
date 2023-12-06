@@ -1,10 +1,9 @@
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Optional
-from urllib.parse import parse_qsl, quote, urlparse
 
-import oauth2
+from requests_oauthlib import OAuth1Session
+from requests_oauthlib.oauth1_session import TokenMissing, TokenRequestDenied
 
 from evernote_backup.cli_app_util import is_inside_docker
 from evernote_backup.evernote_client import EvernoteClientBase
@@ -21,14 +20,12 @@ class CallbackHandler(BaseHTTPRequestHandler):
     }
 
     def do_GET(self) -> None:
-        response = urlparse(self.path)
-
-        if response.path != "/oauth_callback":
+        if not self.path.startswith("/oauth_callback?"):
             self.send_response(self.http_codes["NOT FOUND"])
             self.end_headers()
             return
 
-        self.server.callback_response = dict(parse_qsl(response.query))  # type: ignore
+        self.server.callback_response = self.path
 
         self.send_response(self.http_codes["OK"])
         self.end_headers()
@@ -45,7 +42,7 @@ class StoppableHTTPServer(HTTPServer):
     def __init__(self, *args, **kwargs) -> None:  # type: ignore
         super().__init__(*args, **kwargs)
 
-        self.callback_response: dict = {}
+        self.callback_response: str = ""
 
     def run(self) -> None:
         try:  # noqa: WPS501
@@ -62,28 +59,16 @@ class EvernoteOAuthCallbackHandler(object):
 
         self.server_host = server_host
         self.server_port = oauth_port
-        self.oauth_token: dict = {}
 
     def get_oauth_url(self) -> str:
-        self.oauth_token = self.client.get_request_token(
+        return self.client.get_authorize_url(
             f"http://{self.server_host}:{self.server_port}/oauth_callback"
         )
 
-        return self.client.get_authorize_url(self.oauth_token)
-
     def wait_for_token(self) -> str:
-        callback = self._wait_for_callback()
+        return self.client.get_access_token(self._wait_for_callback())
 
-        if "oauth_verifier" not in callback:
-            raise OAuthDeclinedError
-
-        return self.client.get_access_token(
-            oauth_token=callback["oauth_token"],
-            oauth_verifier=callback["oauth_verifier"],
-            oauth_token_secret=self.oauth_token["oauth_token_secret"],
-        )
-
-    def _wait_for_callback(self) -> dict:
+    def _wait_for_callback(self) -> str:
         if is_inside_docker():
             server_param = ("0.0.0.0", self.server_port)  # noqa: S104
         else:
@@ -113,43 +98,31 @@ class EvernoteOAuthClient(EvernoteClientBase):
     ) -> None:
         super().__init__(backend=backend)
 
-        self.consumer_key = consumer_key
-        self.consumer_secret = consumer_secret
+        self.client_key = consumer_key
+        self.client_secret = consumer_secret
 
-    def get_authorize_url(self, request_token: dict) -> str:
-        return "{0}?oauth_token={1}".format(
-            self._get_endpoint("OAuth.action"),
-            quote(request_token["oauth_token"]),
+        self._session = None
+
+    def get_authorize_url(self, callback_url: str) -> str:
+        self._session = OAuth1Session(
+            client_key=self.client_key,
+            client_secret=self.client_secret,
+            callback_uri=callback_url,
         )
 
-    def get_request_token(self, callback_url: str) -> dict:
-        client = self._get_oauth_client()
+        self._session.fetch_request_token(self._get_endpoint("oauth"))
 
-        request_url = "{0}?oauth_callback={1}".format(
-            self._get_endpoint("oauth"), quote(callback_url)
-        )
+        return self._session.authorization_url(self._get_endpoint("OAuth.action"))
 
-        _, response_content = client.request(request_url, "GET")
+    def get_access_token(self, callback_response_raw: str) -> str:
+        try:
+            self._session.parse_authorization_response(callback_response_raw)
+        except TokenMissing:
+            raise OAuthDeclinedError
 
-        return dict(parse_qsl(response_content.decode("utf-8")))
+        try:
+            access_token = self._session.fetch_access_token(self._get_endpoint("oauth"))
+        except TokenRequestDenied:
+            raise OAuthDeclinedError
 
-    def get_access_token(
-        self,
-        oauth_token: str,
-        oauth_token_secret: str,
-        oauth_verifier: str,
-    ) -> str:
-        token = oauth2.Token(oauth_token, oauth_token_secret)
-        token.set_verifier(oauth_verifier)
-
-        client = self._get_oauth_client(token)
-
-        _, response_content = client.request(self._get_endpoint("oauth"), "POST")
-        access_token_dict = dict(parse_qsl(response_content.decode("utf-8")))
-
-        return access_token_dict["oauth_token"]
-
-    def _get_oauth_client(self, token: Optional[oauth2.Token] = None) -> oauth2.Client:
-        consumer = oauth2.Consumer(self.consumer_key, self.consumer_secret)
-
-        return oauth2.Client(consumer, token) if token else oauth2.Client(consumer)
+        return access_token["oauth_token"]

@@ -78,7 +78,22 @@ def test_get_auth_token_url(mock_oauth_client, mock_evernote_oauth_client):
 
 @pytest.mark.usefixtures("mock_oauth_http_server")
 def test_get_auth_token_declined(mock_oauth_client, mock_evernote_oauth_client):
-    del mock_oauth_client.fake_callback_response["oauth_verifier"]
+    mock_oauth_client.fake_callback_response = "/"
+
+    oauth_handler = EvernoteOAuthCallbackHandler(
+        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
+    )
+    oauth_handler.get_oauth_url()
+
+    with pytest.raises(OAuthDeclinedError):
+        oauth_handler.wait_for_token()
+
+
+@pytest.mark.usefixtures("mock_oauth_http_server")
+def test_get_auth_token_declined_bad_response(
+    mock_oauth_client, mock_evernote_oauth_client
+):
+    mock_oauth_client.fake_bad_response = True
 
     oauth_handler = EvernoteOAuthCallbackHandler(
         mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
@@ -131,7 +146,7 @@ def test_callback_handler(mocker):
 
     CallbackHandler.do_GET(mock_instance)
 
-    assert mock_instance.server.callback_response == {"test_param": "test"}
+    assert mock_instance.server.callback_response == mock_instance.path
     mock_instance.send_response.assert_called_once_with(
         CallbackHandler.http_codes["OK"]
     )

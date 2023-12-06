@@ -285,7 +285,7 @@ def test_oauth_login_custom_port(
 def test_oauth_login_declined_error(
     cli_invoker, fake_storage, mock_evernote_client, mock_oauth_client, mocker
 ):
-    del mock_oauth_client.fake_callback_response["oauth_verifier"]
+    mock_oauth_client.fake_callback_response = "/"
 
     mocker.patch("evernote_backup.cli_app_util.click.echo")
     mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
