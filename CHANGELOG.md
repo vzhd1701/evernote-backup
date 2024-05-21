@@ -1,3 +1,7 @@
+### Bug Fixes
+
+- fix no module named pyutil (close #[89](https://github.com/vzhd1701/evernote-backup/issues/89))
+
 ### [1.9.3](https://github.com/vzhd1701/evernote-backup/compare/1.9.2...1.9.3) (2023-10-18)
 
 ### Bug Fixes
