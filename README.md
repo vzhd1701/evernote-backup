@@ -87,7 +87,10 @@ Successfully initialized database for user!
 
 By default, it will prompt you to enter your account credentials. You can provide them beforehand with `--user` and `--password` options.
 
-If you log in to Evernote with Google or Apple accounts, you must use the `--oauth` option.
+To use **OAuth**, add the `--oauth` option, i.e., `evernote-backup init-db --oauth`. The program will open a browser window where you will 
+authenticate to Evernote and authorize evernote-backup to access your account.  Note that as of mid-year 2024, Evernote is no longer 
+accepting non-OAuth logins from external servers, and so you will likely need to use this option. You will also need to use this option, if 
+you log in to Evernote with Google or Apple accounts.
 
 To connect to **Yinxiang** instead of Evernote, use `--backend china` option. Unfortunately, OAuth is not supported for **Yinxiang** yet.
 
@@ -146,7 +149,8 @@ After first initialization, you can schedule `evernote-backup sync` command to k
 
 ### How to refresh expired token
 
-In case your auth token that you initialized your database with expires, you have an option to re-authorize it by running the `evernote-backup reauth` command. It has the same options as the `init-db` command.
+In case your auth token that you initialized your database with expires, you have an option to re-authorize it by running the `evernote-backup reauth` command. 
+It has the same options as the `init-db` command, including `--oauth` which may be required due to Evernote security policies, even if you did not use it at initialization.
 
 ## Getting help
 
