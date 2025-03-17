@@ -193,3 +193,4 @@ Project                                                                |  Descri
 [eversync](https://github.com/yejianye/eversync)                       |  Sync your local directories with evernote notebooks                                                              |  Python
 [EverMark](https://github.com/liuwons/EverMark)                        |  A tool that can sync local markdown/text notes to Evernote                                                       |  Python
 [LocalEvernote](https://github.com/lwabish/LocalEvernote)              |  Syncs local directory containing notes in Markdown format with Evernote                                          |  Python
+[gnsync](https://github.com/vitaly-zdanevich/geeknote)                 |  Part of Geeknote                                                                                                 |  Python
