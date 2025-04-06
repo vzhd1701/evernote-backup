@@ -5,7 +5,7 @@ from evernote_backup.cli_app_util import (
     is_output_to_terminal,
     unscramble,
 )
-from evernote_backup.config import API_DATA_OAUTH
+from evernote_backup.config import API_DATA_EVERNOTE
 from evernote_backup.evernote_client_oauth import (
     EvernoteOAuthCallbackHandler,
     EvernoteOAuthClient,
@@ -14,7 +14,7 @@ from evernote_backup.evernote_client_oauth import (
 
 
 def get_oauth_client(backend: str) -> EvernoteOAuthClient:
-    key, secret = unscramble(API_DATA_OAUTH)
+    key, secret = unscramble(API_DATA_EVERNOTE)
 
     return EvernoteOAuthClient(
         consumer_key=key,

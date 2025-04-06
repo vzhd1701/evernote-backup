@@ -9,13 +9,13 @@ from evernote_backup.cli_app_util import (
     is_output_to_terminal,
     unscramble,
 )
-from evernote_backup.config import API_DATA
+from evernote_backup.config import API_DATA_YINXIANG
 from evernote_backup.evernote_client_auth import EvernoteClientAuth
 from evernote_backup.evernote_client_util import EvernoteAuthError
 
 
 def get_auth_client(backend: str, network_retry_count: int) -> EvernoteClientAuth:
-    key, secret = unscramble(API_DATA)
+    key, secret = unscramble(API_DATA_YINXIANG)
 
     return EvernoteClientAuth(
         consumer_key=key,
