@@ -27,8 +27,13 @@ jobs:
         with:
           poetry-version: ${{ env.BUILD_POETRY_VERSION }}
 
+      - name: Get Git commit timestamp
+        run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> $GITHUB_ENV
+
       - name: Build project for distribution
         run: poetry build
+        env:
+          SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
 
       - name: Publish to PyPI
         env:
@@ -40,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update Homebrew formula
-        uses: dawidd6/action-homebrew-bump-formula@v3
+        uses: dawidd6/action-homebrew-bump-formula@v4
         with:
           token: ${{ secrets.BREW_BUMP_TOKEN }}
           formula: ${{ env.PACKAGE_NAME }}
