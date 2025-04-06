@@ -1,3 +1,11 @@
+## [1.9.4](https://github.com/vzhd1701/evernote-backup/compare/v1.9.3...v1.9.4) (2025-04-06)
+
+### Bug Fixes
+
+- drop evernote sandbox backend ([d4b99c7](https://github.com/vzhd1701/evernote-backup/commit/d4b99c76d82800dbcdd75f87b6614f94352faeb9))
+- update yinxiang API key ([1d43fa4](https://github.com/vzhd1701/evernote-backup/commit/1d43fa47d1a78d86f7d759a3a9ab8be4b1161137))
+- use oauth login for evernote and password login for yinxiang ([4930005](https://github.com/vzhd1701/evernote-backup/commit/4930005a3cf25fe30eed0e1173a6e2321f4289ce))
+
 ### [1.9.3](https://github.com/vzhd1701/evernote-backup/compare/1.9.2...1.9.3) (2023-10-18)
 
 ### Bug Fixes
