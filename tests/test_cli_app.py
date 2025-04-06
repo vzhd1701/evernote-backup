@@ -3,6 +3,7 @@ import logging
 
 import pytest
 from evernote.edam.error.ttypes import EDAMSystemException
+from thrift.Thrift import TApplicationException
 
 from evernote_backup import cli as cli_module
 from evernote_backup.cli_app_util import ProgramTerminatedError, get_progress_output
@@ -80,8 +81,20 @@ def test_cli_program_error_unexpected(mocker, caplog):
     with pytest.raises(SystemExit):
         cli_module.main()
 
-    assert "test2" in caplog.messages[0]
-    assert "Traceback" in caplog.messages[0]
+    assert "Unknown exception" in caplog.messages[0]
+    assert "Traceback" in caplog.text
+    assert "test2" in caplog.text
+
+
+def test_cli_program_error_thrift(mocker, caplog):
+    cli_mock = mocker.patch("evernote_backup.cli.cli")
+    cli_mock.side_effect = TApplicationException(message="test2")
+
+    with pytest.raises(SystemExit):
+        cli_module.main()
+
+    assert "Thrift exception: test2" in caplog.messages[0]
+    assert "Traceback" in caplog.text
 
 
 def test_cli_program_error_unexpected_edam(mocker, caplog):

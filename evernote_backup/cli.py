@@ -7,6 +7,7 @@ from typing import Optional
 import click
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 from evernote.edam.error.ttypes import EDAMErrorCode, EDAMSystemException
+from thrift.Thrift import TApplicationException
 
 from evernote_backup import cli_app, config_defaults
 from evernote_backup.cli_app_click_util import (
@@ -315,6 +316,9 @@ def main() -> None:
 
         logger.critical(f"Rate limit reached. Restart program in {time_left}.")
         sys.exit(1)
+    except TApplicationException as e:
+        logger.exception(f"Thrift exception: {e.message}")
+        sys.exit(1)
     except Exception:
-        logger.critical(traceback.format_exc())
+        logger.exception("Unknown exception")
         sys.exit(1)
