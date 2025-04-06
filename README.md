@@ -51,7 +51,7 @@ $ docker run --rm -t -v "$PWD":/tmp vzhd1701/evernote-backup:latest
 To log in to Evernote using OAuth with Docker, you'll have to forward port 10500 for a callback:
 
 ```bash
-$ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 vzhd1701/evernote-backup:latest init-db --oauth
+$ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 vzhd1701/evernote-backup:latest init-db
 ```
 
 ### From source
@@ -85,11 +85,9 @@ Reading database en_backup.db...
 Successfully initialized database for user!
 ```
 
-By default, it will prompt you to enter your account credentials. You can provide them beforehand with `--user` and `--password` options.
+If you log in to Evernote, it will prompt you to complete OAuth login using your browser.
 
-If you log in to Evernote with Google or Apple accounts, you must use the `--oauth` option.
-
-To connect to **Yinxiang** instead of Evernote, use `--backend china` option. Unfortunately, OAuth is not supported for **Yinxiang** yet.
+To connect to **Yinxiang** instead of Evernote, use `--backend china` option. It will prompt you to enter your account credentials. You can provide them beforehand with `--user` and `--password` options. OAuth is not supported for **Yinxiang**.
 
 ### Step 2. Downloading Evernote data
 
