@@ -154,16 +154,7 @@ If you found a bug or have a feature request, please [open a new issue](https://
 
 If you have a question about the program or have difficulty using it, you are welcome to [the discussions page](https://github.com/vzhd1701/evernote-backup/discussions). You can also mail me directly, I'm always happy to help.
 
-## Alternative tools
-
-**evernote-backup** is basically a clone of Evernote's original **ENScript** but simplified and stripped of its other functions. If you prefer to export your notes using Evernote's original tool, then you will need to take hold of [Evernote's legacy client](https://help.evernote.com/hc/en-us/articles/360052560314-Install-an-older-version-of-Evernote) and run the following commands:
-
-```console
-ENScript.exe syncDatabase /d backup.ebx /u your@email.com /p your_password
-ENScript.exe exportDatabase /d backup.ebx /f output_dir
-```
-
-### Further reading
+## Further reading
 
 - [How to export Notebooks in new Evernote client](https://help.evernote.com/hc/en-us/articles/360053159414-Export-notebooks)
 - [Backing up and restoring Evernote data (Reference article) (requires registration)](https://discussion.evernote.com/forums/topic/86152-backing-up-and-restoring-evernote-data-reference-article/?tab=comments#comment-367110)
