@@ -23,7 +23,6 @@ def init_db(
     database: Path,
     auth_user: Optional[str],
     auth_password: Optional[str],
-    auth_is_oauth: bool,
     auth_oauth_port: int,
     auth_oauth_host: str,
     auth_token: Optional[str],
@@ -38,7 +37,6 @@ def init_db(
         auth_token = get_auth_token(
             auth_user,
             auth_password,
-            auth_is_oauth,
             auth_oauth_port,
             auth_oauth_host,
             backend,
@@ -64,7 +62,6 @@ def reauth(
     database: Path,
     auth_user: Optional[str],
     auth_password: Optional[str],
-    auth_is_oauth: bool,
     auth_oauth_port: int,
     auth_oauth_host: str,
     auth_token: Optional[str],
@@ -80,7 +77,6 @@ def reauth(
         auth_token = get_auth_token(
             auth_user,
             auth_password,
-            auth_is_oauth,
             auth_oauth_port,
             auth_oauth_host,
             backend,

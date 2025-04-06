@@ -38,13 +38,6 @@ def evernote_login_oauth(backend: str, oauth_port: int, oauth_host: str) -> str:
     if not is_output_to_terminal():
         raise ProgramTerminatedError("OAuth requires user input!")
 
-    if backend.startswith("china"):
-        raise ProgramTerminatedError(
-            "OAuth is not supported to log in to Yinxiang!\n"
-            "You will have to reset your Evernote account password"
-            " and use your credentials to log in."
-        )
-
     oauth_client = get_oauth_client(backend)
 
     oauth_handler = EvernoteOAuthCallbackHandler(oauth_client, oauth_port, oauth_host)

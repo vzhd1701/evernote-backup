@@ -278,12 +278,28 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
         database=Path("fake_db"),
         auth_user=None,
         auth_password=None,
-        auth_is_oauth=False,
         auth_oauth_port=10500,
         auth_oauth_host="localhost",
         auth_token=fake_token,
         force=False,
         backend="evernote",
+        network_retry_count=50,
+    )
+
+
+@pytest.fixture()
+def fake_init_db_china(fake_storage, fake_token, mock_evernote_client):
+    mock_evernote_client.fake_user = "fake_user"
+
+    cli_app.init_db(
+        database=Path("fake_db"),
+        auth_user=None,
+        auth_password=None,
+        auth_oauth_port=10500,
+        auth_oauth_host="localhost",
+        auth_token=fake_token,
+        force=False,
+        backend="china",
         network_retry_count=50,
     )
 

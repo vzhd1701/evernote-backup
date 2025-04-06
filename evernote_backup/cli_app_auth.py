@@ -42,7 +42,6 @@ def get_sync_client(
 def get_auth_token(
     auth_user: Optional[str],
     auth_password: Optional[str],
-    auth_is_oauth: bool,
     auth_oauth_port: int,
     auth_oauth_host: str,
     backend: str,
@@ -50,12 +49,15 @@ def get_auth_token(
 ) -> str:
     logger.info("Logging in to Evernote...")
 
-    if auth_is_oauth:
-        return evernote_login_oauth(backend, auth_oauth_port, auth_oauth_host)
+    if backend.startswith("china"):
+        logger.info("Using password authentication...")
 
-    return evernote_login_password(
-        auth_user,
-        auth_password,
-        backend,
-        network_retry_count,
-    )
+        return evernote_login_password(
+            auth_user,
+            auth_password,
+            backend,
+            network_retry_count,
+        )
+
+    logger.info("Using OAuth authentication...")
+    return evernote_login_oauth(backend, auth_oauth_port, auth_oauth_host)

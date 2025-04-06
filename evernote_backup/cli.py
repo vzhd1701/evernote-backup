@@ -26,38 +26,27 @@ logger = logging.getLogger()
 opt_user = click.option(
     "--user",
     "-u",
-    help="Account email or username.",
+    help="Account email or username (works only for Yinxiang).",
 )
 
 opt_password = click.option(
     "--password",
     "-p",
-    help="Account password.",
-)
-
-opt_oauth = click.option(
-    "--oauth",
-    is_flag=True,
-    help=(
-        "OAuth login flow."
-        " Use this if you signed up for Evernote with Google or Apple account."
-        " (Ignores '--user' and '--password' when used."
-        " Doesn't work for Yinxiang.)"
-    ),
+    help="Account password (works only for Yinxiang).",
 )
 
 opt_oauth_port = click.option(
     "--oauth-port",
     default=config_defaults.OAUTH_LOCAL_PORT,
     show_default=True,
-    help="OAuth local server port. (Advanced option, use with --oauth.)",
+    help="OAuth local server port. (Advanced option, ignored for Yinxiang.)",
 )
 
 opt_oauth_host = click.option(
     "--oauth-host",
     default=config_defaults.OAUTH_HOST,
     show_default=True,
-    help="OAuth local server host. (Advanced option, use with --oauth.)",
+    help="OAuth local server host. (Advanced option, ignored for Yinxiang.)",
 )
 
 opt_token = click.option(
@@ -126,9 +115,7 @@ def cli(quiet: bool, verbose: bool) -> None:
 
 @cli.command()
 @opt_database
-@group_options(
-    opt_user, opt_password, opt_oauth, opt_oauth_port, opt_oauth_host, opt_token
-)
+@group_options(opt_user, opt_password, opt_oauth_port, opt_oauth_host, opt_token)
 @click.option(
     "--force",
     is_flag=True,
@@ -138,7 +125,7 @@ def cli(quiet: bool, verbose: bool) -> None:
     "--backend",
     default=config_defaults.BACKEND,
     show_default=True,
-    type=click.Choice(["evernote", "evernote:sandbox", "china", "china:sandbox"]),
+    type=click.Choice(["evernote", "china", "china:sandbox"]),
     help="API backend to connect to. If you are using Yinxiang, select 'china'.",
 )
 @opt_network_retry_count
@@ -146,7 +133,6 @@ def init_db(
     database: Path,
     user: Optional[str],
     password: Optional[str],
-    oauth: bool,
     oauth_port: int,
     oauth_host: str,
     token: Optional[str],
@@ -160,7 +146,6 @@ def init_db(
         database=database,
         auth_user=user,
         auth_password=password,
-        auth_is_oauth=oauth,
         auth_oauth_port=oauth_port,
         auth_oauth_host=oauth_host,
         auth_token=token,
@@ -273,15 +258,12 @@ click.password_option()
 
 @cli.command()
 @opt_database
-@group_options(
-    opt_user, opt_password, opt_oauth, opt_oauth_port, opt_oauth_host, opt_token
-)
+@group_options(opt_user, opt_password, opt_oauth_port, opt_oauth_host, opt_token)
 @opt_network_retry_count
 def reauth(
     database: Path,
     user: Optional[str],
     password: Optional[str],
-    oauth: bool,
     oauth_port: int,
     oauth_host: str,
     token: Optional[str],
@@ -293,7 +275,6 @@ def reauth(
         database=database,
         auth_user=user,
         auth_password=password,
-        auth_is_oauth=oauth,
         auth_oauth_port=oauth_port,
         auth_oauth_host=oauth_host,
         auth_token=token,

@@ -36,7 +36,7 @@ def test_user_mismatch_error(fake_storage, cli_invoker, mock_evernote_client):
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_no_username_error(fake_storage, cli_invoker):
     with pytest.raises(ProgramTerminatedError) as excinfo:
         cli_invoker("reauth", "--database", "fake_db")
@@ -50,7 +50,7 @@ def test_no_database_error(cli_invoker, fake_token):
     assert "Initialize database first!" in str(excinfo.value)
 
 
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login(cli_invoker, fake_storage, mock_evernote_client):
     mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
@@ -62,7 +62,7 @@ def test_password_login(cli_invoker, fake_storage, mock_evernote_client):
     )
 
 
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_unexpected_error(
     cli_invoker, fake_storage, mock_evernote_client
 ):
@@ -83,7 +83,7 @@ def test_password_login_bad_token_error(
     assert "Wrong token format!" in str(excinfo.value)
 
 
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_wrong_username_error(
     cli_invoker, fake_storage, mock_evernote_client
 ):
@@ -94,7 +94,7 @@ def test_password_login_wrong_username_error(
     assert "Username not found!" in str(excinfo.value)
 
 
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_wrong_password_error(
     cli_invoker, fake_storage, mock_evernote_client
 ):
@@ -106,7 +106,7 @@ def test_password_login_wrong_password_error(
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_no_pass(
     cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt
 ):
@@ -125,7 +125,7 @@ def test_password_login_no_pass(
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_no_login(
     cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt
 ):
@@ -144,7 +144,7 @@ def test_password_login_no_login(
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_two_factor(
     cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt
 ):
@@ -161,7 +161,7 @@ def test_password_login_two_factor(
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_two_factor_hint(
     cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt
 ):
@@ -180,7 +180,7 @@ def test_password_login_two_factor_hint(
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_two_factor_bad_ota_error(
     cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt, fake_token
 ):
@@ -195,7 +195,7 @@ def test_password_login_two_factor_bad_ota_error(
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_two_factor_unexpected_error(
     cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt
 ):
@@ -208,7 +208,7 @@ def test_password_login_two_factor_unexpected_error(
         cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
 
 
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_two_factor_silent_error(
     cli_invoker, fake_storage, mock_evernote_client, mock_output_to_terminal
 ):
@@ -228,7 +228,7 @@ def test_oauth_login_silent_error(
     mock_output_to_terminal.is_tty = False
 
     with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db", "--oauth")
+        cli_invoker("reauth", "-d", "fake_db")
     assert "requires user input" in str(excinfo.value)
 
 
@@ -241,7 +241,7 @@ def test_oauth_login(
     mocker.patch("evernote_backup.cli_app_util.click.echo")
     mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
 
-    cli_invoker("reauth", "-d", "fake_db", "--oauth")
+    cli_invoker("reauth", "-d", "fake_db")
 
     mock_launch.assert_called_once_with(
         "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
@@ -267,7 +267,7 @@ def test_oauth_login_custom_port(
 
     test_port = 10666
 
-    cli_invoker("reauth", "-d", "fake_db", "--oauth", "--oauth-port", test_port)
+    cli_invoker("reauth", "-d", "fake_db", "--oauth-port", test_port)
 
     mock_oauth_http_server.assert_any_call(("localhost", test_port), mocker.ANY)
     mock_launch.assert_called_once_with(
@@ -291,7 +291,7 @@ def test_oauth_login_declined_error(
     mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
 
     with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db", "--oauth")
+        cli_invoker("reauth", "-d", "fake_db")
     assert "declined" in str(excinfo.value)
 
     mock_launch.assert_called_once_with(
