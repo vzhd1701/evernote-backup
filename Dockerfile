@@ -1,6 +1,6 @@
 FROM debian:12-slim AS build
 
-ENV BUILD_POETRY_VERSION=1.6.1
+ENV BUILD_POETRY_VERSION=2.1.2
 
 RUN apt-get update && \
     apt-get install --no-install-suggests --no-install-recommends --yes python3-venv python3-pip && \
