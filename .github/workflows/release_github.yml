@@ -35,6 +35,7 @@ jobs:
         uses: abatilo/actions-poetry@v3
         with:
           poetry-version: ${{ env.BUILD_POETRY_VERSION }}
+          poetry-plugins: "poetry-plugin-export"
 
       - name: Export requirements
         run: poetry export --without-hashes -f requirements.txt --output requirements.txt
