@@ -6,8 +6,8 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+"
 
 env:
-  BUILD_PYTHON_VERSION: 3.8
-  BUILD_POETRY_VERSION: 1.6.1
+  BUILD_PYTHON_VERSION: 3.9
+  BUILD_POETRY_VERSION: 2.1.2
   PACKAGE_NAME: evernote-backup
 
 jobs:
@@ -15,15 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
       - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: abatilo/actions-poetry@v2
+        uses: abatilo/actions-poetry@v3
         with:
           poetry-version: ${{ env.BUILD_POETRY_VERSION }}
 
