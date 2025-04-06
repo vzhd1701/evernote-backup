@@ -44,7 +44,7 @@ def test_init_db_new_file(tmp_path, cli_invoker, mock_evernote_client, fake_toke
 
 @pytest.mark.parametrize(
     "backend",
-    ["evernote", "evernote:sandbox", "china", "china:sandbox"],
+    ["evernote", "china", "china:sandbox"],
 )
 def test_init_db_new_file_backend(
     backend, tmp_path, cli_invoker, mock_evernote_client, fake_token

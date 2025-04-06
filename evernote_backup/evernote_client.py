@@ -20,7 +20,6 @@ class EvernoteClientBase(object):
 
         backends = {
             "evernote": "www.evernote.com",
-            "evernote:sandbox": "sandbox.evernote.com",
             "china": "app.yinxiang.com",
             "china:sandbox": "sandbox.yinxiang.com",
         }
