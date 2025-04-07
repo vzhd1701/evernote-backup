@@ -7,6 +7,7 @@ from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, as_completed
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from click import progressbar
+from evernote.edam.error.ttypes import EDAMErrorCode, EDAMSystemException
 from evernote.edam.notestore.ttypes import SyncChunk
 from evernote.edam.type.ttypes import LinkedNotebook, Note
 
@@ -31,6 +32,10 @@ class WrongAuthUserError(Exception):
 
 class WorkerStopException(Exception):
     """Raise when workers are stopped"""
+
+
+class NoteDownloadException(Exception):
+    """Raise when downloading note fails"""
 
 
 def get_note_size(note: Note) -> int:
@@ -146,13 +151,25 @@ class NoteClientWorker(object):
         for _ in range(retry_count):
             try:
                 return self._note_client.get_note(note_id)
+            except EDAMSystemException as e:
+                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                    raise
+
+                error_code_name = EDAMErrorCode._VALUES_TO_NAMES.get(
+                    e.errorCode, f"UNKNOWN [{e.errorCode}]"
+                )
+
+                raise NoteDownloadException(
+                    f"Remote server returned system error ({error_code_name} - {e.message})"
+                    f" while downloading note [{note_id}]"
+                )
             except struct.error:
                 logger.debug(
                     f"Remote server returned bad data"
                     f" while downloading note [{note_id}], retrying..."
                 )
 
-        raise RuntimeError(
+        raise NoteDownloadException(
             f"Failed to download note [{note_id}] after {retry_count} attempts!"
         )
 
@@ -379,12 +396,24 @@ class NoteSynchronizer(object):  # noqa: WPS214
             for note_f in as_completed(note_futures):
                 f_exc = note_f.exception()
                 if f_exc is not None:
-                    logger.critical(
-                        f"Exception caught while downloading note"
-                        f" '{note_futures[note_f]}'!"
-                    )
+                    if isinstance(f_exc, NoteDownloadException):
+                        logger.error(f_exc)
+                        logger.warning(
+                            f"Note '{note_futures[note_f]}' will be skipped for this run"
+                            " and retried during the next sync."
+                        )
+                        notes_bar.update(1)
+                        continue
+                    elif isinstance(f_exc, EDAMSystemException):
+                        # Only for rate limit error
+                        raise f_exc
+                    else:
+                        logger.critical(
+                            f"Unknown exception caught while downloading note"
+                            f" '{note_futures[note_f]}'!"
+                        )
 
-                    raise f_exc
+                        raise f_exc
 
                 note = note_f.result(timeout=120)  # noqa: WPS432
                 self.storage.notes.add_note(note)

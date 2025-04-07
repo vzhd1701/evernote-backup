@@ -3,6 +3,7 @@ import time
 from hashlib import md5
 
 import pytest
+from evernote.edam.error.ttypes import EDAMErrorCode, EDAMSystemException
 from evernote.edam.type.ttypes import (
     Data,
     LinkedNotebook,
@@ -588,15 +589,15 @@ def test_sync_interrupt_download(
 
 
 @pytest.mark.usefixtures("fake_init_db")
-def test_sync_exception_while_download(
-    cli_invoker, mock_evernote_client, fake_storage, mocker
+def test_sync_unknown_exception_while_download(
+    cli_invoker, mock_evernote_client, fake_storage, mocker, caplog
 ):
-    test_notes = [Note(guid=f"id{i}", title="test") for i in range(100)]
+    test_notes = [Note(guid=f"id{i}", title="test") for i in range(10)]
 
     mock_evernote_client.fake_notes.extend(test_notes)
 
     def fake_get_note(note_guid):
-        if note_guid == "id10":
+        if note_guid == "id3":
             raise RuntimeError("Test error")
 
         return Note(
@@ -613,22 +614,99 @@ def test_sync_exception_while_download(
     )
     mock_get_note.side_effect = fake_get_note
 
+    # with caplog.at_level(logging.DEBUG):
     with pytest.raises(RuntimeError) as excinfo:
         cli_invoker("sync", "--database", "fake_db")
 
     assert str(excinfo.value) == "Test error"
+    assert "Unknown exception caught" in caplog.text
 
 
 @pytest.mark.usefixtures("fake_init_db")
-def test_sync_exception_while_download_retry_fail(
-    cli_invoker, mock_evernote_client, fake_storage, mocker
+def test_sync_edam_exception_while_download(
+    cli_invoker, mock_evernote_client, fake_storage, mocker, caplog
 ):
-    test_notes = [Note(guid=f"id{i}", title="test") for i in range(100)]
+    test_notes = [Note(guid=f"id{i}", title="test") for i in range(10)]
 
     mock_evernote_client.fake_notes.extend(test_notes)
 
     def fake_get_note(note_guid):
-        if note_guid == "id10":
+        if note_guid == "id3":
+            raise EDAMSystemException(
+                errorCode=EDAMErrorCode.INTERNAL_ERROR, message="Test error"
+            )
+
+        return Note(
+            guid=note_guid,
+            title="test",
+            content="test",
+            notebookGuid="test",
+            contentLength=100,
+            active=True,
+        )
+
+    mock_get_note = mocker.patch(
+        "evernote_backup.evernote_client_sync.EvernoteClientSync.get_note"
+    )
+    mock_get_note.side_effect = fake_get_note
+
+    cli_invoker("sync", "--database", "fake_db")
+
+    assert "INTERNAL_ERROR - Test error" in caplog.text
+    assert (
+        "Note 'test' will be skipped for this run and retried during the next sync"
+        in caplog.text
+    )
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_edam_rate_limit_exception_while_download(
+    cli_invoker, mock_evernote_client, fake_storage, mocker, caplog
+):
+    test_notes = [Note(guid=f"id{i}", title="test") for i in range(10)]
+
+    mock_evernote_client.fake_notes.extend(test_notes)
+
+    def fake_get_note(note_guid):
+        if note_guid == "id3":
+            raise EDAMSystemException(
+                errorCode=EDAMErrorCode.RATE_LIMIT_REACHED,
+                message="Test rate limit",
+                rateLimitDuration=10,
+            )
+
+        return Note(
+            guid=note_guid,
+            title="test",
+            content="test",
+            notebookGuid="test",
+            contentLength=100,
+            active=True,
+        )
+
+    mock_get_note = mocker.patch(
+        "evernote_backup.evernote_client_sync.EvernoteClientSync.get_note"
+    )
+    mock_get_note.side_effect = fake_get_note
+
+    with pytest.raises(EDAMSystemException) as excinfo:
+        cli_invoker("sync", "--database", "fake_db")
+
+    assert excinfo.value.message == "Test rate limit"
+    assert excinfo.value.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED
+    assert excinfo.value.rateLimitDuration == 10
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_exception_while_download_retry_fail(
+    cli_invoker, mock_evernote_client, fake_storage, mocker, caplog
+):
+    test_notes = [Note(guid=f"id{i}", title="test") for i in range(10)]
+
+    mock_evernote_client.fake_notes.extend(test_notes)
+
+    def fake_get_note(note_guid):
+        if note_guid == "id3":
             raise struct.error
 
         return Note(
@@ -645,10 +723,13 @@ def test_sync_exception_while_download_retry_fail(
     )
     mock_get_note.side_effect = fake_get_note
 
-    with pytest.raises(RuntimeError) as excinfo:
-        cli_invoker("sync", "--database", "fake_db")
+    cli_invoker("sync", "--database", "fake_db")
 
-    assert "Failed to download note" in str(excinfo.value)
+    assert "Failed to download note [id3] after 5 attempts" in caplog.text
+    assert (
+        "Note 'test' will be skipped for this run and retried during the next sync"
+        in caplog.text
+    )
 
 
 @pytest.mark.usefixtures("fake_init_db")
