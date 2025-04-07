@@ -136,6 +136,7 @@ def export(
     single_notes: bool,
     include_trash: bool,
     no_export_date: bool,
+    add_guid: bool,
     overwrite: bool,
     output_path: Path,
 ) -> None:
@@ -149,6 +150,7 @@ def export(
         single_notes=single_notes,
         export_trash=include_trash,
         no_export_date=no_export_date,
+        add_guid=add_guid,
         overwrite=overwrite,
     )
 

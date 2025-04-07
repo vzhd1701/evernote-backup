@@ -34,6 +34,7 @@ class NoteExporter(object):
         single_notes: bool,
         export_trash: bool,
         no_export_date: bool,
+        add_guid: bool,
         overwrite: bool,
     ) -> None:
         self.storage = storage
@@ -42,6 +43,7 @@ class NoteExporter(object):
         self.single_notes = single_notes
         self.export_trash = export_trash
         self.no_export_date = no_export_date
+        self.add_guid = add_guid
 
     def export_notebooks(self) -> None:
         count_notes = self.storage.notes.get_notes_count()
@@ -112,18 +114,23 @@ class NoteExporter(object):
         for note in notes_source:
             note_path = self.safe_paths.get_file(*parent_dir, f"{note.title}.enex")
 
-            _write_export_file(note_path, note, self.no_export_date)
+            _write_export_file(note_path, note, self.no_export_date, self.add_guid)
 
     def _output_notebook(
         self, parent_dir: List[str], notebook_name: str, notes_source: Iterable[Note]
     ) -> None:
         notebook_path = self.safe_paths.get_file(*parent_dir, f"{notebook_name}.enex")
 
-        _write_export_file(notebook_path, notes_source, self.no_export_date)
+        _write_export_file(
+            notebook_path, notes_source, self.no_export_date, self.add_guid
+        )
 
 
 def _write_export_file(
-    file_path: Path, note_source: Union[Iterable[Note], Note], no_export_date: bool
+    file_path: Path,
+    note_source: Union[Iterable[Note], Note],
+    no_export_date: bool,
+    add_guid: bool,
 ) -> None:
     with open(file_path, "w", encoding="utf-8") as f:
         logger.debug(f"Writing file {file_path}")
@@ -139,7 +146,7 @@ def _write_export_file(
                 f' application="Evernote" version="10.10.5">\n'
             )
 
-        note_formatter = NoteFormatter()
+        note_formatter = NoteFormatter(add_guid=add_guid)
 
         if isinstance(note_source, Note):
             if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover

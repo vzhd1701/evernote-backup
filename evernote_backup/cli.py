@@ -256,6 +256,14 @@ def sync(
     ),
 )
 @click.option(
+    "--add-guid",
+    is_flag=True,
+    help=(
+        "Add GUID meta field to every exported note."
+        " (GUID is a unique note identifier used internally by Evernote)"
+    ),
+)
+@click.option(
     "--overwrite",
     is_flag=True,
     help="Overwrite existing ENEX files.",
@@ -271,6 +279,7 @@ def export(
     single_notes: bool,
     include_trash: bool,
     no_export_date: bool,
+    add_guid: bool,
     overwrite: bool,
     output_path: Path,
 ) -> None:
@@ -281,6 +290,7 @@ def export(
         single_notes=single_notes,
         include_trash=include_trash,
         no_export_date=no_export_date,
+        add_guid=add_guid,
         overwrite=overwrite,
         output_path=output_path,
     )

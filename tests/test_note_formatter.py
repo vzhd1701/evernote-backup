@@ -211,3 +211,16 @@ def test_note_from_past(mocker):
 
     assert "<created>00010101T000000Z</created>" in formatted_note
     assert "<updated>03850725T070640Z</updated>" in formatted_note
+
+
+def test_formatter_add_guid(mocker):
+    formatter = NoteFormatter(add_guid=True)
+
+    note_from_future = Note(
+        guid="test-guid",
+        title="test",
+    )
+
+    formatted_note = formatter.format_note(note_from_future)
+
+    assert "<guid>test-guid</guid>" in formatted_note

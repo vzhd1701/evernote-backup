@@ -13,8 +13,9 @@ from evernote_backup.note_formatter_util import fmt_binary, fmt_content, fmt_tim
 class NoteFormatter(object):
     """https://xml.evernote.com/pub/evernote-export3.dtd"""
 
-    def __init__(self) -> None:
+    def __init__(self, add_guid: bool = False) -> None:
         self._raw_elements: dict = {}
+        self.add_guid = add_guid
 
     def format_note(self, note: Note) -> str:
         self._raw_elements = {}
@@ -30,6 +31,9 @@ class NoteFormatter(object):
                 "resource": map(self._fmt_resource, note.resources or []),
             }
         }
+
+        if self.add_guid:
+            note_skeleton["note"]["guid"] = note.guid
 
         if note.attributes:
             note_skeleton["note"]["note-attributes"] = {
