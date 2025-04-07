@@ -9,9 +9,10 @@ from evernote_backup.config import CURRENT_DB_VERSION
 def test_export_empty_db(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("export", "--database", "fake_db", str(test_out_path))
-    assert "Database is empty" in str(excinfo.value)
+    result = cli_invoker("export", "--database", "fake_db", str(test_out_path))
+
+    assert result.exit_code == 1
+    assert "Database is empty" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -20,9 +21,10 @@ def test_export_old_db(cli_invoker, fake_storage, tmp_path):
 
     fake_storage.config.set_config_value("DB_VERSION", "0")
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("export", "--database", "fake_db", str(test_out_path))
-    assert "Full resync is required" in str(excinfo.value)
+    result = cli_invoker("export", "--database", "fake_db", str(test_out_path))
+
+    assert result.exit_code == 1
+    assert "Full resync is required" in result.output
     assert fake_storage.config.get_config_value("DB_VERSION") == str(CURRENT_DB_VERSION)
 
 
@@ -33,9 +35,10 @@ def test_export_old_db_first(cli_invoker, fake_storage, tmp_path):
     with fake_storage.db as con:
         con.execute("DELETE FROM config WHERE name=?", ("DB_VERSION",))
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("export", "--database", "fake_db", str(test_out_path))
-    assert "Full resync is required" in str(excinfo.value)
+    result = cli_invoker("export", "--database", "fake_db", str(test_out_path))
+
+    assert result.exit_code == 1
+    assert "Full resync is required" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")

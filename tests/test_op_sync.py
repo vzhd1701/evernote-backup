@@ -455,8 +455,10 @@ def test_sync_wrong_user(cli_invoker, mock_evernote_client, fake_storage):
 
     fake_storage.config.set_config_value("user", "user2")
 
-    with pytest.raises(ProgramTerminatedError):
-        cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
+
+    assert result.exit_code == 1
+    assert "Current user of this database is user2, not user1" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -590,7 +592,7 @@ def test_sync_interrupt_download(
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_unknown_exception_while_download(
-    cli_invoker, mock_evernote_client, fake_storage, mocker, caplog
+    cli_invoker, mock_evernote_client, fake_storage, mocker
 ):
     test_notes = [Note(guid=f"id{i}", title="test") for i in range(10)]
 
@@ -614,12 +616,11 @@ def test_sync_unknown_exception_while_download(
     )
     mock_get_note.side_effect = fake_get_note
 
-    # with caplog.at_level(logging.DEBUG):
-    with pytest.raises(RuntimeError) as excinfo:
-        cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
-    assert str(excinfo.value) == "Test error"
-    assert "Unknown exception caught" in caplog.text
+    assert result.exit_code == 1
+    assert "Test error" in result.output
+    assert "Unknown exception caught" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -689,12 +690,10 @@ def test_sync_edam_rate_limit_exception_while_download(
     )
     mock_get_note.side_effect = fake_get_note
 
-    with pytest.raises(EDAMSystemException) as excinfo:
-        cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
-    assert excinfo.value.message == "Test rate limit"
-    assert excinfo.value.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED
-    assert excinfo.value.rateLimitDuration == 10
+    assert result.exit_code == 1
+    assert "Rate limit reached. Restart program in 0:10" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -793,9 +792,10 @@ def test_sync_exception_while_download_retry(
 def test_old_db_error(cli_invoker, mock_evernote_client, fake_storage):
     fake_storage.config.set_config_value("DB_VERSION", "0")
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("sync", "--database", "fake_db")
-    assert "Full resync is required" in str(excinfo.value)
+    result = cli_invoker("sync", "--database", "fake_db")
+
+    assert result.exit_code == 1
+    assert "Full resync is required" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")

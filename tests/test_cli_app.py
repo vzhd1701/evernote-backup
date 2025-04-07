@@ -49,14 +49,14 @@ def test_cli_verbose(is_verbose, log_level_expected, cli_invoker, mocker):
     assert logger.getEffectiveLevel() == log_level_expected
 
 
-def test_cli_log_file(cli_invoker, mocker, tmp_path):
+def test_cli_log_file(cli_invoker, tmp_path):
     log_file = tmp_path / "test.log"
 
-    with pytest.raises(ProgramTerminatedError):
-        cli_invoker("--log", log_file, "init-db")
+    result = cli_invoker("--log", log_file, "init-db")
 
     log_content = log_file.read_text(encoding="utf-8")
 
+    assert result.exit_code == 1
     assert log_file.exists()
     assert "Logging in to Evernote" in log_content
 
@@ -80,58 +80,71 @@ def test_cli_test_tty(is_tty, log_format, cli_invoker, mocker, mock_output_to_te
     assert logger.handlers[0].formatter._fmt == log_format
 
 
-def test_cli_program_error(mocker, caplog):
-    cli_mock = mocker.patch("evernote_backup.cli.cli")
-    cli_mock.side_effect = ProgramTerminatedError("test")
+def test_cli_program_error(cli_invoker, mocker):
+    cli_app_mock = mocker.patch("evernote_backup.cli.cli_app")
+    cli_app_mock.init_db.side_effect = ProgramTerminatedError("test error")
 
-    with pytest.raises(SystemExit):
-        cli_module.main()
+    result = cli_invoker("init-db")
 
-    assert caplog.messages[0] == "test"
-
-
-def test_cli_program_error_unexpected(mocker, caplog):
-    cli_mock = mocker.patch("evernote_backup.cli.cli")
-    cli_mock.side_effect = RuntimeError("test2")
-
-    with pytest.raises(SystemExit):
-        cli_module.main()
-
-    assert "Unknown exception" in caplog.messages[0]
-    assert "Traceback" in caplog.text
-    assert "test2" in caplog.text
+    assert result.exit_code == 1
+    assert "test error" in result.output
 
 
-def test_cli_program_error_thrift(mocker, caplog):
-    cli_mock = mocker.patch("evernote_backup.cli.cli")
-    cli_mock.side_effect = TApplicationException(message="test2")
+def test_cli_program_error_unexpected(cli_invoker, mocker):
+    cli_app_mock = mocker.patch("evernote_backup.cli.cli_app")
+    cli_app_mock.init_db.side_effect = RuntimeError("test2")
 
-    with pytest.raises(SystemExit):
-        cli_module.main()
+    result = cli_invoker("init-db")
 
-    assert "Thrift exception: test2" in caplog.messages[0]
-    assert "Traceback" in caplog.text
-
-
-def test_cli_program_error_unexpected_edam(mocker, caplog):
-    cli_mock = mocker.patch("evernote_backup.cli.cli")
-    cli_mock.side_effect = EDAMSystemException(errorCode=100)
-
-    with pytest.raises(SystemExit):
-        cli_module.main()
-
-    assert "EDAMSystemException" in caplog.messages[0]
-    assert "Traceback" in caplog.messages[0]
+    assert result.exit_code == 1
+    assert "Unknown exception" in result.output
+    assert "Traceback" in result.output
+    assert "test2" in result.output
 
 
-def test_cli_program_error_rate_limit(mocker, caplog):
-    cli_mock = mocker.patch("evernote_backup.cli.cli")
-    cli_mock.side_effect = EDAMSystemException(errorCode=19, rateLimitDuration=10)
+def test_cli_program_error_thrift(cli_invoker, mocker):
+    cli_app_mock = mocker.patch("evernote_backup.cli.cli_app")
+    cli_app_mock.init_db.side_effect = TApplicationException(message="test2")
 
-    with pytest.raises(SystemExit):
-        cli_module.main()
+    result = cli_invoker("init-db")
 
-    assert "Rate limit reached" in caplog.messages[0]
+    assert result.exit_code == 1
+    assert "Thrift exception: test2" in result.output
+    assert "Traceback" in result.output
+
+
+def test_cli_program_error_thrift_bytes(cli_invoker, mocker):
+    cli_app_mock = mocker.patch("evernote_backup.cli.cli_app")
+    cli_app_mock.init_db.side_effect = TApplicationException(message=b"test2")
+
+    result = cli_invoker("init-db")
+
+    assert result.exit_code == 1
+    assert "Thrift exception: test2" in result.output
+    assert "Traceback" in result.output
+
+
+def test_cli_program_error_unexpected_edam(cli_invoker, mocker):
+    cli_app_mock = mocker.patch("evernote_backup.cli.cli_app")
+    cli_app_mock.init_db.side_effect = EDAMSystemException(errorCode=100)
+
+    result = cli_invoker("init-db")
+
+    assert result.exit_code == 1
+    assert "EDAMSystemException" in result.output
+    assert "Traceback" in result.output
+
+
+def test_cli_program_error_rate_limit(cli_invoker, mocker):
+    cli_app_mock = mocker.patch("evernote_backup.cli.cli_app")
+    cli_app_mock.init_db.side_effect = EDAMSystemException(
+        errorCode=19, rateLimitDuration=10
+    )
+
+    result = cli_invoker("init-db")
+
+    assert result.exit_code == 1
+    assert "Rate limit reached" in result.output
 
 
 @pytest.mark.parametrize(
@@ -165,6 +178,11 @@ def test_silent_progress(is_quiet, progress_output, is_tty, cli_invoker, mocker)
         assert isinstance(test_out, io.StringIO)
     else:
         assert test_out == progress_output
+
+
+def test_cli_main_call(mocker):
+    mocker.patch("evernote_backup.cli.cli")
+    cli_module.main()
 
 
 def test_cli_main_import():

@@ -30,24 +30,27 @@ def test_user_mismatch_error(fake_storage, cli_invoker, mock_evernote_client):
     mock_evernote_client.fake_user = "user1"
     fake_storage.config.set_config_value("user", "user2")
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
-    assert "Each user must use a different database file" in str(excinfo.value)
+    result = cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
+
+    assert result.exit_code == 1
+    assert "Each user must use a different database file" in result.output
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
 @pytest.mark.usefixtures("fake_init_db_china")
 def test_no_username_error(fake_storage, cli_invoker):
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "--database", "fake_db")
-    assert "--user and --password are required!" in str(excinfo.value)
+    result = cli_invoker("reauth", "--database", "fake_db")
+
+    assert result.exit_code == 1
+    assert "--user and --password are required!" in result.output
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
 def test_no_database_error(cli_invoker, fake_token):
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
-    assert "Initialize database first!" in str(excinfo.value)
+    result = cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
+
+    assert result.exit_code == 1
+    assert "Initialize database first!" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_china")
@@ -68,8 +71,12 @@ def test_password_login_unexpected_error(
 ):
     mock_evernote_client.fake_auth_unexpected_error = True
 
-    with pytest.raises(EDAMUserException):
-        cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
+    )
+
+    assert result.exit_code == 1
+    assert "EDAMUserException" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -78,9 +85,10 @@ def test_password_login_bad_token_error(
 ):
     mock_evernote_client.fake_is_token_bad = True
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db", "-t", fake_token)
-    assert "Wrong token format!" in str(excinfo.value)
+    result = cli_invoker("reauth", "-d", "fake_db", "-t", fake_token)
+
+    assert result.exit_code == 1
+    assert "Wrong token format!" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_china")
@@ -89,9 +97,12 @@ def test_password_login_wrong_username_error(
 ):
     mock_evernote_client.fake_auth_invalid_name = True
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
-    assert "Username not found!" in str(excinfo.value)
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
+    )
+
+    assert result.exit_code == 1
+    assert "Username not found!" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_china")
@@ -100,9 +111,12 @@ def test_password_login_wrong_password_error(
 ):
     mock_evernote_client.fake_auth_invalid_pass = True
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
-    assert "Invalid password!" in str(excinfo.value)
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
+    )
+
+    assert result.exit_code == 1
+    assert "Invalid password!" in result.output
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
@@ -189,9 +203,12 @@ def test_password_login_two_factor_bad_ota_error(
     mock_evernote_client.fake_auth_token = fake_token
     mock_evernote_client.fake_auth_invalid_ota = True
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
-    assert "Invalid one-time code!" in str(excinfo.value)
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
+    )
+
+    assert result.exit_code == 1
+    assert "Invalid one-time code!" in result.output
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
@@ -204,8 +221,12 @@ def test_password_login_two_factor_unexpected_error(
     mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     mock_evernote_client.fake_auth_twofactor_unexpected_error = True
 
-    with pytest.raises(EDAMUserException):
-        cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
+    )
+
+    assert result.exit_code == 1
+    assert "EDAMUserException" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_china")
@@ -216,9 +237,12 @@ def test_password_login_two_factor_silent_error(
     mock_evernote_client.fake_twofactor_req = True
     mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
-    assert "requires user input" in str(excinfo.value)
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
+    )
+
+    assert result.exit_code == 1
+    assert "requires user input" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -227,9 +251,10 @@ def test_oauth_login_silent_error(
 ):
     mock_output_to_terminal.is_tty = False
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db")
-    assert "requires user input" in str(excinfo.value)
+    result = cli_invoker("reauth", "-d", "fake_db")
+
+    assert result.exit_code == 1
+    assert "requires user input" in result.output
 
 
 @pytest.mark.usefixtures("mock_oauth_http_server")
@@ -290,9 +315,10 @@ def test_oauth_login_declined_error(
     mocker.patch("evernote_backup.cli_app_util.click.echo")
     mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "-d", "fake_db")
-    assert "declined" in str(excinfo.value)
+    result = cli_invoker("reauth", "-d", "fake_db")
+
+    assert result.exit_code == 1
+    assert "declined" in result.output
 
     mock_launch.assert_called_once_with(
         "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
@@ -304,9 +330,10 @@ def test_oauth_login_declined_error(
 def test_old_db_error(cli_invoker, fake_storage, fake_token):
     fake_storage.config.set_config_value("DB_VERSION", "0")
 
-    with pytest.raises(ProgramTerminatedError) as excinfo:
-        cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
-    assert "Full resync is required" in str(excinfo.value)
+    result = cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
+
+    assert result.exit_code == 1
+    assert "Full resync is required" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -320,16 +347,18 @@ def test_custom_network_retry_count_fail(
     test_network_retry_count = 10
     mock_evernote_client.fake_network_counter = test_network_retry_count
 
-    with pytest.raises(ConnectionError):
-        cli_invoker(
-            "reauth",
-            "--database",
-            "fake_db",
-            "--token",
-            fake_token,
-            "--network-retry-count",
-            test_network_retry_count,
-        )
+    result = cli_invoker(
+        "reauth",
+        "--database",
+        "fake_db",
+        "--token",
+        fake_token,
+        "--network-retry-count",
+        test_network_retry_count,
+    )
+
+    assert result.exit_code == 1
+    assert "ConnectionError" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")

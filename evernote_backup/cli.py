@@ -1,8 +1,9 @@
+import functools
 import logging
 import sys
 import traceback
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import click
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
@@ -74,6 +75,34 @@ opt_database = click.option(
 )
 
 
+def handle_errors(f: Callable) -> Callable:
+    logger = logging.getLogger(__name__)
+
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except ProgramTerminatedError as e:
+            logger.critical(e)
+        except EDAMSystemException as e:
+            if e.errorCode != EDAMErrorCode.RATE_LIMIT_REACHED:
+                logger.critical(traceback.format_exc())
+            else:
+                time_left = get_time_txt(e.rateLimitDuration)
+                logger.critical(f"Rate limit reached. Restart program in {time_left}.")
+        except TApplicationException as e:
+            message_txt = (
+                e.message.decode("utf-8") if isinstance(e.message, bytes) else e.message
+            )
+            logger.exception(f"Thrift exception: {message_txt}")
+        except Exception:
+            logger.exception("Unknown exception")
+
+        sys.exit(1)
+
+    return wrapper
+
+
 @click.group(cls=NaturalOrderGroup)
 @optgroup.group("Verbosity", cls=MutuallyExclusiveOptionGroup)  # type: ignore
 @optgroup.option(
@@ -130,6 +159,7 @@ def cli(quiet: bool, verbose: bool, log: Path) -> None:
     help="API backend to connect to. If you are using Yinxiang, select 'china'.",
 )
 @opt_network_retry_count
+@handle_errors
 def init_db(
     database: Path,
     user: Optional[str],
@@ -186,6 +216,7 @@ def init_db(
     ),
 )
 @opt_network_retry_count
+@handle_errors
 def sync(
     database: Path,
     max_chunk_results: int,
@@ -234,6 +265,7 @@ def sync(
     required=True,
     type=DIR_ONLY,
 )
+@handle_errors
 def export(
     database: Path,
     single_notes: bool,
@@ -258,6 +290,7 @@ def export(
 @opt_database
 @group_options(opt_user, opt_password, opt_oauth_port, opt_oauth_host, opt_token)
 @opt_network_retry_count
+@handle_errors
 def reauth(
     database: Path,
     user: Optional[str],
@@ -281,25 +314,4 @@ def reauth(
 
 
 def main() -> None:
-    logger = logging.getLogger(__name__)
-
-    try:
-        cli()
-    except ProgramTerminatedError as e:
-        logger.critical(e)
-        sys.exit(1)
-    except EDAMSystemException as e:
-        if e.errorCode != EDAMErrorCode.RATE_LIMIT_REACHED:
-            logger.critical(traceback.format_exc())
-            sys.exit(1)
-
-        time_left = get_time_txt(e.rateLimitDuration)
-
-        logger.critical(f"Rate limit reached. Restart program in {time_left}.")
-        sys.exit(1)
-    except TApplicationException as e:
-        logger.exception(f"Thrift exception: {e.message}")
-        sys.exit(1)
-    except Exception:
-        logger.exception("Unknown exception")
-        sys.exit(1)
+    cli()

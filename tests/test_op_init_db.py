@@ -12,8 +12,10 @@ def test_init_db_existing_file(tmp_path, cli_invoker, fake_token):
     test_db_path = tmp_path / "test.db"
     Path.touch(test_db_path)
 
-    with pytest.raises(ProgramTerminatedError):
-        cli_invoker("init-db", "--database", test_db_path, "--token", fake_token)
+    result = cli_invoker("init-db", "--database", test_db_path, "--token", fake_token)
+
+    assert result.exit_code == 1
+    assert "Database already exists" in result.output
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
@@ -70,8 +72,11 @@ def test_init_db_new_file_backend(
 
 def test_init_db_touch_token(cli_invoker, mocker):
     mocker.patch(
-        "evernote_backup.cli_app.get_auth_token", side_effect=ProgramTerminatedError
+        "evernote_backup.cli_app.get_auth_token",
+        side_effect=ProgramTerminatedError("test error"),
     )
 
-    with pytest.raises(ProgramTerminatedError):
-        cli_invoker("init-db", "--database", "fake_db")
+    result = cli_invoker("init-db", "--database", "fake_db")
+
+    assert result.exit_code == 1
+    assert "test error" in result.output
