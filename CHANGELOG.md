@@ -1,3 +1,15 @@
+## [1.10.0](https://github.com/vzhd1701/evernote-backup/compare/1.9.4...1.10.0) (2025-04-07)
+
+### Features
+
+- add --add-guid option in export mode to include GUID meta for each note ([c4cb1eb](https://github.com/vzhd1701/evernote-backup/commit/c4cb1ebb128924573839a10b586d24ecf124c698)), closes [#66](https://github.com/vzhd1701/evernote-backup/issues/66)
+- add --log option for setting log file ([64eb952](https://github.com/vzhd1701/evernote-backup/commit/64eb9521d1f7cde0b6dab17b817f8a0e4f8e0455))
+
+### Bug Fixes
+
+- format reminder-time on export ([eceea64](https://github.com/vzhd1701/evernote-backup/commit/eceea645e444b777d948481b77f4cc076e930518)), closes [#86](https://github.com/vzhd1701/evernote-backup/issues/86)
+- skip download for notes that return server side error ([d0fcd23](https://github.com/vzhd1701/evernote-backup/commit/d0fcd23e573442e2a56279e3b2cf1174a0dd84c1))
+
 ## [1.9.4](https://github.com/vzhd1701/evernote-backup/compare/v1.9.3...v1.9.4) (2025-04-06)
 
 ### Bug Fixes
