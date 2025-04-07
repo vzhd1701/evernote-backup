@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, List, Union
 
@@ -133,7 +133,7 @@ def _write_export_file(
         if no_export_date:
             f.write('<en-export application="Evernote" version="10.10.5">')
         else:
-            now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+            now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
             f.write(
                 f'<en-export export-date="{now}"'
                 f' application="Evernote" version="10.10.5">'
