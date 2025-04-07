@@ -42,8 +42,8 @@ class NoteFormatter(object):
                 "source-url": note.attributes.sourceURL,
                 "source-application": note.attributes.sourceApplication,
                 "reminder-order": note.attributes.reminderOrder,
-                "reminder-time": note.attributes.reminderTime,
-                "reminder-done-time": note.attributes.reminderDoneTime,
+                "reminder-time": fmt_time(note.attributes.reminderTime),
+                "reminder-done-time": fmt_time(note.attributes.reminderDoneTime),
                 "place-name": note.attributes.placeName,
                 "content-class": note.attributes.contentClass,
             }

@@ -48,6 +48,9 @@ test_note_data = Note(
         source="desktop.win",
         sourceURL="https://www.example.com/page?category=blog&post_id=123",
         sourceApplication="evernote.win32",
+        reminderOrder=100,
+        reminderTime=1744008231000,
+        reminderDoneTime=1744018231000,
     ),
     tagNames=["test1", "test2"],
 )
@@ -64,6 +67,9 @@ expected = """  <note>
       <source>desktop.win</source>
       <source-url>https://www.example.com/page?category=blog&amp;post_id=123</source-url>
       <source-application>evernote.win32</source-application>
+      <reminder-order>100</reminder-order>
+      <reminder-time>20250407T064351Z</reminder-time>
+      <reminder-done-time>20250407T093031Z</reminder-done-time>
     </note-attributes>
     <content>
       <![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
