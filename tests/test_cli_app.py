@@ -17,7 +17,6 @@ from evernote_backup.cli_app_util import ProgramTerminatedError, get_progress_ou
     ],
 )
 def test_cli_quiet(is_quiet, log_level_expected, cli_invoker, mocker):
-    logger_mock = mocker.patch("evernote_backup.cli.logger")
     mocker.patch("evernote_backup.cli.cli_app")
 
     if is_quiet:
@@ -25,7 +24,9 @@ def test_cli_quiet(is_quiet, log_level_expected, cli_invoker, mocker):
     else:
         cli_invoker("init-db")
 
-    logger_mock.setLevel.assert_called_once_with(log_level_expected)
+    logger = logging.getLogger("evernote_backup")
+
+    assert logger.getEffectiveLevel() == log_level_expected
 
 
 @pytest.mark.parametrize(
@@ -36,7 +37,6 @@ def test_cli_quiet(is_quiet, log_level_expected, cli_invoker, mocker):
     ],
 )
 def test_cli_verbose(is_verbose, log_level_expected, cli_invoker, mocker):
-    logger_mock = mocker.patch("evernote_backup.cli.logger")
     mocker.patch("evernote_backup.cli.cli_app")
 
     if is_verbose:
@@ -44,13 +44,27 @@ def test_cli_verbose(is_verbose, log_level_expected, cli_invoker, mocker):
     else:
         cli_invoker("init-db")
 
-    logger_mock.setLevel.assert_called_once_with(log_level_expected)
+    logger = logging.getLogger("evernote_backup")
+
+    assert logger.getEffectiveLevel() == log_level_expected
+
+
+def test_cli_log_file(cli_invoker, mocker, tmp_path):
+    log_file = tmp_path / "test.log"
+
+    with pytest.raises(ProgramTerminatedError):
+        cli_invoker("--log", log_file, "init-db")
+
+    log_content = log_file.read_text(encoding="utf-8")
+
+    assert log_file.exists()
+    assert "Logging in to Evernote" in log_content
 
 
 @pytest.mark.parametrize(
     "is_tty,log_format",
     [
-        (False, "%(asctime)s | [%(levelname)s] | %(thread)d | %(message)s"),
+        (False, "%(asctime)s | %(levelname)s | %(message)s"),
         (True, "%(message)s"),
     ],
 )
@@ -61,7 +75,9 @@ def test_cli_test_tty(is_tty, log_format, cli_invoker, mocker, mock_output_to_te
 
     cli_invoker("init-db")
 
-    assert logging.root.handlers[0].formatter._fmt == log_format
+    logger = logging.getLogger("evernote_backup")
+
+    assert logger.handlers[0].formatter._fmt == log_format
 
 
 def test_cli_program_error(mocker, caplog):
@@ -130,8 +146,6 @@ def test_cli_program_error_rate_limit(mocker, caplog):
 def test_silent_progress(is_quiet, progress_output, is_tty, cli_invoker, mocker):
     sys_mock = mocker.patch("evernote_backup.cli_app_util.sys")
     sys_mock.stdout.isatty.return_value = is_tty
-
-    mocker.patch("evernote_backup.cli.logger")
 
     test_out = None
 

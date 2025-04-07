@@ -17,11 +17,8 @@ from evernote_backup.cli_app_click_util import (
     group_options,
 )
 from evernote_backup.cli_app_util import ProgramTerminatedError
-from evernote_backup.log_util import get_time_txt, init_logging, init_logging_format
+from evernote_backup.log_util import get_time_txt, init_logging
 from evernote_backup.version import __version__
-
-logger = logging.getLogger()
-
 
 opt_user = click.option(
     "--user",
@@ -91,8 +88,13 @@ opt_database = click.option(
     is_flag=True,
     help="Verbose mode, output debug information.",
 )
+@click.option(
+    "--log",
+    type=click.Path(file_okay=True, dir_okay=False, writable=True),
+    help="Log file path.",
+)
 @click.version_option(__version__)
-def cli(quiet: bool, verbose: bool) -> None:
+def cli(quiet: bool, verbose: bool, log: Path) -> None:
     """Evernote backup & export
 
     \b
@@ -102,15 +104,14 @@ def cli(quiet: bool, verbose: bool) -> None:
     evernote-backup export output_dir/
     """
 
-    init_logging()
-    init_logging_format()
-
     if quiet:
-        logger.setLevel(logging.CRITICAL)
+        log_level = "CRITICAL"
     elif verbose:
-        logger.setLevel(logging.DEBUG)
+        log_level = "DEBUG"
     else:
-        logger.setLevel(logging.INFO)
+        log_level = "INFO"
+
+    init_logging(log_level, log)
 
 
 @cli.command()
@@ -253,9 +254,6 @@ def export(
     )
 
 
-click.password_option()
-
-
 @cli.command()
 @opt_database
 @group_options(opt_user, opt_password, opt_oauth_port, opt_oauth_host, opt_token)
@@ -283,6 +281,8 @@ def reauth(
 
 
 def main() -> None:
+    logger = logging.getLogger(__name__)
+
     try:
         cli()
     except ProgramTerminatedError as e:

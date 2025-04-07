@@ -1,24 +1,61 @@
 import logging
+import logging.config
+import sys
 import time
+from pathlib import Path
+from typing import Optional
 
 from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.cli_app_util import is_output_to_terminal
 
-
-def init_logging() -> None:
-    for h in logging.root.handlers[:]:
-        logging.root.removeHandler(h)
-        h.close()
+IS_TESTING = "pytest" in sys.modules
 
 
-def init_logging_format() -> None:
-    if is_output_to_terminal():
-        log_format = "%(message)s"
-    else:
-        log_format = "%(asctime)s | [%(levelname)s] | %(thread)d | %(message)s"
+def init_logging(log_level: str, log_file: Optional[Path] = None) -> None:
+    main_logger = "evernote_backup"
 
-    logging.basicConfig(format=log_format)
+    format_short = "%(message)s"
+    format_long = "%(asctime)s | %(levelname)s | %(message)s"
+
+    log_format_cli = format_short if is_output_to_terminal() else format_long
+    log_format_file = format_long
+
+    config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "console": {"format": log_format_cli},
+            "file": {"format": log_format_file},
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "level": log_level,
+                "formatter": "console",
+            }
+        },
+        "loggers": {
+            main_logger: {
+                "level": log_level,
+                "handlers": ["console"],
+                "propagate": IS_TESTING,
+            }
+        },
+    }
+
+    if log_file:
+        config["handlers"]["file"] = {
+            "class": "logging.FileHandler",
+            "level": log_level,
+            "formatter": "file",
+            "filename": str(log_file),
+            "encoding": "utf-8",
+            "delay": True,
+        }
+        config["loggers"][main_logger]["handlers"].append("file")
+
+    logging.config.dictConfig(config)
 
 
 def log_format_note(note: Note) -> str:  # pragma: no cover
