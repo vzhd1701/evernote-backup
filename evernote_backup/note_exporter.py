@@ -131,12 +131,12 @@ def _write_export_file(
         f.write(ENEX_HEAD)
 
         if no_export_date:
-            f.write('<en-export application="Evernote" version="10.10.5">')
+            f.write('<en-export application="Evernote" version="10.10.5">\n')
         else:
             now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
             f.write(
                 f'<en-export export-date="{now}"'
-                f' application="Evernote" version="10.10.5">'
+                f' application="Evernote" version="10.10.5">\n'
             )
 
         note_formatter = NoteFormatter()
