@@ -295,7 +295,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
         for note_guid in self._get_notes_by_notebook(notebook_guid):
             with self.db as con:
                 cur = con.execute(
-                    "select raw_note"
+                    "select title, guid, raw_note"
                     " from notes"
                     " where guid=? and raw_note is not NULL",
                     (note_guid,),
@@ -303,18 +303,33 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
 
                 row = cur.fetchone()
 
-                yield pickle.loads(lzma.decompress(row["raw_note"]))
+                raw_note = self._get_raw_note(
+                    row["title"],
+                    row["guid"],
+                    row["raw_note"],
+                )
+
+                if raw_note:
+                    yield raw_note
 
     def iter_notes_trash(self) -> Iterator[Note]:
         with self.db as con:
             cur = con.execute(
-                "select raw_note"
+                "select title, guid, raw_note"
                 " from notes"
                 " where is_active=0 and raw_note is not NULL"
                 " order by title COLLATE NOCASE",
             )
 
-            yield from (pickle.loads(lzma.decompress(row["raw_note"])) for row in cur)
+            for row in cur:
+                raw_note = self._get_raw_note(
+                    row["title"],
+                    row["guid"],
+                    row["raw_note"],
+                )
+
+                if raw_note:
+                    yield raw_note
 
     def get_notes_for_sync(self) -> Tuple[NoteForSync, ...]:
         with self.db as con:
@@ -374,6 +389,26 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
             sorted_notes = sorted(cur, key=lambda x: x["title"])
 
             return [r["guid"] for r in sorted_notes]
+
+    def _get_raw_note(self, note_title: str, note_guid: str, raw_note: bytes):
+        try:
+            return pickle.loads(lzma.decompress(raw_note))
+        except Exception as e:
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                logger.exception(f"Note '{note_title}' [{note_guid}] is corrupt: {e}")
+
+            logger.warning(
+                f"Note '{note_title}' [{note_guid}] is corrupt, it will be re-downloaded during next sync"
+            )
+
+            self._mark_note_for_redownload(note_guid)
+
+    def _mark_note_for_redownload(self, note_guid: str):
+        with self.db as con:
+            con.execute(
+                "update notes set raw_note=NULL, is_active=NULL where guid=?",
+                (note_guid,),
+            )
 
 
 class ConfigStorage(SqliteStorage):

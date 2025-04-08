@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import pytest
@@ -339,6 +340,69 @@ def test_notes_trash(fake_storage):
     result_notes = list(fake_storage.notes.iter_notes_trash())
 
     assert result_notes == expected_notes
+
+
+def test_notes_corrupt(fake_storage, caplog):
+    test_notes = [
+        Note(
+            guid="id1",
+            title="test",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+        Note(
+            guid="id2",
+            title="test",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+        Note(
+            guid="id3",
+            title="test",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+    ]
+
+    expected_notes = [
+        Note(
+            guid="id1",
+            title="test",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+        Note(
+            guid="id2",
+            title="test",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+    ]
+
+    for note in test_notes:
+        fake_storage.notes.add_note(note)
+
+    with fake_storage.db as con:
+        con.execute("UPDATE notes SET raw_note=? WHERE guid=?", (b"123", "id3"))
+
+    with caplog.at_level(logging.DEBUG, logger="evernote_backup"):
+        result_notes = list(fake_storage.notes.iter_notes("notebook1"))
+
+    result_notes_for_sync = fake_storage.notes.get_notes_for_sync()
+
+    assert result_notes == expected_notes
+    assert len(result_notes_for_sync) == 1
+    assert result_notes_for_sync[0].guid == "id3"
+    assert "Traceback" in caplog.text
+    assert (
+        caplog.messages[1]
+        == "Note 'test' [id3] is corrupt, it will be re-downloaded during next sync"
+    )
 
 
 def test_get_notes_for_sync(fake_storage):
