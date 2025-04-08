@@ -179,7 +179,7 @@ class NoteBookStorage(SqliteStorage):  # noqa: WPS214
         with self.db as con:
             cur = con.execute(
                 "select COUNT(guid) from notes"
-                " where notebook_guid=? and is_active=1",
+                " where notebook_guid=? and is_active=1 and raw_note is not NULL",
                 (notebook_guid,),
             )
 
@@ -295,7 +295,10 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
         for note_guid in self._get_notes_by_notebook(notebook_guid):
             with self.db as con:
                 cur = con.execute(
-                    "select raw_note from notes where guid=?", (note_guid,)
+                    "select raw_note"
+                    " from notes"
+                    " where guid=? and raw_note is not NULL",
+                    (note_guid,),
                 )
 
                 row = cur.fetchone()
@@ -306,7 +309,8 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
         with self.db as con:
             cur = con.execute(
                 "select raw_note"
-                " from notes where is_active=0"
+                " from notes"
+                " where is_active=0 and raw_note is not NULL"
                 " order by title COLLATE NOCASE",
             )
 
@@ -344,7 +348,10 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
     def get_notes_count(self, is_active: bool = True) -> int:
         with self.db as con:
             cur = con.execute(
-                "select COUNT(guid) from notes where is_active=?", (is_active,)
+                "select COUNT(guid)"
+                " from notes"
+                " where is_active=? and raw_note is not NULL",
+                (is_active,),
             )
 
             return int(cur.fetchone()[0])
@@ -359,7 +366,8 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
         with self.db as con:
             cur = con.execute(
                 "select guid, title"
-                " from notes where notebook_guid=? and is_active=1",
+                " from notes"
+                " where notebook_guid=? and is_active=1 and raw_note is not NULL",
                 (notebook_guid,),
             )
 

@@ -368,6 +368,56 @@ def test_get_notes_for_sync(fake_storage):
     assert expected == result
 
 
+def test_get_notes_for_export_with_incomplete_sync(fake_storage):
+    test_notes_for_sync = [
+        Note(
+            guid="id1",
+            title="name1",
+            content="test",
+            notebookGuid="notebook1",
+        ),
+        Note(
+            guid="id2",
+            title="name2",
+            content="test",
+            notebookGuid="notebook1",
+        ),
+        Note(
+            guid="id3",
+            title="name3",
+            content="test",
+            notebookGuid="notebook1",
+        ),
+    ]
+
+    expected_notes = [
+        Note(
+            guid="id4",
+            title="test",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+        Note(
+            guid="id5",
+            title="test",
+            content="test",
+            notebookGuid="notebook1",
+            active=True,
+        ),
+    ]
+
+    fake_storage.notes.add_notes_for_sync(test_notes_for_sync)
+
+    for note in expected_notes:
+        fake_storage.notes.add_note(note)
+
+    result_notes = list(fake_storage.notes.iter_notes("notebook1"))
+
+    assert len(result_notes) == 2
+    assert result_notes == expected_notes
+
+
 def test_notebook_deleted(fake_storage):
     test_notebooks = [
         Notebook(
@@ -523,3 +573,37 @@ def test_trash_notes_count(fake_storage):
     result = fake_storage.notes.get_notes_count(is_active=False)
 
     assert result == 2
+
+
+def test_note_count_before_sync(fake_storage):
+    test_notes = [
+        Note(
+            guid="id1",
+            title="test",
+            notebookGuid="test",
+        ),
+        Note(
+            guid="id2",
+            title="test",
+            content="test",
+            notebookGuid="test",
+            active=True,
+        ),
+        Note(
+            guid="id3",
+            title="test",
+            content="test",
+            notebookGuid="test",
+            active=False,
+        ),
+    ]
+
+    fake_storage.notes.add_notes_for_sync([test_notes[0]])
+    fake_storage.notes.add_note(test_notes[1])
+    fake_storage.notes.add_note(test_notes[2])
+
+    result_active = fake_storage.notes.get_notes_count()
+    result_trash = fake_storage.notes.get_notes_count(is_active=False)
+
+    assert result_active == 1
+    assert result_trash == 1
