@@ -12,21 +12,38 @@ from evernote_backup.cli_app_util import is_output_to_terminal
 IS_TESTING = "pytest" in sys.modules
 
 
+class LevelPrefixFormatter(logging.Formatter):
+    def format(self, record):
+        formatted_message = super().format(record)
+
+        # For INFO level, return the formatted message as-is
+        if record.levelno == logging.INFO:
+            return formatted_message
+
+        # For other levels, add the log level prefix
+        return f"{record.levelname}: {formatted_message}"
+
+
 def init_logging(log_level: str, log_file: Optional[Path] = None) -> None:
     main_logger = "evernote_backup"
 
     format_short = "%(message)s"
     format_long = "%(asctime)s | %(levelname)s | %(message)s"
 
-    log_format_cli = format_short if is_output_to_terminal() else format_long
-    log_format_file = format_long
+    if is_output_to_terminal():
+        console_formatter = {
+            "()": LevelPrefixFormatter,
+            "format": format_short,
+        }
+    else:
+        console_formatter = {"format": format_long}
 
     config = {
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "console": {"format": log_format_cli},
-            "file": {"format": log_format_file},
+            "console": console_formatter,
+            "file": {"format": format_long},
         },
         "handlers": {
             "console": {

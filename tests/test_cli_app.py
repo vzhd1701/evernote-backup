@@ -62,22 +62,27 @@ def test_cli_log_file(cli_invoker, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "is_tty,log_format",
+    "is_tty,log_format,expected_error",
     [
-        (False, "%(asctime)s | %(levelname)s | %(message)s"),
-        (True, "%(message)s"),
+        (False, "%(asctime)s | %(levelname)s | %(message)s", "CRITICAL | test error"),
+        (True, "%(message)s", "CRITICAL: test error"),
     ],
 )
-def test_cli_test_tty(is_tty, log_format, cli_invoker, mocker, mock_output_to_terminal):
-    mocker.patch("evernote_backup.cli.cli_app")
+def test_cli_test_tty(
+    is_tty, log_format, expected_error, cli_invoker, mocker, mock_output_to_terminal
+):
+    cli_app_mock = mocker.patch("evernote_backup.cli.cli_app")
+    cli_app_mock.init_db.side_effect = ProgramTerminatedError("test error")
 
     mock_output_to_terminal.is_tty = is_tty
 
-    cli_invoker("init-db")
+    result = cli_invoker("init-db")
 
     logger = logging.getLogger("evernote_backup")
 
     assert logger.handlers[0].formatter._fmt == log_format
+    assert result.exit_code == 1
+    assert expected_error in result.output
 
 
 def test_cli_program_error(cli_invoker, mocker):
