@@ -397,11 +397,14 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
             if logger.getEffectiveLevel() == logging.DEBUG:
                 logger.exception(f"Note '{note_title}' [{note_guid}] is corrupt: {e}")
 
-            logger.warning(
-                f"Note '{note_title}' [{note_guid}] is corrupt, it will be re-downloaded during next sync"
-            )
+            logger.warning(f"Note '{note_title}' [{note_guid}] is corrupt")
 
-            self._mark_note_for_redownload(note_guid)
+    # def _mark_note_for_redownload(self, note_guid: str):
+    #     with self.db as con:
+    #         con.execute(
+    #             "update notes set raw_note=NULL, is_active=NULL where guid=?",
+    #             (note_guid,),
+    #         )
 
     def _mark_note_for_redownload(self, note_guid: str):
         with self.db as con:
