@@ -2,7 +2,7 @@ import io
 import logging
 
 import pytest
-from evernote.edam.error.ttypes import EDAMSystemException
+from evernote.edam.error.ttypes import EDAMSystemException, EDAMErrorCode
 from thrift.Thrift import TApplicationException
 
 from evernote_backup import cli as cli_module
@@ -20,12 +20,13 @@ def test_cli_quiet(is_quiet, log_level_expected, cli_invoker, mocker):
     mocker.patch("evernote_backup.cli.cli_app")
 
     if is_quiet:
-        cli_invoker("--quiet", "init-db")
+        result = cli_invoker("--quiet", "init-db")
     else:
-        cli_invoker("init-db")
+        result = cli_invoker("init-db")
 
     logger = logging.getLogger("evernote_backup")
 
+    assert result.exit_code == 0
     assert logger.getEffectiveLevel() == log_level_expected
 
 
@@ -40,12 +41,13 @@ def test_cli_verbose(is_verbose, log_level_expected, cli_invoker, mocker):
     mocker.patch("evernote_backup.cli.cli_app")
 
     if is_verbose:
-        cli_invoker("--verbose", "init-db")
+        result = cli_invoker("--verbose", "init-db")
     else:
-        cli_invoker("init-db")
+        result = cli_invoker("init-db")
 
     logger = logging.getLogger("evernote_backup")
 
+    assert result.exit_code == 0
     assert logger.getEffectiveLevel() == log_level_expected
 
 
@@ -143,7 +145,7 @@ def test_cli_program_error_unexpected_edam(cli_invoker, mocker):
 def test_cli_program_error_rate_limit(cli_invoker, mocker):
     cli_app_mock = mocker.patch("evernote_backup.cli.cli_app")
     cli_app_mock.init_db.side_effect = EDAMSystemException(
-        errorCode=19, rateLimitDuration=10
+        errorCode=EDAMErrorCode.RATE_LIMIT_REACHED, rateLimitDuration=10
     )
 
     result = cli_invoker("init-db")
@@ -175,10 +177,11 @@ def test_silent_progress(is_quiet, progress_output, is_tty, cli_invoker, mocker)
     init_mock.side_effect = test_output
 
     if is_quiet:
-        cli_invoker("--quiet", "init-db")
+        result = cli_invoker("--quiet", "init-db")
     else:
-        cli_invoker("init-db")
+        result = cli_invoker("init-db")
 
+    assert result.exit_code == 0
     if progress_output == "StringIO":
         assert isinstance(test_out, io.StringIO)
     else:

@@ -18,8 +18,9 @@ def mock_click_prompt(mocker):
 def test_token_refresh(fake_storage, cli_invoker):
     fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
-    cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
+    result = cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
 
+    assert result.exit_code == 0
     assert fake_storage.config.get_config_value("auth_token") == fake_token
 
 
@@ -57,8 +58,11 @@ def test_no_database_error(cli_invoker, fake_token):
 def test_password_login(cli_invoker, fake_storage, mock_evernote_client):
     mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
-    cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
+    )
 
+    assert result.exit_code == 0
     assert (
         fake_storage.config.get_config_value("auth_token")
         == mock_evernote_client.fake_auth_token
@@ -129,8 +133,9 @@ def test_password_login_no_pass(
     mock_evernote_client.fake_valid_username = "fake_user"
     mock_evernote_client.fake_valid_password = "asd123"
 
-    cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user")
+    result = cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user")
 
+    assert result.exit_code == 0
     mock_click_prompt.assert_called_once_with("Password", hide_input=True)
     assert (
         fake_storage.config.get_config_value("auth_token")
@@ -148,8 +153,9 @@ def test_password_login_no_login(
     mock_evernote_client.fake_valid_username = "fake_user"
     mock_evernote_client.fake_valid_password = "asd123"
 
-    cli_invoker("reauth", "-d", "fake_db", "-p", "asd123")
+    result = cli_invoker("reauth", "-d", "fake_db", "-p", "asd123")
 
+    assert result.exit_code == 0
     mock_click_prompt.assert_called_once_with("Username or Email")
     assert (
         fake_storage.config.get_config_value("auth_token")
@@ -166,8 +172,11 @@ def test_password_login_two_factor(
     mock_evernote_client.fake_twofactor_req = True
     mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
-    cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
+    )
 
+    assert result.exit_code == 0
     assert (
         fake_storage.config.get_config_value("auth_token")
         == mock_evernote_client.fake_auth_token
@@ -184,8 +193,11 @@ def test_password_login_two_factor_hint(
     mock_evernote_client.fake_twofactor_hint = "test_hint"
     mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
-    cli_invoker("reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass")
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
+    )
 
+    assert result.exit_code == 0
     assert mock_evernote_client.fake_twofactor_hint in mock_click_prompt.call_args[0][0]
     assert (
         fake_storage.config.get_config_value("auth_token")
@@ -266,8 +278,9 @@ def test_oauth_login(
     mocker.patch("evernote_backup.cli_app_util.click.echo")
     mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
 
-    cli_invoker("reauth", "-d", "fake_db")
+    result = cli_invoker("reauth", "-d", "fake_db")
 
+    assert result.exit_code == 0
     mock_launch.assert_called_once_with(
         "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
     )
@@ -292,8 +305,9 @@ def test_oauth_login_custom_port(
 
     test_port = 10666
 
-    cli_invoker("reauth", "-d", "fake_db", "--oauth-port", test_port)
+    result = cli_invoker("reauth", "-d", "fake_db", "--oauth-port", test_port)
 
+    assert result.exit_code == 0
     mock_oauth_http_server.assert_any_call(("localhost", test_port), mocker.ANY)
     mock_launch.assert_called_once_with(
         "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
@@ -372,7 +386,7 @@ def test_custom_network_retry_count(
     test_network_retry_count = 90
     mock_evernote_client.fake_network_counter = test_network_retry_count - 1
 
-    cli_invoker(
+    result = cli_invoker(
         "reauth",
         "--database",
         "fake_db",
@@ -382,4 +396,5 @@ def test_custom_network_retry_count(
         test_network_retry_count,
     )
 
+    assert result.exit_code == 0
     assert fake_storage.config.get_config_value("auth_token") == fake_token

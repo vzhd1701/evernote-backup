@@ -23,8 +23,11 @@ def test_init_db_existing_file_force(tmp_path, cli_invoker, fake_token):
     test_db_path = tmp_path / "test.db"
     Path.touch(test_db_path)
 
-    cli_invoker("init-db", "--database", test_db_path, "--token", fake_token, "--force")
+    result = cli_invoker(
+        "init-db", "--database", test_db_path, "--token", fake_token, "--force"
+    )
 
+    assert result.exit_code == 0
     assert test_db_path.stat().st_size > 0
 
 
@@ -33,10 +36,11 @@ def test_init_db_new_file(tmp_path, cli_invoker, mock_evernote_client, fake_toke
 
     mock_evernote_client.fake_user = "user1"
 
-    cli_invoker("init-db", "--database", test_db_path, "--token", fake_token)
+    result = cli_invoker("init-db", "--database", test_db_path, "--token", fake_token)
 
     storage = SqliteStorage(test_db_path)
 
+    assert result.exit_code == 0
     assert storage.config.get_config_value("USN") == "0"
     assert storage.config.get_config_value("DB_VERSION") == str(CURRENT_DB_VERSION)
     assert storage.config.get_config_value("auth_token") == fake_token
@@ -55,7 +59,7 @@ def test_init_db_new_file_backend(
 
     mock_evernote_client.fake_user = "user1"
 
-    cli_invoker(
+    result = cli_invoker(
         "init-db",
         "--database",
         test_db_path,
@@ -67,6 +71,7 @@ def test_init_db_new_file_backend(
 
     storage = SqliteStorage(test_db_path)
 
+    assert result.exit_code == 0
     assert storage.config.get_config_value("backend") == backend
 
 

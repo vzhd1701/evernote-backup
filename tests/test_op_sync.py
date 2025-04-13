@@ -28,10 +28,11 @@ def test_sync_add_notebook(cli_invoker, mock_evernote_client, fake_storage):
     ]
     mock_evernote_client.fake_notebooks = test_notebooks
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
 
+    assert result.exit_code == 0
     assert result_notebooks == test_notebooks
 
 
@@ -57,10 +58,11 @@ def test_sync_add_note(cli_invoker, mock_evernote_client, fake_storage):
 
     mock_evernote_client.fake_notes.append(test_note)
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notes == [test_note]
 
 
@@ -93,10 +95,11 @@ def test_sync_add_note_with_res(cli_invoker, mock_evernote_client, fake_storage)
 
     mock_evernote_client.fake_notes.append(test_note)
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notes == [test_note]
 
 
@@ -141,10 +144,11 @@ def test_sync_add_note_with_tags(cli_invoker, mock_evernote_client, fake_storage
         )
     ]
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notes == expected_notes
 
 
@@ -161,13 +165,14 @@ def test_sync_add_linked_notebook(cli_invoker, mock_evernote_client, fake_storag
 
     mock_evernote_client.fake_l_usn = 123
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
-    result_l_notebooks_asn = fake_storage.notebooks.get_linked_notebook_usn("id3")
+    result_l_notebooks_usn = fake_storage.notebooks.get_linked_notebook_usn("id3")
 
+    assert result.exit_code == 0
     assert result_notebooks == mock_evernote_client.fake_l_notebooks
-    assert result_l_notebooks_asn == mock_evernote_client.fake_l_usn
+    assert result_l_notebooks_usn == mock_evernote_client.fake_l_usn
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -185,15 +190,19 @@ def test_sync_add_linked_notebook_nothing_to_sync(
 
     mock_evernote_client.fake_l_usn = 100
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
-    result_l_notebooks_asn = fake_storage.notebooks.get_linked_notebook_usn("id3")
+    result_l_notebooks_usn = fake_storage.notebooks.get_linked_notebook_usn("id3")
 
+    assert result.exit_code == 0
     assert result_notebooks == mock_evernote_client.fake_l_notebooks
-    assert result_l_notebooks_asn == mock_evernote_client.fake_l_usn
+    assert result_l_notebooks_usn == mock_evernote_client.fake_l_usn
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
+
+    assert result.exit_code == 0
+    assert "nothing to sync" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -219,10 +228,11 @@ def test_sync_add_linked_notebook_stack(
         )
     ]
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
 
+    assert result.exit_code == 0
     assert result_notebooks == expected_notebooks
 
 
@@ -254,11 +264,12 @@ def test_sync_add_linked_notebook_note(cli_invoker, mock_evernote_client, fake_s
         "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     )
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notebooks == mock_evernote_client.fake_l_notebooks
     assert result_notes == mock_evernote_client.fake_l_notes
 
@@ -293,11 +304,12 @@ def test_sync_add_linked_notebook_note_public(
         "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     )
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notebooks == mock_evernote_client.fake_l_notebooks
     assert result_notes == mock_evernote_client.fake_l_notes
 
@@ -351,10 +363,11 @@ def test_sync_add_linked_notebook_note_with_tag(
         "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     )
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notes == expected_notes
 
 
@@ -386,11 +399,12 @@ def test_sync_expunge_linked_notebook_note(
     )
     mock_evernote_client.fake_usn = 100
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notebooks == mock_evernote_client.fake_l_notebooks
     assert result_notes == mock_evernote_client.fake_l_notes
 
@@ -401,11 +415,12 @@ def test_sync_expunge_linked_notebook_note(
 
     mock_evernote_client.fake_expunged_linked_notebooks = ["id3", "id4"]
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notebooks == []
     assert result_notes == []
 
@@ -440,11 +455,12 @@ def test_sync_add_linked_notebook_note_error_no_access(
 
     mock_evernote_client.fake_auth_linked_notebook_error = True
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notebooks == []
     assert result_notes == []
 
@@ -486,10 +502,11 @@ def test_sync_expunge_notebooks(cli_invoker, mock_evernote_client, fake_storage)
 
     mock_evernote_client.fake_expunged_notebooks = ["id1", "id3"]
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
 
+    assert result.exit_code == 0
     assert len(result_notebooks) == 1
     assert result_notebooks[0].guid == "id2"
 
@@ -529,10 +546,11 @@ def test_sync_expunge_notes(cli_invoker, mock_evernote_client, fake_storage):
 
     mock_evernote_client.fake_expunged_notes = ["id1", "id3"]
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notes.iter_notes("test"))
 
+    assert result.exit_code == 0
     assert len(result_notebooks) == 1
     assert result_notebooks[0].guid == "id2"
 
@@ -549,10 +567,11 @@ def test_sync_nothing_to_sync(cli_invoker, mock_evernote_client, fake_storage):
 
     fake_storage.config.set_config_value("USN", mock_evernote_client.fake_usn)
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
 
+    assert result.exit_code == 0
     assert not result_notebooks
 
 
@@ -587,7 +606,10 @@ def test_sync_interrupt_download(
     mock_add_note = mocker.patch("evernote_backup.note_storage.NoteStorage.add_note")
     mock_add_note.side_effect = interrupter
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
+
+    assert result.exit_code == 1
+    assert "Aborting, please wait" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -625,7 +647,7 @@ def test_sync_unknown_exception_while_download(
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_edam_exception_while_download(
-    cli_invoker, mock_evernote_client, fake_storage, mocker, caplog
+    cli_invoker, mock_evernote_client, fake_storage, mocker
 ):
     test_notes = [Note(guid=f"id{i}", title="test") for i in range(10)]
 
@@ -651,18 +673,23 @@ def test_sync_edam_exception_while_download(
     )
     mock_get_note.side_effect = fake_get_note
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
-    assert "INTERNAL_ERROR - Test error" in caplog.text
+    assert result.exit_code == 0
+
+    assert (
+        "Remote server returned system error (INTERNAL_ERROR - Test error) while downloading note [id3]"
+        in result.output
+    )
     assert (
         "Note 'test' will be skipped for this run and retried during the next sync"
-        in caplog.text
+        in result.output
     )
 
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_edam_rate_limit_exception_while_download(
-    cli_invoker, mock_evernote_client, fake_storage, mocker, caplog
+    cli_invoker, mock_evernote_client, fake_storage, mocker
 ):
     test_notes = [Note(guid=f"id{i}", title="test") for i in range(10)]
 
@@ -698,7 +725,7 @@ def test_sync_edam_rate_limit_exception_while_download(
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_exception_while_download_retry_fail(
-    cli_invoker, mock_evernote_client, fake_storage, mocker, caplog
+    cli_invoker, mock_evernote_client, fake_storage, mocker
 ):
     test_notes = [Note(guid=f"id{i}", title="test") for i in range(10)]
 
@@ -722,12 +749,14 @@ def test_sync_exception_while_download_retry_fail(
     )
     mock_get_note.side_effect = fake_get_note
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
-    assert "Failed to download note [id3] after 5 attempts" in caplog.text
+    assert result.exit_code == 0
+
+    assert "Failed to download note [id3] after 5 attempts" in result.output
     assert (
         "Note 'test' will be skipped for this run and retried during the next sync"
-        in caplog.text
+        in result.output
     )
 
 
@@ -780,11 +809,12 @@ def test_sync_exception_while_download_retry(
     )
     mock_get_note.side_effect = fake_get_note
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notes = list(fake_storage.notes.iter_notes("nbid1"))
+    result_notes = sorted(fake_storage.notes.iter_notes("nbid1"), key=lambda n: n.guid)
 
-    assert set(result_notes) == set(test_notes)
+    assert result.exit_code == 0
+    assert result_notes == test_notes
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
@@ -821,12 +851,13 @@ def test_sync_custom_max_chunk_results(cli_invoker, mock_evernote_client, fake_s
     mock_evernote_client.fake_notes.append(test_note)
     test_max_chunk_results = 100
 
-    cli_invoker(
+    result = cli_invoker(
         "sync", "--database", "fake_db", "--max-chunk-results", test_max_chunk_results
     )
 
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notes == [test_note]
     assert mock_evernote_client.last_maxEntries == test_max_chunk_results
 
@@ -858,7 +889,7 @@ def test_sync_custom_max_download_workers(
     test_max_download_workers = 1
     thread_pool_spy = mocker.spy(note_synchronizer, "ThreadPoolExecutor")
 
-    cli_invoker(
+    result = cli_invoker(
         "sync",
         "--database",
         "fake_db",
@@ -868,6 +899,7 @@ def test_sync_custom_max_download_workers(
 
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
+    assert result.exit_code == 0
     assert result_notes == [test_note]
     thread_pool_spy.assert_called_once_with(max_workers=test_max_download_workers)
 
@@ -900,8 +932,9 @@ def test_sync_massive_note_count(
 
     monkeypatch.setattr(note_synchronizer, "THREAD_CHUNK_SIZE", 2)
 
-    cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("sync", "--database", "fake_db")
 
+    assert result.exit_code == 0
     result_notes = sorted(
         fake_storage.notes.iter_notes("nbid1"), key=lambda x: int(x.guid[2:])
     )

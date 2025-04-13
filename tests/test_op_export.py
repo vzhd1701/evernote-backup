@@ -1,7 +1,6 @@
 import pytest
 from evernote.edam.type.ttypes import Note, Notebook
 
-from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.config import CURRENT_DB_VERSION
 
 
@@ -73,11 +72,12 @@ def test_export(cli_invoker, fake_storage, tmp_path):
     for note in test_notes:
         fake_storage.notes.add_note(note)
 
-    cli_invoker("export", "--database", "fake_db", str(test_out_path))
+    result = cli_invoker("export", "--database", "fake_db", str(test_out_path))
 
     book1_path = test_out_path / "stack1" / "name1.enex"
     book2_path = test_out_path / "name2.enex"
 
+    assert result.exit_code == 0
     assert book1_path.is_file()
     assert book2_path.is_file()
 
@@ -126,8 +126,9 @@ def test_export_over_existing(cli_invoker, fake_storage, tmp_path):
     book1_expected_path = test_out_path / "stack1" / "name1 (1).enex"
     book2_expected_path = test_out_path / "name2 (1).enex"
 
-    cli_invoker("export", "--database", "fake_db", str(test_out_path))
+    result = cli_invoker("export", "--database", "fake_db", str(test_out_path))
 
+    assert result.exit_code == 0
     assert book1_expected_path.is_file()
     assert book2_expected_path.is_file()
 
@@ -173,8 +174,11 @@ def test_export_over_existing_overwrite(cli_invoker, fake_storage, tmp_path):
     book1_existing_path.touch()
     book2_existing_path.touch()
 
-    cli_invoker("export", "--database", "fake_db", "--overwrite", str(test_out_path))
+    result = cli_invoker(
+        "export", "--database", "fake_db", "--overwrite", str(test_out_path)
+    )
 
+    assert result.exit_code == 0
     assert book1_existing_path.stat().st_size > 0
     assert book2_existing_path.stat().st_size > 0
 
@@ -210,11 +214,14 @@ def test_export_single_notes(cli_invoker, fake_storage, tmp_path):
     for note in test_notes:
         fake_storage.notes.add_note(note)
 
-    cli_invoker("export", "--database", "fake_db", "--single-notes", str(test_out_path))
+    result = cli_invoker(
+        "export", "--database", "fake_db", "--single-notes", str(test_out_path)
+    )
 
     book1_path = test_out_path / "stack1" / "name1" / "title1.enex"
     book2_path = test_out_path / "name2" / "title2.enex"
 
+    assert result.exit_code == 0
     assert book1_path.is_file()
     assert book2_path.is_file()
 
@@ -262,8 +269,11 @@ def test_export_single_notes_over_existing(cli_invoker, fake_storage, tmp_path):
     book1_expected_path = test_out_path / "stack1" / "name1" / "title1 (1).enex"
     book2_expected_path = test_out_path / "name2" / "title2 (1).enex"
 
-    cli_invoker("export", "--database", "fake_db", "--single-notes", str(test_out_path))
+    result = cli_invoker(
+        "export", "--database", "fake_db", "--single-notes", str(test_out_path)
+    )
 
+    assert result.exit_code == 0
     assert book1_expected_path.is_file()
     assert book2_expected_path.is_file()
 
@@ -310,7 +320,7 @@ def test_export_single_notes_over_existing_overwrite(
     book1_existing_path.touch()
     book2_existing_path.touch()
 
-    cli_invoker(
+    result = cli_invoker(
         "export",
         "--database",
         "fake_db",
@@ -319,6 +329,7 @@ def test_export_single_notes_over_existing_overwrite(
         str(test_out_path),
     )
 
+    assert result.exit_code == 0
     assert book1_existing_path.stat().st_size > 0
     assert book2_existing_path.stat().st_size > 0
 
@@ -347,10 +358,13 @@ def test_export_single_notes_super_long_name(cli_invoker, fake_storage, tmp_path
     for note in test_notes:
         fake_storage.notes.add_note(note)
 
-    cli_invoker("export", "--database", "fake_db", "--single-notes", str(test_out_path))
+    result = cli_invoker(
+        "export", "--database", "fake_db", "--single-notes", str(test_out_path)
+    )
 
     note_path = test_out_path / "name1" / expected_note_name
 
+    assert result.exit_code == 0
     assert note_path.is_file()
 
 
@@ -368,8 +382,9 @@ def test_export_no_trash(cli_invoker, fake_storage, tmp_path):
         )
     )
 
-    cli_invoker("export", "--database", "fake_db", str(test_out_path))
+    result = cli_invoker("export", "--database", "fake_db", str(test_out_path))
 
+    assert result.exit_code == 0
     assert not test_out_path.exists()
 
 
@@ -387,12 +402,13 @@ def test_export_yes_trash(cli_invoker, fake_storage, tmp_path):
         )
     )
 
-    cli_invoker(
+    result = cli_invoker(
         "export", "--database", "fake_db", "--include-trash", str(test_out_path)
     )
 
     book1_path = test_out_path / "Trash.enex"
 
+    assert result.exit_code == 0
     assert book1_path.is_file()
 
 
@@ -410,7 +426,7 @@ def test_export_yes_trash_single_notes(cli_invoker, fake_storage, tmp_path):
         )
     )
 
-    cli_invoker(
+    result = cli_invoker(
         "export",
         "--database",
         "fake_db",
@@ -421,6 +437,7 @@ def test_export_yes_trash_single_notes(cli_invoker, fake_storage, tmp_path):
 
     book1_path = test_out_path / "Trash" / "title1.enex"
 
+    assert result.exit_code == 0
     assert book1_path.is_file()
 
 
@@ -444,7 +461,7 @@ def test_export_yes_export_date(cli_invoker, fake_storage, tmp_path):
         )
     )
 
-    cli_invoker(
+    result = cli_invoker(
         "export",
         "--database",
         "fake_db",
@@ -456,6 +473,7 @@ def test_export_yes_export_date(cli_invoker, fake_storage, tmp_path):
     with open(book1_path, "r") as f:
         book1_xml = f.read()
 
+    assert result.exit_code == 0
     assert "export-date" in book1_xml
 
 
@@ -479,7 +497,7 @@ def test_export_no_export_date(cli_invoker, fake_storage, tmp_path):
         )
     )
 
-    cli_invoker(
+    result = cli_invoker(
         "export",
         "--database",
         "fake_db",
@@ -492,6 +510,7 @@ def test_export_no_export_date(cli_invoker, fake_storage, tmp_path):
     with open(book1_path, "r") as f:
         book1_xml = f.read()
 
+    assert result.exit_code == 0
     assert "export-date" not in book1_xml
 
 
@@ -515,7 +534,7 @@ def test_export_add_guid(cli_invoker, fake_storage, tmp_path):
         )
     )
 
-    cli_invoker(
+    result = cli_invoker(
         "export",
         "--add-guid",
         "--database",
@@ -528,4 +547,5 @@ def test_export_add_guid(cli_invoker, fake_storage, tmp_path):
     with open(book1_path, "r") as f:
         book1_xml = f.read()
 
+    assert result.exit_code == 0
     assert "<guid>id1</guid>" in book1_xml
