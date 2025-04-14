@@ -50,7 +50,6 @@ def raise_auth_error(exception: Union[EDAMSystemException, EDAMUserException]) -
             "password": (
                 "Password login disabled. Password reset required!\n"
                 "Most probably, you log in to Evernote with Google or Apple account."
-                " Use --oauth option to log in."
             ),
         },
     }

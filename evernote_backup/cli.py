@@ -52,7 +52,7 @@ opt_token = click.option(
     "-t",
     help=(
         "Manually provide authentication token to use with Evernote API."
-        " (Advanced option, ignores '--user', '--password' and '--oauth' when used.)"
+        " (Advanced option, ignores '--user' and '--password' when used.)"
     ),
 )
 
