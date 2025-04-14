@@ -780,6 +780,21 @@ requests = ">=2.0.0"
 rsa = ["oauthlib[signedtoken] (>=3.0.0)"]
 
 [[package]]
+name = "requests-sse"
+version = "0.5.1"
+description = "server-sent events python client library based on requests"
+optional = false
+python-versions = "<4.0,>=3.7"
+groups = ["main"]
+files = [
+    {file = "requests_sse-0.5.1-py3-none-any.whl", hash = "sha256:29165526fc138698f6fa4e88a8613ca8e1bd9b4b82f5d3220c60724cec60da96"},
+    {file = "requests_sse-0.5.1.tar.gz", hash = "sha256:42df8ad8b8428a44b3f27d2501b68d3f2dd6eaa8cf4cc82e9e53cc3d18eea9cd"},
+]
+
+[package.dependencies]
+requests = ">=2.0.0,<3.0.0"
+
+[[package]]
 name = "six"
 version = "1.17.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -941,4 +956,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<4.0"
-content-hash = "7982a90885dcfe45a9f639d161dc8f0bd347c016552aa99c7ed4d5f305f4e727"
+content-hash = "19069c02489a8b4caddcfd18e2696f2e454becb595d5c4a9f854b752c47be87e"
