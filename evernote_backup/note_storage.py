@@ -10,6 +10,7 @@ from typing import Iterable, Iterator, List, NamedTuple, Optional, Tuple, Union
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
 from evernote_backup.config import CURRENT_DB_VERSION
+from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.log_util import log_format_note, log_format_notebook
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,16 @@ DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
                         is_active BOOLEAN,
                         raw_note BLOB
                     );
+                    CREATE TABLE IF NOT EXISTS tasks(
+                        guid TEXT PRIMARY KEY,
+                        note_guid TEXT,
+                        raw_task BLOB
+                    );
+                    CREATE TABLE IF NOT EXISTS reminders(
+                        guid TEXT PRIMARY KEY,
+                        task_guid TEXT,
+                        raw_reminder BLOB
+                    );
                     CREATE TABLE IF NOT EXISTS config(
                         name TEXT PRIMARY KEY,
                         value TEXT
@@ -50,6 +61,10 @@ DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
                      ON notebooks_linked(guid, notebook_guid);
                     CREATE INDEX IF NOT EXISTS idx_notes_raw_null
                      ON notes(guid) WHERE raw_note IS NULL;
+                    CREATE INDEX IF NOT EXISTS idx_tasks
+                     ON tasks(note_guid);
+                    CREATE INDEX IF NOT EXISTS idx_reminders
+                     ON reminders(task_guid);
 """
 
 
@@ -92,6 +107,14 @@ class SqliteStorage(object):
     def notebooks(self) -> "NoteBookStorage":
         return NoteBookStorage(self.db)
 
+    @property
+    def tasks(self) -> "TasksStorage":
+        return TasksStorage(self.db)
+
+    @property
+    def reminders(self) -> "RemindersStorage":
+        return RemindersStorage(self.db)
+
     def check_version(self) -> None:
         try:
             db_version = int(self.config.get_config_value("DB_VERSION"))
@@ -99,6 +122,9 @@ class SqliteStorage(object):
             db_version = 0
 
         if db_version != CURRENT_DB_VERSION:
+            logger.info(
+                f"Upgrading database version from {db_version} to {CURRENT_DB_VERSION}..."
+            )
             self.upgrade_db(db_version)
 
     def upgrade_db(self, db_version: int) -> None:
@@ -138,6 +164,29 @@ class SqliteStorage(object):
                 con4.execute(
                     "CREATE INDEX IF NOT EXISTS idx_notes_raw_null"
                     " ON notes(guid) WHERE raw_note IS NULL;"
+                )
+
+        if db_version < 6:
+            self.config.set_config_value("last_connection_tasks", "0")
+
+            with self.db as con5:
+                con5.executescript(
+                    """
+                    CREATE TABLE IF NOT EXISTS tasks(
+                        guid TEXT PRIMARY KEY,
+                        note_guid TEXT,
+                        raw_task BLOB
+                    );
+                    CREATE TABLE IF NOT EXISTS reminders(
+                        guid TEXT PRIMARY KEY,
+                        task_guid TEXT,
+                        raw_reminder BLOB
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_tasks
+                     ON tasks(note_guid);
+                    CREATE INDEX IF NOT EXISTS idx_reminders
+                     ON reminders(task_guid);
+                    """
                 )
 
         self.config.set_config_value("DB_VERSION", str(CURRENT_DB_VERSION))
@@ -406,12 +455,94 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
     #             (note_guid,),
     #         )
 
-    def _mark_note_for_redownload(self, note_guid: str):
+
+class TasksStorage(SqliteStorage):  # noqa: WPS214
+    def add_tasks(self, tasks: Iterable[Task]) -> None:
+        for task in tasks:
+            self.add_task(task)
+
+    def add_task(self, task: Task) -> None:
+        logger.debug(f"Adding/updating task [{task.taskId}] note_id [{task.parentId}]")
+
+        task_deflated = lzma.compress(task.to_json().encode("utf-8"))
+
         with self.db as con:
             con.execute(
-                "update notes set raw_note=NULL, is_active=NULL where guid=?",
+                "replace into tasks(guid, note_guid, raw_task)" " values (?, ?, ?)",
+                (task.taskId, task.parentId, task_deflated),
+            )
+
+    def iter_tasks(self, note_guid: str) -> Iterator[Task]:
+        with self.db as con:
+            cur = con.execute(
+                "select guid, raw_task from tasks where note_guid=?",
                 (note_guid,),
             )
+
+            for row in cur:
+                raw_task = self._get_raw_task(row["guid"], row["raw_task"])
+
+                if raw_task:
+                    yield raw_task
+
+    def expunge_tasks(self, guids: Iterable[str]) -> None:
+        with self.db as con:
+            con.executemany("delete from tasks where guid=?", ((g,) for g in guids))
+
+    def _get_raw_task(self, task_guid: str, raw_task: bytes) -> Optional[Task]:
+        try:
+            return Task.from_json(lzma.decompress(raw_task).decode("utf-8"))
+        except Exception as e:
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                logger.exception(f"Task [{task_guid}] is corrupt: {e}")
+
+            logger.warning(f"Task [{task_guid}] is corrupt")
+
+
+class RemindersStorage(SqliteStorage):  # noqa: WPS214
+    def add_reminders(self, reminders: Iterable[Reminder]) -> None:
+        for reminder in reminders:
+            self.add_reminder(reminder)
+
+    def add_reminder(self, reminder: Reminder) -> None:
+        logger.debug(
+            f"Adding/updating reminder [{reminder.reminderId}] task_id [{reminder.sourceId}]"
+        )
+
+        reminder_deflated = lzma.compress(reminder.to_json().encode("utf-8"))
+
+        with self.db as con:
+            con.execute(
+                "replace into reminders(guid, task_guid, raw_reminder)"
+                " values (?, ?, ?)",
+                (reminder.reminderId, reminder.sourceId, reminder_deflated),
+            )
+
+    def iter_reminders(self, task_guid: str) -> Iterator[Reminder]:
+        with self.db as con:
+            cur = con.execute(
+                "select guid, raw_reminder from reminders where task_guid=?",
+                (task_guid,),
+            )
+
+            for row in cur:
+                raw_reminder = self._get_raw_reminder(row["guid"], row["raw_reminder"])
+
+                if raw_reminder:
+                    yield raw_reminder
+
+    def expunge_reminders(self, guids: Iterable[str]) -> None:
+        with self.db as con:
+            con.executemany("delete from reminders where guid=?", ((g,) for g in guids))
+
+    def _get_raw_reminder(self, guid: str, raw_reminder: bytes) -> Optional[Reminder]:
+        try:
+            return Reminder.from_json(lzma.decompress(raw_reminder).decode("utf-8"))
+        except Exception as e:
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                logger.exception(f"Reminder [{guid}] is corrupt: {e}")
+
+            logger.warning(f"Reminder [{guid}] is corrupt")
 
 
 class ConfigStorage(SqliteStorage):

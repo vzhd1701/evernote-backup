@@ -2,6 +2,7 @@ import pytest
 from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.config import CURRENT_DB_VERSION
+from evernote_backup.evernote_types import Reminder, Task
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -549,3 +550,67 @@ def test_export_add_guid(cli_invoker, fake_storage, tmp_path):
 
     assert result.exit_code == 0
     assert "<guid>id1</guid>" in book1_xml
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_export_note_with_tasks(cli_invoker, fake_storage, tmp_path):
+    test_out_path = tmp_path / "test_out"
+
+    test_notebooks = [
+        Notebook(guid="nbid1", name="name1", stack=None),
+    ]
+
+    fake_storage.notebooks.add_notebooks(test_notebooks)
+
+    fake_storage.notes.add_note(
+        Note(
+            guid="id1",
+            title="title1",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+        )
+    )
+
+    fake_storage.tasks.add_tasks(
+        [
+            Task(taskId="tid1", parentId="id1", label="test task1", sortWeight="Z"),
+            Task(taskId="tid2", parentId="id1", label="test task2", sortWeight="A"),
+        ]
+    )
+
+    fake_storage.reminders.add_reminder(
+        Reminder(
+            reminderId="rid1",
+            sourceId="tid1",
+            reminderDate=1744552247000,
+        )
+    )
+
+    result = cli_invoker(
+        "export",
+        "--database",
+        "fake_db",
+        str(test_out_path),
+    )
+
+    expected_tasks_xml = """
+    <task>
+      <title>test task2</title>
+      <sortWeight>A</sortWeight>
+    </task>
+    <task>
+      <title>test task1</title>
+      <sortWeight>Z</sortWeight>
+      <reminder>
+        <reminderDate>20250413T135047Z</reminderDate>
+      </reminder>
+    </task>"""
+
+    book1_path = test_out_path / "name1.enex"
+
+    with open(book1_path, "r") as f:
+        book1_xml = f.read()
+
+    assert result.exit_code == 0
+    assert expected_tasks_xml in book1_xml

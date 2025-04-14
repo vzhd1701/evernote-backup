@@ -1,15 +1,27 @@
 import functools
 import inspect
+import json
 import platform
-from typing import Any, Optional, Union
+import uuid
+from typing import Any, Iterator, Optional, Union
 
-from evernote.edam.error.ttypes import EDAMSystemException, EDAMUserException
+from evernote.edam.error.ttypes import (
+    EDAMErrorCode,
+    EDAMSystemException,
+    EDAMUserException,
+)
 from evernote.edam.notestore import NoteStore
 from evernote.edam.userstore import UserStore
+from requests_sse import EventSource, MessageEvent
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import THttpClient
 
-from evernote_backup.evernote_client_util import network_retry, raise_auth_error
+from evernote_backup.evernote_client_util import (
+    EvernoteAuthError,
+    network_retry,
+    raise_auth_error,
+)
+from evernote_backup.evernote_types import EvernoteEntityType
 from evernote_backup.token_util import get_token_shard
 
 
@@ -50,6 +62,7 @@ class EvernoteClient(EvernoteClientBase):
         self.network_error_retry_count = network_error_retry_count
 
         self._user: Optional[str] = None
+        self._token_jwt: Optional[str] = None
 
     def verify_token(self) -> None:
         try:
@@ -92,6 +105,35 @@ class EvernoteClient(EvernoteClientBase):
             user_agent=self.user_agent,
             network_error_retry_count=self.network_error_retry_count,
         )
+
+    def refresh_jwt_token(self):
+        try:
+            self._token_jwt = self.user_store.getNAPAccessToken()
+        except (EDAMUserException, EDAMSystemException) as e:
+            if e.errorCode == EDAMErrorCode.INVALID_AUTH:
+                raise EvernoteAuthError(
+                    "This auth token does not have permission to use the new Evernote API."
+                )
+            raise_auth_error(e)
+            raise
+
+    def iter_sync_events(self, last_connection: int) -> Iterator[MessageEvent]:
+        headers = {
+            "User-Agent": self.user_agent,
+            "x-feature-version": "4",
+            "x-conduit-version": "2.40.2",
+            "Authorization": f"Bearer {self._token_jwt}",
+        }
+
+        connection_id = uuid.uuid4()
+
+        entity_filter = [EvernoteEntityType.TASK, EvernoteEntityType.REMINDER]
+        entity_filter_arg = json.dumps(entity_filter, separators=(",", ":"))
+
+        url = f"https://api.evernote.com/sync/v1/download?lastConnection={last_connection}&connectionId={connection_id}&entityFilter={entity_filter_arg}"
+
+        with EventSource(url, timeout=30, headers=headers) as event_source:
+            yield from event_source
 
 
 class Store(object):
@@ -146,7 +188,7 @@ class Store(object):
         http_client.setCustomHeaders(
             {
                 "User-Agent": self.user_agent,
-                "x-feature-version": 3,
+                "x-feature-version": "3",
                 "accept": "application/x-thrift",
                 "cache-control": "no-cache",
             }

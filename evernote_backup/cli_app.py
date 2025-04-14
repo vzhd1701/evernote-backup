@@ -43,7 +43,7 @@ def init_db(
             network_retry_count,
         )
 
-    note_client = get_sync_client(auth_token, backend, network_retry_count, 1)
+    note_client = get_sync_client(auth_token, backend, network_retry_count, 1, False)
 
     storage = initialize_storage(database, force)
 
@@ -54,6 +54,7 @@ def init_db(
     storage.config.set_config_value("auth_token", auth_token)
     storage.config.set_config_value("user", new_user)
     storage.config.set_config_value("backend", backend)
+    storage.config.set_config_value("last_connection_tasks", "0")
 
     logger.info(f"Successfully initialized database for {new_user}!")
 
@@ -83,7 +84,13 @@ def reauth(
             network_retry_count,
         )
 
-    note_client = get_sync_client(auth_token, backend, network_retry_count, 1)
+    note_client = get_sync_client(
+        auth_token=auth_token,
+        backend=backend,
+        network_error_retry_count=network_retry_count,
+        max_chunk_results=1,
+        is_jwt_needed=False,
+    )
 
     local_user = storage.config.get_config_value("user")
 
@@ -104,20 +111,32 @@ def sync(
     max_download_workers: int,
     download_cache_memory_limit: int,
     network_retry_count: int,
+    include_tasks: bool,
+    token: Optional[str],
 ) -> None:
     storage = get_storage(database)
 
     raise_on_old_database_version(storage)
 
     backend = storage.config.get_config_value("backend")
-    auth_token = storage.config.get_config_value("auth_token")
+    auth_token = token or storage.config.get_config_value("auth_token")
+
+    is_jwt_needed = include_tasks
 
     note_client = get_sync_client(
-        auth_token, backend, network_retry_count, max_chunk_results
+        auth_token,
+        backend,
+        network_retry_count,
+        max_chunk_results,
+        is_jwt_needed,
     )
 
     note_synchronizer = NoteSynchronizer(
-        note_client, storage, max_download_workers, download_cache_memory_limit
+        note_client,
+        storage,
+        max_download_workers,
+        download_cache_memory_limit,
+        include_tasks,
     )
 
     try:

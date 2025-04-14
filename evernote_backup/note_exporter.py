@@ -9,6 +9,7 @@ from click import progressbar
 from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.cli_app_util import get_progress_output
+from evernote_backup.evernote_types import Task
 from evernote_backup.log_util import log_format_note, log_format_notebook
 from evernote_backup.note_exporter_util import SafePath
 from evernote_backup.note_formatter import NoteFormatter
@@ -17,9 +18,9 @@ from evernote_backup.note_storage import SqliteStorage
 logger = logging.getLogger(__name__)
 
 ENEX_HEAD = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE en-export SYSTEM "http://xml.evernote.com/pub/evernote-export3.dtd">
+<!DOCTYPE en-export SYSTEM "http://xml.evernote.com/pub/evernote-export4.dtd">
 """
-ENEX_TAIL = "</en-export>"
+ENEX_TAIL = "</en-export>\n"
 
 
 class NothingToExportError(Exception):
@@ -114,50 +115,59 @@ class NoteExporter(object):
         for note in notes_source:
             note_path = self.safe_paths.get_file(*parent_dir, f"{note.title}.enex")
 
-            _write_export_file(note_path, note, self.no_export_date, self.add_guid)
+            self._write_export_file(
+                note_path, [note], self.no_export_date, self.add_guid
+            )
 
     def _output_notebook(
         self, parent_dir: List[str], notebook_name: str, notes_source: Iterable[Note]
     ) -> None:
         notebook_path = self.safe_paths.get_file(*parent_dir, f"{notebook_name}.enex")
 
-        _write_export_file(
+        self._write_export_file(
             notebook_path, notes_source, self.no_export_date, self.add_guid
         )
 
+    def _get_note_tasks(self, note_guid: str) -> List[Task]:
+        tasks = sorted(
+            self.storage.tasks.iter_tasks(note_guid),
+            key=lambda t: t.sortWeight,
+        )
 
-def _write_export_file(
-    file_path: Path,
-    note_source: Union[Iterable[Note], Note],
-    no_export_date: bool,
-    add_guid: bool,
-) -> None:
-    with open(file_path, "w", encoding="utf-8") as f:
-        logger.debug(f"Writing file {file_path}")
+        for task in tasks:
+            task.reminders = list(self.storage.reminders.iter_reminders(task.taskId))
 
-        f.write(ENEX_HEAD)
+        return tasks
 
-        if no_export_date:
-            f.write('<en-export application="Evernote" version="10.10.5">\n')
-        else:
-            now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-            f.write(
-                f'<en-export export-date="{now}"'
-                f' application="Evernote" version="10.10.5">\n'
-            )
+    def _write_export_file(
+        self,
+        file_path: Path,
+        note_source: Iterable[Note],
+        no_export_date: bool,
+        add_guid: bool,
+    ) -> None:
+        with open(file_path, "w", encoding="utf-8") as f:
+            logger.debug(f"Writing file {file_path}")
 
-        note_formatter = NoteFormatter(add_guid=add_guid)
+            f.write(ENEX_HEAD)
 
-        if isinstance(note_source, Note):
-            if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
-                n_info = log_format_note(note_source)
-                logger.debug(f"Exporting note {n_info}")
-            f.write(note_formatter.format_note(note_source))
-        else:
+            if no_export_date:
+                f.write('<en-export application="Evernote" version="10.134.4">\n')
+            else:
+                now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+                f.write(
+                    f'<en-export export-date="{now}"'
+                    f' application="Evernote" version="10.134.4">\n'
+                )
+
+            note_formatter = NoteFormatter(add_guid=add_guid)
+
             for note in note_source:  # noqa: WPS440
-                if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
-                    n_info = log_format_note(note)
-                    logger.debug(f"Exporting note {n_info}")
-                f.write(note_formatter.format_note(note))
+                n_info = log_format_note(note)
+                logger.debug(f"Exporting note {n_info}")
 
-        f.write(ENEX_TAIL)
+                note_tasks = self._get_note_tasks(note.guid)
+
+                f.write(note_formatter.format_note(note, note_tasks))
+
+            f.write(ENEX_TAIL)

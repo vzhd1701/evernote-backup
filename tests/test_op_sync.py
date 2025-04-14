@@ -14,7 +14,7 @@ from evernote.edam.type.ttypes import (
 )
 
 from evernote_backup import note_synchronizer
-from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.evernote_types import Reminder, Task
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -940,3 +940,345 @@ def test_sync_massive_note_count(
     )
 
     assert result_notes == mock_evernote_client.fake_notes
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_add_task(cli_invoker, mock_evernote_client, fake_storage):
+    mock_evernote_client.fake_notebooks.append(
+        Notebook(
+            guid="nbid1",
+            name="name1",
+            stack="stack1",
+            serviceUpdated=1000,
+        ),
+    )
+
+    test_note = Note(
+        guid="id1",
+        title="title1",
+        content="body1",
+        notebookGuid="nbid1",
+        active=True,
+        contentLength=100,
+    )
+
+    mock_evernote_client.fake_notes.append(test_note)
+
+    test_task = Task(
+        taskId="c16d6ec7-9a4f-4860-b490-12d93774897c",
+        parentId=test_note.guid,
+        parentType=0,
+        noteLevelID="nl-abcdef123456",
+        taskGroupNoteLevelID="be9a14f8-06f8-44df-bcd3-945adf5b282a",
+        label="Test Label",
+        description="Test Description",
+        dueDate=1713129600000,
+        dueDateUIOption="date_only",
+        timeZone="America/New_York",
+        status="open",
+        statusUpdated=1712692800000,
+        inNote=True,
+        flag=True,
+        taskFlag=2,
+        priority=3,
+        idClock=1,
+        sortWeight="A",
+        creator=5678901,
+        lastEditor=5678901,
+        ownerId=5678901,
+        created=1712261000000,
+        updated=1712692800000,
+        assigneeEmail="test@test.com",
+        assigneeUserId=9012345,
+        assignedByUserId=5678901,
+        recurrence="RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO",
+        repeatAfterCompletion=False,
+    )
+
+    mock_evernote_client.fake_updates.append(
+        {
+            "acl": {"agentIds": ["123:;2"], "updated": 1744277698325},
+            "instance": {
+                "ref": {"id": test_task.taskId, "type": 15},
+                "type": 1,
+                "version": test_task.updated,
+                "created": test_task.created,
+                "updated": test_task.updated,
+                "deleted": 0,
+                "shardId": "",
+                "ownerId": test_task.ownerId,
+                "noteLevelID": test_task.noteLevelID,
+                "taskGroupNoteLevelID": test_task.taskGroupNoteLevelID,
+                "label": test_task.label,
+                "dueDate": test_task.dueDate,
+                "dueDateUIOption": test_task.dueDateUIOption,
+                "timeZone": test_task.timeZone,
+                "status": test_task.status,
+                "statusUpdated": test_task.statusUpdated,
+                "inNote": test_task.inNote,
+                "flag": test_task.flag,
+                "sortWeight": test_task.sortWeight,
+                "creator": test_task.creator,
+                "lastEditor": test_task.lastEditor,
+                "assigneeUserID": test_task.assigneeUserId,
+                "assigneeEmail": test_task.assigneeEmail,
+                "assigneeIdentityId": test_task.assigneeIdentityId,
+                "assignedByUserID": test_task.assignedByUserId,
+                "recurrence": test_task.recurrence,
+                "repeatAfterCompletion": test_task.repeatAfterCompletion,
+                "priority": test_task.priority,
+                "sourceOfChange": "RTE",
+                "taskFlag": test_task.taskFlag,
+                "featureVersion": [0, 1, 0],
+                "embeddedOutliers": [],
+                "idClock": test_task.idClock,
+                "description": test_task.description,
+                "parentEntity": {"id": test_note.guid, "type": 0},
+            },
+            "operation": 2,
+            "updated": 1744277698547,
+        },
+    )
+
+    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+
+    result_notes = list(fake_storage.notes.iter_notes("nbid1"))
+    result_tasks = list(fake_storage.tasks.iter_tasks("id1"))
+
+    assert result.exit_code == 0
+    assert result_notes == [test_note]
+    assert result_tasks == [test_task]
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_add_task_with_reminder(cli_invoker, mock_evernote_client, fake_storage):
+    mock_evernote_client.fake_notebooks.append(
+        Notebook(
+            guid="nbid1",
+            name="name1",
+            stack="stack1",
+            serviceUpdated=1000,
+        ),
+    )
+
+    test_note = Note(
+        guid="id1",
+        title="title1",
+        content="body1",
+        notebookGuid="nbid1",
+        active=True,
+        contentLength=100,
+    )
+
+    mock_evernote_client.fake_notes.append(test_note)
+
+    test_task = Task(
+        taskId="c16d6ec7-9a4f-4860-b490-12d93774897c",
+        parentId=test_note.guid,
+        parentType=0,
+        noteLevelID="nl-abcdef123456",
+        taskGroupNoteLevelID="be9a14f8-06f8-44df-bcd3-945adf5b282a",
+        label="Test Label",
+        status="open",
+        statusUpdated=1712692800000,
+        idClock=1,
+        sortWeight="A",
+        creator=5678901,
+        lastEditor=5678901,
+        ownerId=5678901,
+        created=1712261000000,
+        updated=1712692800000,
+    )
+
+    test_reminder = Reminder(
+        reminderId="5d48e464-1dad-4624-9523-24f2bd8f8fe3",
+        sourceId=test_task.taskId,
+        sourceType=15,
+        noteLevelID="38e93c9d-f34e-4754-bb08-5f5ceb62154a",
+        reminderDate=1713042000000,
+        reminderDateUIOption="date_time",
+        timeZone="America/New_York",
+        dueDateOffset=86400,
+        status="active",
+        ownerId=5678901,
+        created=1712175600000,
+        updated=1712520000000,
+    )
+
+    mock_evernote_client.fake_updates = [
+        {
+            "acl": {"agentIds": ["123:;2"], "updated": 1744277698325},
+            "instance": {
+                "ref": {"id": test_task.taskId, "type": 15},
+                "type": 1,
+                "version": test_task.updated,
+                "created": test_task.created,
+                "updated": test_task.updated,
+                "deleted": 0,
+                "shardId": "",
+                "ownerId": test_task.ownerId,
+                "noteLevelID": test_task.noteLevelID,
+                "taskGroupNoteLevelID": test_task.taskGroupNoteLevelID,
+                "label": test_task.label,
+                "status": test_task.status,
+                "statusUpdated": test_task.statusUpdated,
+                "sortWeight": test_task.sortWeight,
+                "creator": test_task.creator,
+                "lastEditor": test_task.lastEditor,
+                "sourceOfChange": "RTE",
+                "featureVersion": [0, 1, 0],
+                "embeddedOutliers": [],
+                "idClock": test_task.idClock,
+                "parentEntity": {"id": test_note.guid, "type": 0},
+            },
+            "operation": 2,
+            "updated": 1744277698547,
+        },
+        {
+            "acl": {"agentIds": ["123:;2"], "updated": 0},
+            "instance": {
+                "ref": {"id": test_reminder.reminderId, "type": 16},
+                "type": 1,
+                "version": test_reminder.updated,
+                "created": test_reminder.created,
+                "updated": test_reminder.updated,
+                "deleted": 0,
+                "shardId": "",
+                "ownerId": test_reminder.ownerId,
+                "reminderDate": test_reminder.reminderDate,
+                "reminderDateUIOption": test_reminder.reminderDateUIOption,
+                "timeZone": test_reminder.timeZone,
+                "status": test_reminder.status,
+                "noteLevelID": test_reminder.noteLevelID,
+                "dueDateOffset": test_reminder.dueDateOffset,
+                "parentEntity": {
+                    "id": test_task.taskId,
+                    "type": 15,
+                },
+            },
+            "operation": 1,
+            "updated": 1744275073798,
+        },
+    ]
+
+    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+
+    result_notes = list(fake_storage.notes.iter_notes("nbid1"))
+    result_tasks = list(fake_storage.tasks.iter_tasks("id1"))
+    result_reminders = list(fake_storage.reminders.iter_reminders(test_task.taskId))
+
+    assert result.exit_code == 0
+    assert result_notes == [test_note]
+    assert len(result_tasks) == 1
+    assert result_reminders == [test_reminder]
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_expunge_task(cli_invoker, mock_evernote_client, fake_storage):
+    test_task = Task(
+        taskId="c16d6ec7-9a4f-4860-b490-12d93774897c",
+        parentId="nid1",
+        parentType=0,
+    )
+
+    fake_storage.tasks.add_task(test_task)
+
+    mock_evernote_client.fake_updates.append(
+        {
+            "acl": {"agentIds": ["123:;2"], "updated": 0},
+            "instance": {
+                "ref": {"id": test_task.taskId, "type": 15},
+                "type": 1,
+                "version": 9007199254740991,
+                "created": 1744264744284,
+                "updated": 9007199254740991,
+                "deleted": 0,
+                "shardId": "",
+                "ownerId": 123,
+                "parentEntity": {
+                    "id": "nid1",
+                    "type": 0,
+                },
+            },
+            "operation": 4,
+            "updated": 1744275036349,
+        },
+    )
+
+    result_tasks_before = list(fake_storage.tasks.iter_tasks("nid1"))
+
+    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+
+    result_tasks = list(fake_storage.tasks.iter_tasks("nid1"))
+
+    assert result.exit_code == 0
+    assert "Expunged tasks: 1" in result.output
+    assert len(result_tasks) == 0
+    assert len(result_tasks_before) == 1
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_expunge_reminder(cli_invoker, mock_evernote_client, fake_storage):
+    test_reminder = Reminder(
+        reminderId="c16d6ec7-9a4f-4860-b490-12d93774897c",
+        sourceId="tid1",
+        sourceType=0,
+    )
+
+    fake_storage.reminders.add_reminder(test_reminder)
+
+    mock_evernote_client.fake_updates.append(
+        {
+            "acl": {"agentIds": ["123:;2"], "updated": 0},
+            "instance": {
+                "ref": {"id": test_reminder.reminderId, "type": 16},
+                "type": 1,
+                "version": 9007199254740991,
+                "created": 1744264744284,
+                "updated": 9007199254740991,
+                "deleted": 0,
+                "shardId": "",
+                "ownerId": 123,
+                "parentEntity": {
+                    "id": "nid1",
+                    "type": 0,
+                },
+            },
+            "operation": 4,
+            "updated": 1744275036349,
+        },
+    )
+
+    result_reminders_before = list(fake_storage.reminders.iter_reminders("tid1"))
+
+    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+
+    result_reminders = list(fake_storage.reminders.iter_reminders("tid1"))
+
+    assert result.exit_code == 0
+    assert "Expunged reminders: 1" in result.output
+    assert len(result_reminders_before) == 1
+    assert len(result_reminders) == 0
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_bad_token_for_jwt(cli_invoker, mock_evernote_client, fake_storage):
+    mock_evernote_client.fake_is_token_bad_for_jwt = True
+
+    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+
+    assert result.exit_code == 1
+    assert (
+        "This auth token does not have permission to use the new Evernote API"
+        in result.output
+    )
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_sync_unknown_error_on_jwt(cli_invoker, mock_evernote_client, fake_storage):
+    mock_evernote_client.fake_auth_get_jwt_unexpected_error = True
+
+    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+
+    assert result.exit_code == 1
+    assert "EDAMUserException" in result.output

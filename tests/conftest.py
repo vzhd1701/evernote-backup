@@ -1,6 +1,10 @@
+import json
 import sqlite3
+import time
 import urllib.parse
+import uuid
 from pathlib import Path
+from typing import Iterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,6 +16,7 @@ from evernote.edam.error.ttypes import (
     EDAMUserException,
 )
 from requests_oauthlib.oauth1_session import TokenRequestDenied
+from requests_sse import MessageEvent
 
 import evernote_backup
 from evernote_backup import cli_app, note_storage
@@ -47,6 +52,7 @@ class FakeEvernoteValues(MagicMock):
         self.fake_is_token_expired = False
         self.fake_is_token_invalid = False
         self.fake_is_token_bad = False
+        self.fake_is_token_bad_for_jwt = False
 
         self.fake_auth_invalid_pass = False
         self.fake_auth_invalid_name = False
@@ -56,14 +62,18 @@ class FakeEvernoteValues(MagicMock):
         self.fake_linked_notebook_auth_token = None
         self.fake_twofactor_req = False
         self.fake_twofactor_hint = None
+        self.fake_jwt_token = None
 
         self.fake_auth_verify_unexpected_error = False
+        self.fake_auth_get_jwt_unexpected_error = False
         self.fake_auth_unexpected_error = False
         self.fake_auth_twofactor_unexpected_error = False
         self.fake_auth_linked_notebook_error = False
 
         self.last_maxEntries = None
         self.fake_network_counter = 0
+
+        self.fake_updates = []
 
 
 class FakeEvernoteUserStore(MagicMock):
@@ -143,6 +153,15 @@ class FakeEvernoteUserStore(MagicMock):
         return MagicMock(
             authenticationToken=self.fake_values.fake_auth_token,
         )
+
+    def getNAPAccessToken(self):
+        if self.fake_values.fake_is_token_bad_for_jwt:
+            raise EDAMUserException(
+                errorCode=EDAMErrorCode.INVALID_AUTH, parameter="authenticationToken"
+            )
+        if self.fake_values.fake_auth_get_jwt_unexpected_error:
+            raise EDAMUserException()
+        return self.fake_values.fake_jwt_token
 
 
 class FakeEvernoteNoteStore(MagicMock):
@@ -230,12 +249,73 @@ class FakeEvernoteNoteStore(MagicMock):
         return self.fake_values.fake_l_tags
 
 
+class FakeSyncEventSource(MagicMock):
+    fake_values = None
+
+    def __enter__(self):
+        connection_id = str(uuid.uuid4())
+        event_id = f"{connection_id}::0"
+        origin = "https://api.evernote.com"
+
+        return [
+            MessageEvent(
+                last_event_id=event_id,
+                origin=origin,
+                type="connection",
+                data=f'{{"connectionId": "{connection_id}","identityIds": [12345]}}',
+            ),
+            # unknown message type
+            MessageEvent(
+                last_event_id=event_id,
+                origin=origin,
+                type="boop",
+                data="[]",
+            ),
+            # empty update message
+            MessageEvent(
+                last_event_id=event_id,
+                origin=origin,
+                type="sync",
+                data="[]",
+            ),
+            # glitchy update message
+            MessageEvent(
+                last_event_id=event_id,
+                origin=origin,
+                type="sync",
+                data='{"items": [1, 2, 3',
+            ),
+            MessageEvent(
+                last_event_id=event_id,
+                origin=origin,
+                type="sync",
+                data=json.dumps(self.fake_values.fake_updates),
+            ),
+            MessageEvent(
+                last_event_id=event_id,
+                origin=origin,
+                type="complete",
+                data=f'{{"documentCount":{len(self.fake_values.fake_updates)}}}',
+            ),
+            MessageEvent(
+                last_event_id=event_id,
+                origin=origin,
+                type="close",
+                data='{"completed":true}',
+            ),
+        ]
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False  # Don't suppress exceptions
+
+
 @pytest.fixture()
 def mock_evernote_client(mocker):
     fake_values = FakeEvernoteValues()
 
     FakeEvernoteUserStore.fake_values = fake_values
     FakeEvernoteNoteStore.fake_values = fake_values
+    FakeSyncEventSource.fake_values = fake_values
 
     mocker.patch(
         "evernote_backup.evernote_client.UserStore.Client", new=FakeEvernoteUserStore
@@ -244,6 +324,8 @@ def mock_evernote_client(mocker):
     mocker.patch(
         "evernote_backup.evernote_client.NoteStore.Client", new=FakeEvernoteNoteStore
     )
+
+    mocker.patch("evernote_backup.evernote_client.EventSource", new=FakeSyncEventSource)
 
     return fake_values
 

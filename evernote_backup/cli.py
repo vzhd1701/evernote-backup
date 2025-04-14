@@ -216,6 +216,12 @@ def init_db(
     ),
 )
 @opt_network_retry_count
+@click.option(
+    "--include-tasks",
+    is_flag=True,
+    help="Download tasks and reminders on sync.",
+)
+@opt_token
 @handle_errors
 def sync(
     database: Path,
@@ -223,6 +229,8 @@ def sync(
     max_download_workers: int,
     download_cache_memory_limit: int,
     network_retry_count: int,
+    include_tasks: bool,
+    token: Optional[str],
 ) -> None:
     """Sync local database with Evernote, downloading all notes."""
 
@@ -232,6 +240,8 @@ def sync(
         max_download_workers=max_download_workers,
         download_cache_memory_limit=download_cache_memory_limit,
         network_retry_count=network_retry_count,
+        include_tasks=include_tasks,
+        token=token,
     )
 
 

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-
+import json
 import re
 import uuid
-from typing import Optional
+from typing import List, Optional
 
 import xmltodict
 from evernote.edam.type.ttypes import Note, Resource
 
+from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.note_formatter_util import fmt_binary, fmt_content, fmt_time
 
 
@@ -17,7 +18,7 @@ class NoteFormatter(object):
         self._raw_elements: dict = {}
         self.add_guid = add_guid
 
-    def format_note(self, note: Note) -> str:
+    def format_note(self, note: Note, note_tasks: List[Task]) -> str:
         self._raw_elements = {}
 
         note_skeleton = {
@@ -26,9 +27,10 @@ class NoteFormatter(object):
                 "created": fmt_time(note.created),
                 "updated": fmt_time(note.updated),
                 "tag": note.tagNames,
-                "note-attributes": None,
+                "note-attributes": {},
                 "content": self._fmt_raw(fmt_content(note.content)),
                 "resource": map(self._fmt_resource, note.resources or []),
+                "task": map(self._fmt_task, note_tasks or []),
             }
         }
 
@@ -99,3 +101,48 @@ class NoteFormatter(object):
         content_uuid = str(uuid.uuid4())
         self._raw_elements[content_uuid] = body
         return content_uuid
+
+    # <!ELEMENT task
+    #  (title, created, updated, taskStatus, inNote, taskFlag, sortWeight,
+    #   noteLevelID, taskGroupNoteLevelID, dueDate?, dueDateUIOption?, timeZone?,
+    #   recurrence?, repeatAfterCompletion?, statusUpdated?, creator?, lastEditor?,
+    #   reminder*)
+    # >
+    def _fmt_task(self, task: Task) -> dict:
+        return {
+            "title": task.label,
+            "created": fmt_time(task.created),
+            "updated": fmt_time(task.updated),
+            "taskStatus": task.status,
+            # not exported by Evernote client
+            # "inNote": task.inNote,
+            "taskFlag": task.flag,
+            "sortWeight": task.sortWeight,
+            "noteLevelID": task.noteLevelID,
+            "taskGroupNoteLevelID": task.taskGroupNoteLevelID,
+            "dueDate": fmt_time(task.dueDate),
+            "dueDateUIOption": task.dueDateUIOption,
+            "timeZone": task.timeZone,
+            "recurrence": task.recurrence and json.dumps(task.recurrence)[1:-1],
+            "repeatAfterCompletion": task.repeatAfterCompletion,
+            "statusUpdated": fmt_time(task.statusUpdated),
+            "creator": task.creator,
+            "lastEditor": task.lastEditor,
+            "reminder": map(self._fmt_reminder, task.reminders or []),
+        }
+
+    # <!ELEMENT reminder
+    #   (created, updated, noteLevelID, reminderDate?, reminderDateUIOption?,
+    #    timeZone?, dueDateOffset?, reminderStatus?)
+    # >
+    def _fmt_reminder(self, reminder: Reminder) -> dict:
+        return {
+            "created": fmt_time(reminder.created),
+            "updated": fmt_time(reminder.updated),
+            "noteLevelID": reminder.noteLevelID,
+            "reminderDate": fmt_time(reminder.reminderDate),
+            "reminderDateUIOption": reminder.reminderDateUIOption,
+            "timeZone": reminder.timeZone,
+            "dueDateOffset": reminder.dueDateOffset,
+            "reminderStatus": reminder.status,
+        }

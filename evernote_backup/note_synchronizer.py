@@ -14,6 +14,7 @@ from evernote.edam.type.ttypes import LinkedNotebook, Note
 from evernote_backup.cli_app_util import chunks, get_progress_output
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import NotebookAuth
+from evernote_backup.evernote_types import SyncChunkV2
 from evernote_backup.note_storage import NoteForSync, SqliteStorage
 
 logger = logging.getLogger(__name__)
@@ -155,12 +156,8 @@ class NoteClientWorker(object):
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
                     raise
 
-                error_code_name = EDAMErrorCode._VALUES_TO_NAMES.get(
-                    e.errorCode, f"UNKNOWN [{e.errorCode}]"
-                )
-
                 raise NoteDownloadException(
-                    f"Remote server returned system error ({error_code_name} - {e.message})"
+                    f"Remote server returned system error ({e.errorCode.name} - {e.message})"
                     f" while downloading note [{note_id}]"
                 )
             except struct.error:
@@ -189,17 +186,23 @@ class NoteSynchronizer(object):  # noqa: WPS214
         note_storage: SqliteStorage,
         max_download_workers: int,
         download_cache_memory_limit: int,
+        include_tasks: bool,
     ) -> None:
         self._count_updated_notebooks = 0
         self._count_updated_notes = 0
+        self._count_updated_tasks = 0
+        self._count_updated_reminders = 0
 
         self._count_expunged_notebooks = 0
         self._count_expunged_linked_notebooks = 0
         self._count_expunged_notes = 0
+        self._count_expunged_tasks = 0
+        self._count_expunged_reminders = 0
 
         self.note_client = note_client
         self.storage = note_storage
         self.max_download_workers = max_download_workers
+        self.include_tasks = include_tasks
 
         self.note_worker = NoteClientWorker(
             self.note_client.token,
@@ -233,16 +236,25 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
             self._count_updated_notes = len(notes_to_sync)
 
+        if self.include_tasks:
+            logger.info("Syncing tasks...")
+            self._sync_chunks_v2()
+
         report = [
-            f"Updated or added notebooks: {self._count_updated_notebooks}",
-            f"Updated or added notes: {self._count_updated_notes}",
-            f"Expunged notebooks: {self._count_expunged_notebooks}",
-            f"Expunged linked notebooks: {self._count_expunged_linked_notebooks}",
-            f"Expunged notes: {self._count_expunged_notes}",
+            (f"Updated or added notebooks", self._count_updated_notebooks),
+            (f"Updated or added notes", self._count_updated_notes),
+            (f"Updated or added tasks", self._count_updated_tasks),
+            (f"Updated or added reminders", self._count_updated_reminders),
+            (f"Expunged notebooks", self._count_expunged_notebooks),
+            (f"Expunged linked notebooks", self._count_expunged_linked_notebooks),
+            (f"Expunged notes", self._count_expunged_notes),
+            (f"Expunged tasks", self._count_expunged_tasks),
+            (f"Expunged reminders", self._count_expunged_reminders),
         ]
 
-        for msg in report:
-            logger.info(msg)
+        for msg, count in report:
+            if count > 0:
+                logger.info(f"{msg}: {count}")
 
     def _authorize_linked_notebooks_for_notes(
         self, notes_to_sync: Tuple[NoteForSync, ...]
@@ -314,9 +326,9 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
     def _process_chunk(self, chunk: SyncChunk) -> None:
         self._expunge(
-            chunk.expungedNotebooks,
-            chunk.expungedNotes,
-            chunk.expungedLinkedNotebooks,
+            expunged_notebooks=chunk.expungedNotebooks,
+            expunged_notes=chunk.expungedNotes,
+            expunged_linked_notebooks=chunk.expungedLinkedNotebooks,
         )
 
         if chunk.notebooks:
@@ -329,9 +341,11 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
     def _expunge(
         self,
-        expunged_notebooks: List[str],
-        expunged_notes: List[str],
-        expunged_linked_notebooks: List[str],
+        expunged_notebooks: Optional[List[str]] = None,
+        expunged_notes: Optional[List[str]] = None,
+        expunged_linked_notebooks: Optional[List[str]] = None,
+        expunged_tasks: Optional[List[str]] = None,
+        expunged_reminders: Optional[List[str]] = None,
     ) -> None:
         if expunged_notebooks:
             self.storage.notebooks.expunge_notebooks(expunged_notebooks)
@@ -342,6 +356,16 @@ class NoteSynchronizer(object):  # noqa: WPS214
             self.storage.notes.expunge_notes(expunged_notes)
 
             self._count_expunged_notes += len(expunged_notes)
+
+        if expunged_tasks:
+            self.storage.tasks.expunge_tasks(expunged_tasks)
+
+            self._count_expunged_tasks += len(expunged_tasks)
+
+        if expunged_reminders:
+            self.storage.reminders.expunge_reminders(expunged_reminders)
+
+            self._count_expunged_reminders += len(expunged_reminders)
 
         if expunged_linked_notebooks:
             for l_notebook_guid in expunged_linked_notebooks:
@@ -431,3 +455,35 @@ class NoteSynchronizer(object):  # noqa: WPS214
             wait(note_futures, timeout=30, return_when=FIRST_EXCEPTION)  # noqa: WPS432
 
             raise
+
+    def _sync_chunks_v2(self) -> None:
+        last_connection_tasks = int(
+            self.storage.config.get_config_value("last_connection_tasks")
+        )
+
+        chunk_iter = self.note_client.iter_sync_chunks_v2(last_connection_tasks)
+
+        with progressbar(
+            chunk_iter, show_pos=True, file=get_progress_output()
+        ) as chunks_bar:
+            for chunk in chunks_bar:
+                self._process_chunk_v2(chunk)
+                self.storage.config.set_config_value(
+                    "last_connection_tasks", str(chunk.last_timestamp + 1)
+                )
+
+    def _process_chunk_v2(self, chunk: SyncChunkV2) -> None:
+        self._expunge(
+            expunged_tasks=chunk.expunged_tasks,
+            expunged_reminders=chunk.expunged_reminders,
+        )
+
+        if chunk.tasks:
+            self.storage.tasks.add_tasks(chunk.tasks)
+
+            self._count_updated_tasks += len(chunk.tasks)
+
+        if chunk.reminders:
+            self.storage.reminders.add_reminders(chunk.reminders)
+
+            self._count_updated_reminders += len(chunk.reminders)

@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
+from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.note_storage import NoteForSync, SqliteStorage, initialize_db
 
 
@@ -399,6 +400,86 @@ def test_notes_corrupt(fake_storage, caplog):
     assert len(result_notes_for_sync) == 0
     assert "Traceback" in caplog.text
     assert "Note 'test' [id3] is corrupt" in caplog.text
+
+
+def test_task_corrupt(fake_storage, caplog):
+    test_tasks = [
+        Task(
+            taskId="id1",
+            parentId="nid1",
+        ),
+        Task(
+            taskId="id2",
+            parentId="nid1",
+        ),
+        Task(
+            taskId="id3",
+            parentId="nid1",
+        ),
+    ]
+
+    expected_tasks = [
+        Task(
+            taskId="id1",
+            parentId="nid1",
+        ),
+        Task(
+            taskId="id2",
+            parentId="nid1",
+        ),
+    ]
+
+    fake_storage.tasks.add_tasks(test_tasks)
+
+    with fake_storage.db as con:
+        con.execute("UPDATE tasks SET raw_task=? WHERE guid=?", (b"123", "id3"))
+
+    with caplog.at_level(logging.DEBUG, logger="evernote_backup"):
+        result_tasks = list(fake_storage.tasks.iter_tasks("nid1"))
+
+    assert result_tasks == expected_tasks
+    assert "Traceback" in caplog.text
+    assert "Task [id3] is corrupt" in caplog.text
+
+
+def test_reminder_corrupt(fake_storage, caplog):
+    test_reminders = [
+        Reminder(
+            reminderId="id1",
+            sourceId="tid1",
+        ),
+        Reminder(
+            reminderId="id2",
+            sourceId="tid1",
+        ),
+        Reminder(
+            reminderId="id3",
+            sourceId="tid1",
+        ),
+    ]
+
+    expected_reminders = [
+        Reminder(
+            reminderId="id1",
+            sourceId="tid1",
+        ),
+        Reminder(
+            reminderId="id2",
+            sourceId="tid1",
+        ),
+    ]
+
+    fake_storage.reminders.add_reminders(test_reminders)
+
+    with fake_storage.db as con:
+        con.execute("UPDATE reminders SET raw_reminder=? WHERE guid=?", (b"123", "id3"))
+
+    with caplog.at_level(logging.DEBUG, logger="evernote_backup"):
+        result_reminders = list(fake_storage.reminders.iter_reminders("tid1"))
+
+    assert result_reminders == expected_reminders
+    assert "Traceback" in caplog.text
+    assert "Reminder [id3] is corrupt" in caplog.text
 
 
 def test_get_notes_for_sync(fake_storage):
