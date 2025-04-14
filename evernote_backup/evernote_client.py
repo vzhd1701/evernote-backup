@@ -9,7 +9,6 @@ from evernote.edam.userstore import UserStore
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import THttpClient
 
-from evernote_backup.evernote_client_classes import ClientV2
 from evernote_backup.evernote_client_util import network_retry, raise_auth_error
 from evernote_backup.token_util import get_token_shard
 
@@ -63,7 +62,7 @@ class EvernoteClient(EvernoteClientBase):
     def user_store(self) -> "Store":
         user_store_uri = self._get_endpoint("edam/user")
         return Store(
-            client_class=ClientV2,
+            client_class=UserStore.Client,
             store_url=user_store_uri,
             token=self.token,
             user_agent=self.user_agent,

@@ -237,7 +237,9 @@ def mock_evernote_client(mocker):
     FakeEvernoteUserStore.fake_values = fake_values
     FakeEvernoteNoteStore.fake_values = fake_values
 
-    mocker.patch("evernote_backup.evernote_client.ClientV2", new=FakeEvernoteUserStore)
+    mocker.patch(
+        "evernote_backup.evernote_client.UserStore.Client", new=FakeEvernoteUserStore
+    )
 
     mocker.patch(
         "evernote_backup.evernote_client.NoteStore.Client", new=FakeEvernoteNoteStore

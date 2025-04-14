@@ -32,13 +32,14 @@ classifiers = [
     "Topic :: Terminals",
     "Topic :: Utilities",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.9,<4.0"
 dependencies = [
-    "evernote3==1.25.14",
     "xmltodict==0.13.0",
     "click==8.1.8",
     "click-option-group==0.5.7",
     "requests-oauthlib==1.3.1",
+    "thrift (==0.21.0)",
+    "evernote-plus (==1.28.1.dev0)",
 ]
 
 [project.urls]
@@ -74,7 +75,6 @@ extended_default_ignore=[]
 max_line_length = 88
 exclude = [
     "tests/*.py",
-    "evernote_backup/evernote_client_classes.py",
 ]
 
 [tool.flakeheaven.plugins]
@@ -186,8 +186,3 @@ warn_unreachable = true
 
 check_untyped_defs = true
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "evernote_backup.evernote_client_classes"
-disallow_untyped_defs = false
-disallow_untyped_calls = false
