@@ -1,3 +1,5 @@
+// https://github.com/absolute-version/commit-and-tag-version
+
 const version_updater_regex = {
   readVersion: function (contents) {
     version_m = contents.match(this.regex);
