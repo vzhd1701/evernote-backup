@@ -142,6 +142,15 @@ $ evernote-backup export output_dir/
 
 After first initialization, you can schedule `evernote-backup sync` command to keep your local database always up-to-date. However, `evernote-backup export` will always re-export all notebooks to the specified output directory.
 
+### Tasks
+
+To sync tasks & reminders, you will need:
+
+1. Get the official desktop app authentication token using [evertoken](https://github.com/vzhd1701/evertoken)
+2. Use it with sync command like so: `evernote-backup sync --include-tasks --token "YOUR_TOKEN_HERE"`
+
+Sorry for the extra steps, tasks and reminders are not accessible using current public API, so I had to use Evernote's new sync API which is not available for third party apps yet. I have placed a request to grant my app key access to the new API, but I have not received a response yet.
+
 ### How to refresh expired token
 
 In case your auth token that you initialized your database with expires, you have an option to re-authorize it by running the `evernote-backup reauth` command. It has the same options as the `init-db` command.
