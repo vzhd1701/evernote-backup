@@ -359,7 +359,7 @@ def test_custom_network_retry_count_fail(
     mocker.patch("evernote_backup.evernote_client_util.time.sleep")
 
     test_network_retry_count = 10
-    mock_evernote_client.fake_network_counter = test_network_retry_count
+    mock_evernote_client.fake_network_counter = test_network_retry_count + 1
 
     result = cli_invoker(
         "reauth",

@@ -1,26 +1,20 @@
-import functools
-import inspect
 import json
 import platform
 import uuid
-from typing import Any, Iterator, Optional, Union
+from typing import Iterator, Optional
 
 from evernote.edam.error.ttypes import (
     EDAMErrorCode,
     EDAMSystemException,
     EDAMUserException,
 )
-from evernote.edam.notestore import NoteStore
-from evernote.edam.userstore import UserStore
 from requests_sse import EventSource, MessageEvent
-from thrift.protocol import TBinaryProtocol
-from thrift.transport import THttpClient
 
-from evernote_backup.evernote_client_util import (
-    EvernoteAuthError,
-    network_retry,
-    raise_auth_error,
+from evernote_backup.evernote_client_api_http import (
+    NoteStoreClientRetryable,
+    UserStoreClientRetryable,
 )
+from evernote_backup.evernote_client_util import EvernoteAuthError, raise_auth_error
 from evernote_backup.evernote_types import EvernoteEntityType
 from evernote_backup.token_util import get_token_shard
 
@@ -72,18 +66,25 @@ class EvernoteClient(EvernoteClientBase):
             raise
 
     @property
-    def user_store(self) -> "Store":
+    def user_store(self) -> "UserStoreClientRetryable":
         user_store_uri = self._get_endpoint("edam/user")
-        return Store(
-            client_class=UserStore.Client,
+
+        us = UserStoreClientRetryable(
+            auth_token=self.token,
             store_url=user_store_uri,
-            token=self.token,
             user_agent=self.user_agent,
-            network_error_retry_count=self.network_error_retry_count,
+            retry_max=self.network_error_retry_count,
+        )
+
+        return UserStoreClientRetryable(
+            auth_token=self.token,
+            store_url=user_store_uri,
+            user_agent=self.user_agent,
+            retry_max=self.network_error_retry_count,
         )
 
     @property
-    def note_store(self) -> "Store":
+    def note_store(self) -> "NoteStoreClientRetryable":
         return self.get_note_store()
 
     @property
@@ -92,18 +93,20 @@ class EvernoteClient(EvernoteClientBase):
             self._user = self.user_store.getUser().username
         return self._user
 
-    def get_note_store(self, shard_id: Optional[str] = None) -> "Store":
+    def get_note_store(
+        self,
+        shard_id: Optional[str] = None,
+    ) -> "NoteStoreClientRetryable":
         if shard_id is None:
             shard_id = self.shard
 
         note_store_uri = self._get_endpoint(f"edam/note/{shard_id}")
 
-        return Store(
-            client_class=NoteStore.Client,
+        return NoteStoreClientRetryable(
+            auth_token=self.token,
             store_url=note_store_uri,
-            token=self.token,
             user_agent=self.user_agent,
-            network_error_retry_count=self.network_error_retry_count,
+            retry_max=self.network_error_retry_count,
         )
 
     def refresh_jwt_token(self):
@@ -136,65 +139,3 @@ class EvernoteClient(EvernoteClientBase):
 
         with EventSource(url, timeout=30, headers=headers) as event_source:
             yield from event_source
-
-
-class Store(object):
-    def __init__(
-        self,
-        client_class: Union[UserStore.Client, NoteStore.Client],
-        store_url: str,
-        user_agent: str,
-        network_error_retry_count: int,
-        token: Optional[str] = None,
-    ):
-        self.token = token
-        self.user_agent = user_agent
-        self.network_error_retry_count = network_error_retry_count
-
-        self._client = self._get_thrift_client(client_class, store_url)
-
-    def __getattr__(self, name: str) -> Any:
-        target_method = getattr(self._client, name)
-
-        if not callable(target_method):
-            return target_method
-
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            target_method_retry = network_retry(self.network_error_retry_count)(
-                target_method
-            )
-
-            org_args = inspect.getfullargspec(target_method).args
-            if len(org_args) == len(args) + 1:
-                return target_method_retry(*args, **kwargs)
-            elif self.token and "authenticationToken" in org_args:
-                skip_args = ["self", "authenticationToken"]
-                arg_names = [i for i in org_args if i not in skip_args]
-                return functools.partial(
-                    target_method_retry,
-                    authenticationToken=self.token,
-                )(
-                    **dict(list(zip(arg_names, args))),
-                )
-
-            return target_method_retry(*args, **kwargs)
-
-        return wrapper
-
-    def _get_thrift_client(
-        self,
-        client_class: Union[UserStore.Client, NoteStore.Client],
-        url: str,
-    ) -> Union[UserStore.Client, NoteStore.Client]:
-        http_client = THttpClient.THttpClient(url)
-        http_client.setCustomHeaders(
-            {
-                "User-Agent": self.user_agent,
-                "x-feature-version": "3",
-                "accept": "application/x-thrift",
-                "cache-control": "no-cache",
-            }
-        )
-
-        thrift_protocol = TBinaryProtocol.TBinaryProtocol(http_client)
-        return client_class(thrift_protocol)

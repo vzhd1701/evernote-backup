@@ -27,10 +27,10 @@ class EvernoteClientAuth(EvernoteClient):
             return self.user_store.authenticateLongSessionV2(
                 username=username,
                 password=password,
-                ssoLoginToken=None,
+                ssoLoginToken="",
                 consumerKey=self.consumer_key,
                 consumerSecret=self.consumer_secret,
-                deviceIdentifier=None,
+                deviceIdentifier="",
                 deviceDescription=self.device_description,
                 supportsTwoFactor=True,
                 supportsBusinessOnlyAccounts=True,
@@ -41,10 +41,10 @@ class EvernoteClientAuth(EvernoteClient):
 
     def two_factor_auth(self, auth_token: str, ota_code: str) -> AuthenticationResult:
         try:
+            self.note_store.auth_token = auth_token
             return self.user_store.completeTwoFactorAuthentication(
-                authenticationToken=auth_token,
                 oneTimeCode=ota_code,
-                deviceIdentifier=None,
+                deviceIdentifier="",
                 deviceDescription=self.device_description,
             )
         except EDAMUserException as e:

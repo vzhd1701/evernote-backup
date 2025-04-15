@@ -1,10 +1,7 @@
 import json
 import sqlite3
-import time
-import urllib.parse
 import uuid
 from pathlib import Path
-from typing import Iterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -21,10 +18,11 @@ from requests_sse import MessageEvent
 import evernote_backup
 from evernote_backup import cli_app, note_storage
 from evernote_backup.cli import cli
+from evernote_backup.evernote_client_api_http import RetryableMixin
 from evernote_backup.token_util import get_token_shard
 
 
-class FakeEvernoteValues(MagicMock):
+class FakeEvernoteValues:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -76,10 +74,13 @@ class FakeEvernoteValues(MagicMock):
         self.fake_updates = []
 
 
-class FakeEvernoteUserStore(MagicMock):
+class FakeEvernoteUserStore:
     fake_values = None
 
-    def getUser(self, authenticationToken):
+    def __init__(self, auth_token: str, store_url: str, user_agent: str, headers=None):
+        self.auth_token = auth_token
+
+    def getUser(self):
         if self.fake_values.fake_network_counter > 0:
             self.fake_values.fake_network_counter -= 1
             raise ConnectionError
@@ -100,7 +101,7 @@ class FakeEvernoteUserStore(MagicMock):
             )
         return MagicMock(username=self.fake_values.fake_user)
 
-    def getNoteStoreUrl(self, authenticationToken):
+    def getNoteStoreUrl(self):
         return "https://www.evernote.com/shard/s520/notestore"
 
     def authenticateLongSessionV2(
@@ -139,7 +140,6 @@ class FakeEvernoteUserStore(MagicMock):
 
     def completeTwoFactorAuthentication(
         self,
-        authenticationToken,
         oneTimeCode,
         deviceIdentifier,
         deviceDescription,
@@ -165,23 +165,21 @@ class FakeEvernoteUserStore(MagicMock):
         return self.fake_values.fake_jwt_token
 
 
-class FakeEvernoteNoteStore(MagicMock):
+class FakeEvernoteNoteStore:
     fake_values = None
 
-    def __init__(self, iprot, oprot=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, auth_token: str, store_url: str, user_agent: str, headers=None):
+        self.auth_token = auth_token
+        self.shard = store_url[store_url.rfind("/") + 1 :]
 
-        self.shard = iprot.trans.path[len("/edam/note/") :]
-
-    def getSyncState(self, authenticationToken):
+    def getSyncState(self):
         return MagicMock(updateCount=self.fake_values.fake_usn)
 
-    def listTags(self, authenticationToken):
+    def listTags(self):
         return self.fake_values.fake_tags
 
     def getNote(
         self,
-        authenticationToken,
         guid,
         withContent,
         withResourcesData,
@@ -191,13 +189,13 @@ class FakeEvernoteNoteStore(MagicMock):
         # if authenticationToken == self.fake_values.fake_linked_notebook_auth_token:
 
         # If client shard is different, means we are trying to get note from linked nb
-        token_shard = get_token_shard(authenticationToken)
+        token_shard = get_token_shard(self.auth_token)
         if token_shard != self.shard:
             return next(n for n in self.fake_values.fake_l_notes if n.guid == guid)
 
         return next(n for n in self.fake_values.fake_notes if n.guid == guid)
 
-    def getFilteredSyncChunk(self, authenticationToken, afterUSN, maxEntries, filter):
+    def getFilteredSyncChunk(self, afterUSN, maxEntries, filter):
         self.fake_values.last_maxEntries = maxEntries
 
         fake_chunk = MagicMock()
@@ -217,7 +215,7 @@ class FakeEvernoteNoteStore(MagicMock):
         return fake_chunk
 
     def getLinkedNotebookSyncChunk(
-        self, authenticationToken, linkedNotebook, afterUSN, maxEntries, fullSyncOnly
+        self, linkedNotebook, afterUSN, maxEntries, fullSyncOnly
     ):
         if self.fake_values.fake_auth_linked_notebook_error:
             raise EDAMNotFoundException
@@ -238,15 +236,15 @@ class FakeEvernoteNoteStore(MagicMock):
 
         return fake_chunk
 
-    def listLinkedNotebooks(self, authenticationToken):
+    def listLinkedNotebooks(self):
         return self.fake_values.fake_linked_notebooks
 
-    def authenticateToSharedNotebook(self, shareKeyOrGlobalId, authenticationToken):
+    def authenticateToSharedNotebook(self, shareKeyOrGlobalId):
         return MagicMock(
             authenticationToken=self.fake_values.fake_linked_notebook_auth_token,
         )
 
-    def listTagsByNotebook(self, authenticationToken, notebookGuid):
+    def listTagsByNotebook(self, notebookGuid):
         return self.fake_values.fake_l_tags
 
 
@@ -318,12 +316,20 @@ def mock_evernote_client(mocker):
     FakeEvernoteNoteStore.fake_values = fake_values
     FakeSyncEventSource.fake_values = fake_values
 
+    class FakeUserStoreClientRetryable(RetryableMixin, FakeEvernoteUserStore):
+        pass
+
+    class FakeNoteStoreClientRetryable(RetryableMixin, FakeEvernoteNoteStore):
+        pass
+
     mocker.patch(
-        "evernote_backup.evernote_client.UserStore.Client", new=FakeEvernoteUserStore
+        "evernote_backup.evernote_client.UserStoreClientRetryable",
+        new=FakeUserStoreClientRetryable,
     )
 
     mocker.patch(
-        "evernote_backup.evernote_client.NoteStore.Client", new=FakeEvernoteNoteStore
+        "evernote_backup.evernote_client.NoteStoreClientRetryable",
+        new=FakeNoteStoreClientRetryable,
     )
 
     mocker.patch("evernote_backup.evernote_client.EventSource", new=FakeSyncEventSource)
