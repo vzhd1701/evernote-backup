@@ -110,7 +110,7 @@ class EvernoteClient(EvernoteClientBase):
                 raise EvernoteAuthError(
                     "This auth token does not have permission to use the new Evernote API."
                     " Please refer to readme file (Tasks section) for more information:"
-                    " https://github.com/vzhd1701/evernote-backup#Tasks"
+                    " https://github.com/vzhd1701/evernote-backup#tasks"
                 )
             raise_auth_error(e)
             raise
