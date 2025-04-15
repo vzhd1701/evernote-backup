@@ -3,6 +3,7 @@ import time
 from http.client import HTTPException
 from typing import Any, Callable, Dict, Optional, Tuple, Type
 
+from six.moves import http_client
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 from thrift.transport.THttpClient import THttpClient
 
@@ -15,6 +16,35 @@ DEFAULT_RETRY_MAX = 3
 DEFAULT_RETRY_DELAY = 0.5
 DEFAULT_RETRY_BACKOFF_FACTOR = 2.0
 DEFAULT_RETRY_EXCEPTIONS = (HTTPException, ConnectionError)
+
+
+class THttpClientHotfix(THttpClient):
+    """
+    Hotfix for deprecated `key_file` and `cert_file` args
+    https://issues.apache.org/jira/browse/THRIFT-5847
+    https://github.com/apache/thrift/pull/3108
+    """
+
+    def open(self):  # pragma: no cover
+        if self.scheme == "http":
+            self._THttpClient__http = http_client.HTTPConnection(
+                self.host,
+                self.port,
+                timeout=self._THttpClient__timeout,
+            )
+        elif self.scheme == "https":
+            self._THttpClient__http = http_client.HTTPSConnection(
+                self.host,
+                self.port,
+                timeout=self._THttpClient__timeout,
+                context=self.context,
+            )
+        if self.using_proxy():
+            self._THttpClient__http.set_tunnel(
+                self.realhost,
+                self.realport,
+                {"Proxy-Authorization": self.proxy_auth},
+            )
 
 
 class BinaryHttpThriftClient:
@@ -42,7 +72,7 @@ class BinaryHttpThriftClient:
 
     def _create_protocol(self):
         try:
-            thrift_http_client = THttpClient(self.url)
+            thrift_http_client = THttpClientHotfix(self.url)
             thrift_http_client.setCustomHeaders(self._default_headers)
             return TBinaryProtocol(thrift_http_client)
         except Exception as e:
