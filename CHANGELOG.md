@@ -1,3 +1,17 @@
+## [1.11.0](https://github.com/vzhd1701/evernote-backup/compare/1.10.0...1.11.0) (2025-04-15)
+
+### Features
+
+- add support for tasks & reminders ([f1ece7a](https://github.com/vzhd1701/evernote-backup/commit/f1ece7afd5e2c58b1260a2e9d2582382d3dada11))
+
+### Bug Fixes
+
+- add hotfix for THttpClient until new thrift version gets released ([386eb24](https://github.com/vzhd1701/evernote-backup/commit/386eb24a944f009dbb4975b929cb25604e5cdd8e)), closes [#130](https://github.com/vzhd1701/evernote-backup/issues/130)
+- give warning on corrupt notes without removing notes ([467ee96](https://github.com/vzhd1701/evernote-backup/commit/467ee968bea48db9f6f1730e9fcb450734e113c1))
+- mark notes for redownload if they are corrupted in DB ([fb7eedd](https://github.com/vzhd1701/evernote-backup/commit/fb7eeddad0804ca61bc3d55485f163c35fce3df2))
+- print log level in console output if it's other than INFO ([aabc5cd](https://github.com/vzhd1701/evernote-backup/commit/aabc5cdf4cd092c43a6743a025d7a7096edf6f36))
+- restore china backend login ([4d93d9b](https://github.com/vzhd1701/evernote-backup/commit/4d93d9b7375bfbe4483942afc285abc84a2f9fbb))
+
 ## [1.10.0](https://github.com/vzhd1701/evernote-backup/compare/1.9.4...1.10.0) (2025-04-07)
 
 ### Features
