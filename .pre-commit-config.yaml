@@ -37,7 +37,7 @@ repos:
         name: mdformat
         stages: [commit]
         language: system
-        entry: poetry run mdformat
+        entry: poetry run mdformat --number
         types: [markdown]
 
     -   id: pytest
