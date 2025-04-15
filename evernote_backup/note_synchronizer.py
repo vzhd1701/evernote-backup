@@ -241,15 +241,15 @@ class NoteSynchronizer(object):  # noqa: WPS214
             self._sync_chunks_v2()
 
         report = [
-            (f"Updated or added notebooks", self._count_updated_notebooks),
-            (f"Updated or added notes", self._count_updated_notes),
-            (f"Updated or added tasks", self._count_updated_tasks),
-            (f"Updated or added reminders", self._count_updated_reminders),
-            (f"Expunged notebooks", self._count_expunged_notebooks),
-            (f"Expunged linked notebooks", self._count_expunged_linked_notebooks),
-            (f"Expunged notes", self._count_expunged_notes),
-            (f"Expunged tasks", self._count_expunged_tasks),
-            (f"Expunged reminders", self._count_expunged_reminders),
+            ("Updated or added notebooks", self._count_updated_notebooks),
+            ("Updated or added notes", self._count_updated_notes),
+            ("Updated or added tasks", self._count_updated_tasks),
+            ("Updated or added reminders", self._count_updated_reminders),
+            ("Expunged notebooks", self._count_expunged_notebooks),
+            ("Expunged linked notebooks", self._count_expunged_linked_notebooks),
+            ("Expunged notes", self._count_expunged_notes),
+            ("Expunged tasks", self._count_expunged_tasks),
+            ("Expunged reminders", self._count_expunged_reminders),
         ]
 
         for msg, count in report:

@@ -33,7 +33,7 @@ def get_sync_client(
         raise ProgramTerminatedError(e)
 
     if is_jwt_needed:
-        logger.info(f"Retrieving JWT token...")
+        logger.info("Retrieving JWT token...")
 
         try:
             client.refresh_jwt_token()

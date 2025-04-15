@@ -1,7 +1,7 @@
 import json
 from dataclasses import asdict, dataclass, field
 from enum import IntEnum
-from typing import Any, List, Optional
+from typing import List, Optional
 
 
 # @evernote/tasks-data-model/dist/ReminderEntity.js
