@@ -157,7 +157,8 @@ class FakeEvernoteUserStore(MagicMock):
     def getNAPAccessToken(self):
         if self.fake_values.fake_is_token_bad_for_jwt:
             raise EDAMUserException(
-                errorCode=EDAMErrorCode.INVALID_AUTH, parameter="authenticationToken"
+                errorCode=EDAMErrorCode.PERMISSION_DENIED,
+                parameter="authenticationToken",
             )
         if self.fake_values.fake_auth_get_jwt_unexpected_error:
             raise EDAMUserException()

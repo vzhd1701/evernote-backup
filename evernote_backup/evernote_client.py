@@ -110,9 +110,11 @@ class EvernoteClient(EvernoteClientBase):
         try:
             self._token_jwt = self.user_store.getNAPAccessToken()
         except (EDAMUserException, EDAMSystemException) as e:
-            if e.errorCode == EDAMErrorCode.INVALID_AUTH:
+            if e.errorCode == EDAMErrorCode.PERMISSION_DENIED:
                 raise EvernoteAuthError(
                     "This auth token does not have permission to use the new Evernote API."
+                    " Please refer to readme file (Tasks section) for more information:"
+                    " https://github.com/vzhd1701/evernote-backup#Tasks"
                 )
             raise_auth_error(e)
             raise
