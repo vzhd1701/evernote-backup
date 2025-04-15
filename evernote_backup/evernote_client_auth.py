@@ -1,5 +1,8 @@
 from evernote.edam.error.ttypes import EDAMUserException
-from evernote.edam.userstore.ttypes import AuthenticationResult
+from evernote.edam.userstore.ttypes import (
+    AuthenticationParameters,
+    AuthenticationResult,
+)
 
 from evernote_backup.evernote_client import EvernoteClient
 from evernote_backup.evernote_client_util import raise_auth_error
@@ -23,18 +26,20 @@ class EvernoteClientAuth(EvernoteClient):
         self.consumer_secret = consumer_secret
 
     def login(self, username: str, password: str) -> AuthenticationResult:
+        auth_params = AuthenticationParameters(
+            usernameOrEmail=username,
+            password=password,
+            ssoLoginToken="",
+            consumerKey=self.consumer_key,
+            consumerSecret=self.consumer_secret,
+            deviceIdentifier="",
+            deviceDescription=self.device_description,
+            supportsTwoFactor=True,
+            supportsBusinessOnlyAccounts=True,
+        )
+
         try:
-            return self.user_store.authenticateLongSessionV2(
-                username=username,
-                password=password,
-                ssoLoginToken="",
-                consumerKey=self.consumer_key,
-                consumerSecret=self.consumer_secret,
-                deviceIdentifier="",
-                deviceDescription=self.device_description,
-                supportsTwoFactor=True,
-                supportsBusinessOnlyAccounts=True,
-            )
+            return self.user_store.authenticateLongSessionV2(auth_params)
         except EDAMUserException as e:
             raise_auth_error(e)
             raise

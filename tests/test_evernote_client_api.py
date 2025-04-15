@@ -26,7 +26,7 @@ def test_user_store_client_init():
         "x-feature-version": "3",
     }
 
-    assert client.auth_token == "test-token"
+    assert client.authenticationToken == "test-token"
     assert client._retry_max == 10
     assert client._retry_delay == 20
     assert client._retry_backoff_factor == 30
@@ -62,7 +62,7 @@ def test_note_store_client_init():
         "x-feature-version": "3",
     }
 
-    assert client.auth_token == "test-token"
+    assert client.authenticationToken == "test-token"
     assert client._retry_max == 10
     assert client._retry_delay == 20
     assert client._retry_backoff_factor == 30

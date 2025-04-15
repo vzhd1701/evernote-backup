@@ -27,9 +27,9 @@ class TokenizedUserStoreClient:
 
     """
 
-    def __init__(self, auth_token: str, iprot, oprot=None):
+    def __init__(self, authenticationToken: str, iprot, oprot=None):
         self._client = UserStore.Client(iprot, oprot)
-        self.auth_token = auth_token
+        self.authenticationToken = authenticationToken
 
     def checkVersion(
         self, clientName: str, edamVersionMajor: int, edamVersionMinor: int
@@ -205,43 +205,16 @@ class TokenizedUserStoreClient:
         )
 
     def authenticateLongSessionV2(
-        self,
-        username: str,
-        password: str,
-        ssoLoginToken: str,
-        consumerKey: str,
-        consumerSecret: str,
-        deviceIdentifier: str,
-        deviceDescription: str,
-        supportsTwoFactor: bool,
-        supportsBusinessOnlyAccounts: bool,
+        self, authParams: AuthenticationParameters
     ) -> AuthenticationResult:
         """
         Used to be the main username/password login endpoint for the desktop app.
         Still useful, but only for Yinxiang.
 
         Parameters:
-         - username
-         - password
-         - ssoLoginToken
-         - consumerKey
-         - consumerSecret
-         - deviceIdentifier
-         - deviceDescription
-         - supportsTwoFactor
-         - supportsBusinessOnlyAccounts
+         - authParams
         """
-        return self._client.authenticateLongSessionV2(
-            username=username,
-            password=password,
-            ssoLoginToken=ssoLoginToken,
-            consumerKey=consumerKey,
-            consumerSecret=consumerSecret,
-            deviceIdentifier=deviceIdentifier,
-            deviceDescription=deviceDescription,
-            supportsTwoFactor=supportsTwoFactor,
-            supportsBusinessOnlyAccounts=supportsBusinessOnlyAccounts,
-        )
+        return self._client.authenticateLongSessionV2(authParams=authParams)
 
     def completeTwoFactorAuthentication(
         self, oneTimeCode: str, deviceIdentifier: str, deviceDescription: str
@@ -291,7 +264,7 @@ class TokenizedUserStoreClient:
          - deviceDescription
         """
         return self._client.completeTwoFactorAuthentication(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             oneTimeCode=oneTimeCode,
             deviceIdentifier=deviceIdentifier,
             deviceDescription=deviceDescription,
@@ -319,7 +292,9 @@ class TokenizedUserStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.revokeLongSession(authenticationToken=self.auth_token)
+        return self._client.revokeLongSession(
+            authenticationToken=self.authenticationToken
+        )
 
     def authenticateToBusiness(self) -> AuthenticationResult:
         """
@@ -358,7 +333,9 @@ class TokenizedUserStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.authenticateToBusiness(authenticationToken=self.auth_token)
+        return self._client.authenticateToBusiness(
+            authenticationToken=self.authenticationToken
+        )
 
     def getUser(self) -> User:
         """
@@ -371,7 +348,7 @@ class TokenizedUserStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.getUser(authenticationToken=self.auth_token)
+        return self._client.getUser(authenticationToken=self.authenticationToken)
 
     def getPublicUserInfo(self, username: str) -> PublicUserInfo:
         """
@@ -400,7 +377,7 @@ class TokenizedUserStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.getUserUrls(authenticationToken=self.auth_token)
+        return self._client.getUserUrls(authenticationToken=self.authenticationToken)
 
     def inviteToBusiness(self, emailAddress: str) -> None:
         """
@@ -451,7 +428,7 @@ class TokenizedUserStoreClient:
          - emailAddress
         """
         return self._client.inviteToBusiness(
-            authenticationToken=self.auth_token, emailAddress=emailAddress
+            authenticationToken=self.authenticationToken, emailAddress=emailAddress
         )
 
     def removeFromBusiness(self, emailAddress: str) -> None:
@@ -484,7 +461,7 @@ class TokenizedUserStoreClient:
          - emailAddress
         """
         return self._client.removeFromBusiness(
-            authenticationToken=self.auth_token, emailAddress=emailAddress
+            authenticationToken=self.authenticationToken, emailAddress=emailAddress
         )
 
     def updateBusinessUserIdentifier(
@@ -538,7 +515,7 @@ class TokenizedUserStoreClient:
          - newEmailAddress
         """
         return self._client.updateBusinessUserIdentifier(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             oldEmailAddress=oldEmailAddress,
             newEmailAddress=newEmailAddress,
         )
@@ -565,7 +542,9 @@ class TokenizedUserStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.listBusinessUsers(authenticationToken=self.auth_token)
+        return self._client.listBusinessUsers(
+            authenticationToken=self.authenticationToken
+        )
 
     def listBusinessInvitations(
         self, includeRequestedInvitations: bool
@@ -589,7 +568,7 @@ class TokenizedUserStoreClient:
          - includeRequestedInvitations
         """
         return self._client.listBusinessInvitations(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             includeRequestedInvitations=includeRequestedInvitations,
         )
 
@@ -616,7 +595,9 @@ class TokenizedUserStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.getNAPAccessToken(authenticationToken=self.auth_token)
+        return self._client.getNAPAccessToken(
+            authenticationToken=self.authenticationToken
+        )
 
     def getNAPAccessJWT(self, request: GetNAPAccessJWTRequest) -> str:
         """
@@ -625,7 +606,7 @@ class TokenizedUserStoreClient:
          - request
         """
         return self._client.getNAPAccessJWT(
-            authenticationToken=self.auth_token, request=request
+            authenticationToken=self.authenticationToken, request=request
         )
 
 
@@ -658,9 +639,9 @@ class TokenizedNoteStoreClient:
 
     """
 
-    def __init__(self, auth_token: str, iprot, oprot=None):
+    def __init__(self, authenticationToken: str, iprot, oprot=None):
         self._client = NoteStore.Client(iprot, oprot)
-        self.auth_token = auth_token
+        self.authenticationToken = authenticationToken
 
     def getSyncState(self) -> SyncState:
         """
@@ -670,7 +651,7 @@ class TokenizedNoteStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.getSyncState(authenticationToken=self.auth_token)
+        return self._client.getSyncState(authenticationToken=self.authenticationToken)
 
     def getFilteredSyncChunk(
         self, afterUSN: int, maxEntries: int, filter: SyncChunkFilter
@@ -715,7 +696,7 @@ class TokenizedNoteStoreClient:
          - filter
         """
         return self._client.getFilteredSyncChunk(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             afterUSN=afterUSN,
             maxEntries=maxEntries,
             filter=filter,
@@ -768,7 +749,7 @@ class TokenizedNoteStoreClient:
          - linkedNotebook
         """
         return self._client.getLinkedNotebookSyncState(
-            authenticationToken=self.auth_token, linkedNotebook=linkedNotebook
+            authenticationToken=self.authenticationToken, linkedNotebook=linkedNotebook
         )
 
     def getLinkedNotebookSyncChunk(
@@ -850,7 +831,7 @@ class TokenizedNoteStoreClient:
          - fullSyncOnly
         """
         return self._client.getLinkedNotebookSyncChunk(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             linkedNotebook=linkedNotebook,
             afterUSN=afterUSN,
             maxEntries=maxEntries,
@@ -864,7 +845,7 @@ class TokenizedNoteStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.listNotebooks(authenticationToken=self.auth_token)
+        return self._client.listNotebooks(authenticationToken=self.authenticationToken)
 
     def listAccessibleBusinessNotebooks(self) -> list[Notebook]:
         """
@@ -884,7 +865,7 @@ class TokenizedNoteStoreClient:
          - authenticationToken
         """
         return self._client.listAccessibleBusinessNotebooks(
-            authenticationToken=self.auth_token
+            authenticationToken=self.authenticationToken
         )
 
     def getNotebook(self, guid: str) -> Notebook:
@@ -911,7 +892,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - guid
         """
-        return self._client.getNotebook(authenticationToken=self.auth_token, guid=guid)
+        return self._client.getNotebook(
+            authenticationToken=self.authenticationToken, guid=guid
+        )
 
     def getDefaultNotebook(self) -> Notebook:
         """
@@ -921,7 +904,9 @@ class TokenizedNoteStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.getDefaultNotebook(authenticationToken=self.auth_token)
+        return self._client.getDefaultNotebook(
+            authenticationToken=self.authenticationToken
+        )
 
     def createNotebook(self, notebook: Notebook) -> Notebook:
         """
@@ -963,7 +948,7 @@ class TokenizedNoteStoreClient:
          - notebook
         """
         return self._client.createNotebook(
-            authenticationToken=self.auth_token, notebook=notebook
+            authenticationToken=self.authenticationToken, notebook=notebook
         )
 
     def updateNotebook(self, notebook: Notebook) -> int:
@@ -1011,7 +996,7 @@ class TokenizedNoteStoreClient:
          - notebook
         """
         return self._client.updateNotebook(
-            authenticationToken=self.auth_token, notebook=notebook
+            authenticationToken=self.authenticationToken, notebook=notebook
         )
 
     def expungeNotebook(self, guid: str) -> int:
@@ -1045,7 +1030,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.expungeNotebook(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def listTags(self) -> list[Tag]:
@@ -1056,7 +1041,7 @@ class TokenizedNoteStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.listTags(authenticationToken=self.auth_token)
+        return self._client.listTags(authenticationToken=self.authenticationToken)
 
     def listTagsByNotebook(self, notebookGuid: str) -> list[Tag]:
         """
@@ -1077,7 +1062,7 @@ class TokenizedNoteStoreClient:
          - notebookGuid
         """
         return self._client.listTagsByNotebook(
-            authenticationToken=self.auth_token, notebookGuid=notebookGuid
+            authenticationToken=self.authenticationToken, notebookGuid=notebookGuid
         )
 
     def getTag(self, guid: str) -> Tag:
@@ -1103,7 +1088,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - guid
         """
-        return self._client.getTag(authenticationToken=self.auth_token, guid=guid)
+        return self._client.getTag(
+            authenticationToken=self.authenticationToken, guid=guid
+        )
 
     def createTag(self, tag: Tag) -> Tag:
         """
@@ -1138,7 +1125,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - tag
         """
-        return self._client.createTag(authenticationToken=self.auth_token, tag=tag)
+        return self._client.createTag(
+            authenticationToken=self.authenticationToken, tag=tag
+        )
 
     def updateTag(self, tag: Tag) -> int:
         """
@@ -1176,7 +1165,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - tag
         """
-        return self._client.updateTag(authenticationToken=self.auth_token, tag=tag)
+        return self._client.updateTag(
+            authenticationToken=self.authenticationToken, tag=tag
+        )
 
     def untagAll(self, guid: str) -> None:
         """
@@ -1209,7 +1200,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - guid
         """
-        return self._client.untagAll(authenticationToken=self.auth_token, guid=guid)
+        return self._client.untagAll(
+            authenticationToken=self.authenticationToken, guid=guid
+        )
 
     def expungeTag(self, guid: str) -> int:
         """
@@ -1241,7 +1234,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - guid
         """
-        return self._client.expungeTag(authenticationToken=self.auth_token, guid=guid)
+        return self._client.expungeTag(
+            authenticationToken=self.authenticationToken, guid=guid
+        )
 
     def listSearches(self) -> list[SavedSearch]:
         """
@@ -1251,7 +1246,7 @@ class TokenizedNoteStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.listSearches(authenticationToken=self.auth_token)
+        return self._client.listSearches(authenticationToken=self.authenticationToken)
 
     def getSearch(self, guid: str) -> SavedSearch:
         """
@@ -1275,7 +1270,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - guid
         """
-        return self._client.getSearch(authenticationToken=self.auth_token, guid=guid)
+        return self._client.getSearch(
+            authenticationToken=self.authenticationToken, guid=guid
+        )
 
     def createSearch(self, search: SavedSearch) -> SavedSearch:
         """
@@ -1307,7 +1304,7 @@ class TokenizedNoteStoreClient:
          - search
         """
         return self._client.createSearch(
-            authenticationToken=self.auth_token, search=search
+            authenticationToken=self.authenticationToken, search=search
         )
 
     def updateSearch(self, search: SavedSearch) -> int:
@@ -1343,7 +1340,7 @@ class TokenizedNoteStoreClient:
          - search
         """
         return self._client.updateSearch(
-            authenticationToken=self.auth_token, search=search
+            authenticationToken=self.authenticationToken, search=search
         )
 
     def expungeSearch(self, guid: str) -> int:
@@ -1377,7 +1374,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.expungeSearch(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def findNoteOffset(self, filter: NoteFilter, guid: str) -> int:
@@ -1428,7 +1425,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.findNoteOffset(
-            authenticationToken=self.auth_token, filter=filter, guid=guid
+            authenticationToken=self.authenticationToken, filter=filter, guid=guid
         )
 
     def findNotesMetadata(
@@ -1503,7 +1500,7 @@ class TokenizedNoteStoreClient:
          - resultSpec
         """
         return self._client.findNotesMetadata(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             filter=filter,
             offset=offset,
             maxNotes=maxNotes,
@@ -1550,7 +1547,9 @@ class TokenizedNoteStoreClient:
          - withTrash
         """
         return self._client.findNoteCounts(
-            authenticationToken=self.auth_token, filter=filter, withTrash=withTrash
+            authenticationToken=self.authenticationToken,
+            filter=filter,
+            withTrash=withTrash,
         )
 
     def getNoteWithResultSpec(self, guid: str, resultSpec: NoteResultSpec) -> Note:
@@ -1591,7 +1590,9 @@ class TokenizedNoteStoreClient:
          - resultSpec
         """
         return self._client.getNoteWithResultSpec(
-            authenticationToken=self.auth_token, guid=guid, resultSpec=resultSpec
+            authenticationToken=self.authenticationToken,
+            guid=guid,
+            resultSpec=resultSpec,
         )
 
     def getNote(
@@ -1618,7 +1619,7 @@ class TokenizedNoteStoreClient:
          - withResourcesAlternateData
         """
         return self._client.getNote(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             guid=guid,
             withContent=withContent,
             withResourcesData=withResourcesData,
@@ -1640,7 +1641,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.getNoteApplicationData(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def getNoteApplicationDataEntry(self, guid: str, key: str) -> str:
@@ -1659,7 +1660,7 @@ class TokenizedNoteStoreClient:
          - key
         """
         return self._client.getNoteApplicationDataEntry(
-            authenticationToken=self.auth_token, guid=guid, key=key
+            authenticationToken=self.authenticationToken, guid=guid, key=key
         )
 
     def setNoteApplicationDataEntry(self, guid: str, key: str, value: str) -> int:
@@ -1674,7 +1675,10 @@ class TokenizedNoteStoreClient:
          - value
         """
         return self._client.setNoteApplicationDataEntry(
-            authenticationToken=self.auth_token, guid=guid, key=key, value=value
+            authenticationToken=self.authenticationToken,
+            guid=guid,
+            key=key,
+            value=value,
         )
 
     def unsetNoteApplicationDataEntry(self, guid: str, key: str) -> int:
@@ -1689,7 +1693,7 @@ class TokenizedNoteStoreClient:
          - key
         """
         return self._client.unsetNoteApplicationDataEntry(
-            authenticationToken=self.auth_token, guid=guid, key=key
+            authenticationToken=self.authenticationToken, guid=guid, key=key
         )
 
     def getNoteContent(self, guid: str) -> str:
@@ -1718,7 +1722,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.getNoteContent(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def getNoteSearchText(
@@ -1765,7 +1769,7 @@ class TokenizedNoteStoreClient:
          - tokenizeForIndexing
         """
         return self._client.getNoteSearchText(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             guid=guid,
             noteOnly=noteOnly,
             tokenizeForIndexing=tokenizeForIndexing,
@@ -1801,7 +1805,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.getResourceSearchText(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def getNoteTagNames(self, guid: str) -> list[str]:
@@ -1828,7 +1832,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.getNoteTagNames(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def createNote(self, note: Note) -> Note:
@@ -1899,7 +1903,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - note
         """
-        return self._client.createNote(authenticationToken=self.auth_token, note=note)
+        return self._client.createNote(
+            authenticationToken=self.authenticationToken, note=note
+        )
 
     def updateNote(self, note: Note) -> Note:
         """
@@ -1977,7 +1983,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - note
         """
-        return self._client.updateNote(authenticationToken=self.auth_token, note=note)
+        return self._client.updateNote(
+            authenticationToken=self.authenticationToken, note=note
+        )
 
     def deleteNote(self, guid: str) -> int:
         """
@@ -2010,7 +2018,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - guid
         """
-        return self._client.deleteNote(authenticationToken=self.auth_token, guid=guid)
+        return self._client.deleteNote(
+            authenticationToken=self.authenticationToken, guid=guid
+        )
 
     def expungeNote(self, guid: str) -> int:
         """
@@ -2041,7 +2051,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - guid
         """
-        return self._client.expungeNote(authenticationToken=self.auth_token, guid=guid)
+        return self._client.expungeNote(
+            authenticationToken=self.authenticationToken, guid=guid
+        )
 
     def copyNote(self, noteGuid: str, toNotebookGuid: str) -> Note:
         """
@@ -2092,7 +2104,7 @@ class TokenizedNoteStoreClient:
          - toNotebookGuid
         """
         return self._client.copyNote(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             noteGuid=noteGuid,
             toNotebookGuid=toNotebookGuid,
         )
@@ -2125,7 +2137,7 @@ class TokenizedNoteStoreClient:
          - noteGuid
         """
         return self._client.listNoteVersions(
-            authenticationToken=self.auth_token, noteGuid=noteGuid
+            authenticationToken=self.authenticationToken, noteGuid=noteGuid
         )
 
     def getNoteVersion(
@@ -2188,7 +2200,7 @@ class TokenizedNoteStoreClient:
          - withResourcesAlternateData
         """
         return self._client.getNoteVersion(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             noteGuid=noteGuid,
             updateSequenceNum=updateSequenceNum,
             withResourcesData=withResourcesData,
@@ -2250,7 +2262,7 @@ class TokenizedNoteStoreClient:
          - withAlternateData
         """
         return self._client.getResource(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             guid=guid,
             withData=withData,
             withRecognition=withRecognition,
@@ -2272,7 +2284,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.getResourceApplicationData(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def getResourceApplicationDataEntry(self, guid: str, key: str) -> str:
@@ -2291,7 +2303,7 @@ class TokenizedNoteStoreClient:
          - key
         """
         return self._client.getResourceApplicationDataEntry(
-            authenticationToken=self.auth_token, guid=guid, key=key
+            authenticationToken=self.authenticationToken, guid=guid, key=key
         )
 
     def setResourceApplicationDataEntry(self, guid: str, key: str, value: str) -> int:
@@ -2306,7 +2318,10 @@ class TokenizedNoteStoreClient:
          - value
         """
         return self._client.setResourceApplicationDataEntry(
-            authenticationToken=self.auth_token, guid=guid, key=key, value=value
+            authenticationToken=self.authenticationToken,
+            guid=guid,
+            key=key,
+            value=value,
         )
 
     def unsetResourceApplicationDataEntry(self, guid: str, key: str) -> int:
@@ -2320,7 +2335,7 @@ class TokenizedNoteStoreClient:
          - key
         """
         return self._client.unsetResourceApplicationDataEntry(
-            authenticationToken=self.auth_token, guid=guid, key=key
+            authenticationToken=self.authenticationToken, guid=guid, key=key
         )
 
     def updateResource(self, resource: Resource) -> int:
@@ -2378,7 +2393,7 @@ class TokenizedNoteStoreClient:
          - resource
         """
         return self._client.updateResource(
-            authenticationToken=self.auth_token, resource=resource
+            authenticationToken=self.authenticationToken, resource=resource
         )
 
     def getResourceData(self, guid: str) -> bytes:
@@ -2409,7 +2424,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.getResourceData(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def getResourceByHash(
@@ -2470,7 +2485,7 @@ class TokenizedNoteStoreClient:
          - withAlternateData
         """
         return self._client.getResourceByHash(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             noteGuid=noteGuid,
             contentHash=contentHash,
             withData=withData,
@@ -2508,7 +2523,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.getResourceRecognition(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def getResourceAlternateData(self, guid: str) -> bytes:
@@ -2541,7 +2556,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.getResourceAlternateData(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def getResourceAttributes(self, guid: str) -> ResourceAttributes:
@@ -2570,7 +2585,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.getResourceAttributes(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def getPublicNotebook(self, userId: int, publicUri: str) -> Notebook:
@@ -2700,7 +2715,7 @@ class TokenizedNoteStoreClient:
          - message
         """
         return self._client.shareNotebook(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             sharedNotebook=sharedNotebook,
             message=message,
         )
@@ -2767,7 +2782,7 @@ class TokenizedNoteStoreClient:
          - shareTemplate
         """
         return self._client.createOrUpdateNotebookShares(
-            authenticationToken=self.auth_token, shareTemplate=shareTemplate
+            authenticationToken=self.authenticationToken, shareTemplate=shareTemplate
         )
 
     def updateSharedNotebook(self, sharedNotebook: SharedNotebook) -> int:
@@ -2779,7 +2794,7 @@ class TokenizedNoteStoreClient:
          - sharedNotebook
         """
         return self._client.updateSharedNotebook(
-            authenticationToken=self.auth_token, sharedNotebook=sharedNotebook
+            authenticationToken=self.authenticationToken, sharedNotebook=sharedNotebook
         )
 
     def setNotebookRecipientSettings(
@@ -2827,7 +2842,7 @@ class TokenizedNoteStoreClient:
          - recipientSettings
         """
         return self._client.setNotebookRecipientSettings(
-            authenticationToken=self.auth_token,
+            authenticationToken=self.authenticationToken,
             notebookGuid=notebookGuid,
             recipientSettings=recipientSettings,
         )
@@ -2843,7 +2858,9 @@ class TokenizedNoteStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.listSharedNotebooks(authenticationToken=self.auth_token)
+        return self._client.listSharedNotebooks(
+            authenticationToken=self.authenticationToken
+        )
 
     def createLinkedNotebook(self, linkedNotebook: LinkedNotebook) -> LinkedNotebook:
         """
@@ -2888,7 +2905,7 @@ class TokenizedNoteStoreClient:
          - linkedNotebook
         """
         return self._client.createLinkedNotebook(
-            authenticationToken=self.auth_token, linkedNotebook=linkedNotebook
+            authenticationToken=self.authenticationToken, linkedNotebook=linkedNotebook
         )
 
     def updateLinkedNotebook(self, linkedNotebook: LinkedNotebook) -> int:
@@ -2913,7 +2930,7 @@ class TokenizedNoteStoreClient:
          - linkedNotebook
         """
         return self._client.updateLinkedNotebook(
-            authenticationToken=self.auth_token, linkedNotebook=linkedNotebook
+            authenticationToken=self.authenticationToken, linkedNotebook=linkedNotebook
         )
 
     def listLinkedNotebooks(self) -> list[LinkedNotebook]:
@@ -2923,7 +2940,9 @@ class TokenizedNoteStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.listLinkedNotebooks(authenticationToken=self.auth_token)
+        return self._client.listLinkedNotebooks(
+            authenticationToken=self.authenticationToken
+        )
 
     def expungeLinkedNotebook(self, guid: str) -> int:
         """
@@ -2942,7 +2961,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.expungeLinkedNotebook(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def authenticateToSharedNotebook(
@@ -3003,7 +3022,8 @@ class TokenizedNoteStoreClient:
          - authenticationToken
         """
         return self._client.authenticateToSharedNotebook(
-            authenticationToken=self.auth_token, shareKeyOrGlobalId=shareKeyOrGlobalId
+            authenticationToken=self.authenticationToken,
+            shareKeyOrGlobalId=shareKeyOrGlobalId,
         )
 
     def getSharedNotebookByAuth(self) -> SharedNotebook:
@@ -3035,7 +3055,9 @@ class TokenizedNoteStoreClient:
         Parameters:
          - authenticationToken
         """
-        return self._client.getSharedNotebookByAuth(authenticationToken=self.auth_token)
+        return self._client.getSharedNotebookByAuth(
+            authenticationToken=self.authenticationToken
+        )
 
     def emailNote(self, parameters: NoteEmailParameters) -> None:
         """
@@ -3092,7 +3114,7 @@ class TokenizedNoteStoreClient:
          - parameters
         """
         return self._client.emailNote(
-            authenticationToken=self.auth_token, parameters=parameters
+            authenticationToken=self.authenticationToken, parameters=parameters
         )
 
     def shareNote(self, guid: str) -> str:
@@ -3123,7 +3145,9 @@ class TokenizedNoteStoreClient:
          - authenticationToken
          - guid
         """
-        return self._client.shareNote(authenticationToken=self.auth_token, guid=guid)
+        return self._client.shareNote(
+            authenticationToken=self.authenticationToken, guid=guid
+        )
 
     def stopSharingNote(self, guid: str) -> None:
         """
@@ -3153,7 +3177,7 @@ class TokenizedNoteStoreClient:
          - guid
         """
         return self._client.stopSharingNote(
-            authenticationToken=self.auth_token, guid=guid
+            authenticationToken=self.authenticationToken, guid=guid
         )
 
     def authenticateToSharedNote(self, guid: str, noteKey: str) -> AuthenticationResult:
@@ -3205,7 +3229,7 @@ class TokenizedNoteStoreClient:
          - authenticationToken
         """
         return self._client.authenticateToSharedNote(
-            authenticationToken=self.auth_token, guid=guid, noteKey=noteKey
+            authenticationToken=self.authenticationToken, guid=guid, noteKey=noteKey
         )
 
     def findRelated(
@@ -3266,7 +3290,9 @@ class TokenizedNoteStoreClient:
          - resultSpec
         """
         return self._client.findRelated(
-            authenticationToken=self.auth_token, query=query, resultSpec=resultSpec
+            authenticationToken=self.authenticationToken,
+            query=query,
+            resultSpec=resultSpec,
         )
 
     def updateNoteIfUsnMatches(self, note: Note) -> UpdateNoteIfUsnMatchesResult:
@@ -3302,7 +3328,7 @@ class TokenizedNoteStoreClient:
          - note
         """
         return self._client.updateNoteIfUsnMatches(
-            authenticationToken=self.auth_token, note=note
+            authenticationToken=self.authenticationToken, note=note
         )
 
     def manageNotebookShares(
@@ -3329,7 +3355,7 @@ class TokenizedNoteStoreClient:
          - parameters
         """
         return self._client.manageNotebookShares(
-            authenticationToken=self.auth_token, parameters=parameters
+            authenticationToken=self.authenticationToken, parameters=parameters
         )
 
     def getNotebookShares(self, notebookGuid: str) -> ShareRelationships:
@@ -3346,5 +3372,5 @@ class TokenizedNoteStoreClient:
          - notebookGuid
         """
         return self._client.getNotebookShares(
-            authenticationToken=self.auth_token, notebookGuid=notebookGuid
+            authenticationToken=self.authenticationToken, notebookGuid=notebookGuid
         )

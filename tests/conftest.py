@@ -12,6 +12,7 @@ from evernote.edam.error.ttypes import (
     EDAMSystemException,
     EDAMUserException,
 )
+from evernote.edam.userstore.ttypes import AuthenticationParameters
 from requests_oauthlib.oauth1_session import TokenRequestDenied
 from requests_sse import MessageEvent
 
@@ -104,30 +105,19 @@ class FakeEvernoteUserStore:
     def getNoteStoreUrl(self):
         return "https://www.evernote.com/shard/s520/notestore"
 
-    def authenticateLongSessionV2(
-        self,
-        username,
-        password,
-        ssoLoginToken,
-        consumerKey,
-        consumerSecret,
-        deviceIdentifier,
-        deviceDescription,
-        supportsTwoFactor,
-        supportsBusinessOnlyAccounts,
-    ):
+    def authenticateLongSessionV2(self, authParams: AuthenticationParameters):
         if self.fake_values.fake_auth_unexpected_error:
             raise EDAMUserException()
         if self.fake_values.fake_auth_invalid_pass or (
             self.fake_values.fake_valid_password
-            and self.fake_values.fake_valid_password != password
+            and self.fake_values.fake_valid_password != authParams.password
         ):
             raise EDAMUserException(
                 errorCode=EDAMErrorCode.INVALID_AUTH, parameter="password"
             )
         if self.fake_values.fake_auth_invalid_name or (
             self.fake_values.fake_valid_username
-            and self.fake_values.fake_valid_username != username
+            and self.fake_values.fake_valid_username != authParams.usernameOrEmail
         ):
             raise EDAMUserException(
                 errorCode=EDAMErrorCode.INVALID_AUTH, parameter="username"
