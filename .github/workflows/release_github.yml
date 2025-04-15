@@ -140,9 +140,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Extract release changelog
         run: |
-          sed "0,/### \[/d;/### \[/Q" CHANGELOG.md > release_changelog
+          sed "0,/## \[/d;/## \[/Q" CHANGELOG.md > release_changelog
           echo -n "**Full Changelog**: " >> release_changelog
-          sed -n 's/### \[.*\](\(.*\)) (.*/\1/p' CHANGELOG.md | head -1 >> release_changelog
+          sed -n 's/## \[.*\](\(.*\)) (.*/\1/p' CHANGELOG.md | head -1 >> release_changelog
 
       - name: Get tag version
         run: |
