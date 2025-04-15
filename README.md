@@ -31,13 +31,11 @@ $ brew install evernote-backup
 $ pipx install evernote-backup
 ```
 
-### With PIP
+### With [uv](https://docs.astral.sh/uv/)
 
 ```bash
-$ pip install --user evernote-backup
+$ uv tool install evernote-backup
 ```
-
-**Python 3.8 or later required.**
 
 ### With [**Docker**](https://docs.docker.com/)
 
