@@ -69,13 +69,6 @@ class EvernoteClient(EvernoteClientBase):
     def user_store(self) -> "UserStoreClientRetryable":
         user_store_uri = self._get_endpoint("edam/user")
 
-        us = UserStoreClientRetryable(
-            auth_token=self.token,
-            store_url=user_store_uri,
-            user_agent=self.user_agent,
-            retry_max=self.network_error_retry_count,
-        )
-
         return UserStoreClientRetryable(
             auth_token=self.token,
             store_url=user_store_uri,
