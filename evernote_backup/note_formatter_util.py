@@ -1,7 +1,11 @@
 import base64
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
+
+
+def fmt_utcfromtimestamp(timestamp: int):
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
 
 def fmt_time(timestamp: Optional[int]) -> Optional[str]:
@@ -16,7 +20,7 @@ def fmt_time(timestamp: Optional[int]) -> Optional[str]:
     elif timestamp >= _get_max_timestamp():
         date = _date_from_future(timestamp)
     else:
-        date = datetime.utcfromtimestamp(timestamp)
+        date = fmt_utcfromtimestamp(timestamp)
 
     return date.strftime(f"{date.year:04}%m%dT%H%M%SZ")
 
@@ -63,9 +67,27 @@ def _get_max_timestamp() -> int:  # pragma: no cover
     except (OverflowError, ValueError, OSError):
         is_64bits = sys.maxsize > 2**32  # noqa: WPS114
         return int(
-            datetime(3000, 1, 1, 23, 59, 59, 999999).timestamp()
+            datetime(
+                3000,
+                1,
+                1,
+                23,
+                59,
+                59,
+                999999,
+                tzinfo=timezone.utc,
+            ).timestamp()
             if is_64bits
-            else datetime(2038, 1, 1, 23, 59, 59, 999999).timestamp()
+            else datetime(
+                2038,
+                1,
+                1,
+                23,
+                59,
+                59,
+                999999,
+                tzinfo=timezone.utc,
+            ).timestamp()
         )
 
 
@@ -84,7 +106,7 @@ def _date_from_future(timestamp: int) -> datetime:  # noqa: WPS210
     y += m <= 2
 
     try:
-        day_time = datetime.utcfromtimestamp(timestamp % 86400)
+        day_time = fmt_utcfromtimestamp(timestamp % 86400)
 
         return datetime(
             year=y,
@@ -93,6 +115,7 @@ def _date_from_future(timestamp: int) -> datetime:  # noqa: WPS210
             hour=day_time.hour,
             minute=day_time.minute,
             second=day_time.second,
+            tzinfo=timezone.utc,
         )
     except (OverflowError, ValueError, OSError):
         return datetime.max
@@ -100,6 +123,6 @@ def _date_from_future(timestamp: int) -> datetime:  # noqa: WPS210
 
 def _date_from_past(timestamp: int) -> datetime:
     try:
-        return datetime.utcfromtimestamp(0) - timedelta(seconds=abs(timestamp))
+        return fmt_utcfromtimestamp(0) - timedelta(seconds=abs(timestamp))
     except (OverflowError, ValueError, OSError):
         return datetime.min

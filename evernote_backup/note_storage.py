@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
-
 import logging
 import lzma
 import pickle
 import sqlite3
+from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import Iterable, Iterator, List, NamedTuple, Optional, Tuple, Union
+from typing import NamedTuple, Optional, Union
 
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
@@ -84,7 +83,7 @@ def initialize_db(database_path: Path) -> None:
     db.close()
 
 
-class SqliteStorage(object):
+class SqliteStorage:
     def __init__(self, database: Union[Path, sqlite3.Connection]) -> None:
         if isinstance(database, sqlite3.Connection):
             self.db = database
@@ -380,7 +379,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                 if raw_note:
                     yield raw_note
 
-    def get_notes_for_sync(self) -> Tuple[NoteForSync, ...]:
+    def get_notes_for_sync(self) -> tuple[NoteForSync, ...]:
         with self.db as con:
             cur = con.execute(
                 "select notes.guid, title, notebooks_linked.guid as l_notebook"
@@ -420,7 +419,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
 
             return int(cur.fetchone()[0])
 
-    def _get_notes_by_notebook(self, notebook_guid: str) -> List[str]:
+    def _get_notes_by_notebook(self, notebook_guid: str) -> list[str]:
         """Due to wrong idx_notes index, SQLite creates a temporary table on
             from notes where notebook_guid=? and is_active=1
             order by title COLLATE NOCASE
@@ -442,9 +441,9 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
     def _get_raw_note(self, note_title: str, note_guid: str, raw_note: bytes):
         try:
             return pickle.loads(lzma.decompress(raw_note))
-        except Exception as e:
+        except Exception:
             if logger.getEffectiveLevel() == logging.DEBUG:
-                logger.exception(f"Note '{note_title}' [{note_guid}] is corrupt: {e}")
+                logger.exception(f"Note '{note_title}' [{note_guid}] is corrupt")
 
             logger.warning(f"Note '{note_title}' [{note_guid}] is corrupt")
 
@@ -468,7 +467,7 @@ class TasksStorage(SqliteStorage):  # noqa: WPS214
 
         with self.db as con:
             con.execute(
-                "replace into tasks(guid, note_guid, raw_task)" " values (?, ?, ?)",
+                "replace into tasks(guid, note_guid, raw_task) values (?, ?, ?)",
                 (task.taskId, task.parentId, task_deflated),
             )
 
@@ -492,9 +491,9 @@ class TasksStorage(SqliteStorage):  # noqa: WPS214
     def _get_raw_task(self, task_guid: str, raw_task: bytes) -> Optional[Task]:
         try:
             return Task.from_json(lzma.decompress(raw_task).decode("utf-8"))
-        except Exception as e:
+        except Exception:
             if logger.getEffectiveLevel() == logging.DEBUG:
-                logger.exception(f"Task [{task_guid}] is corrupt: {e}")
+                logger.exception(f"Task [{task_guid}] is corrupt")
 
             logger.warning(f"Task [{task_guid}] is corrupt")
 
@@ -538,9 +537,9 @@ class RemindersStorage(SqliteStorage):  # noqa: WPS214
     def _get_raw_reminder(self, guid: str, raw_reminder: bytes) -> Optional[Reminder]:
         try:
             return Reminder.from_json(lzma.decompress(raw_reminder).decode("utf-8"))
-        except Exception as e:
+        except Exception:
             if logger.getEffectiveLevel() == logging.DEBUG:
-                logger.exception(f"Reminder [{guid}] is corrupt: {e}")
+                logger.exception(f"Reminder [{guid}] is corrupt")
 
             logger.warning(f"Reminder [{guid}] is corrupt")
 

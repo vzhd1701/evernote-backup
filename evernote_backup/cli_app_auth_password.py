@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 import click
 from evernote.edam.userstore.ttypes import AuthenticationResult
@@ -33,7 +33,7 @@ def get_auth_client(
 def prompt_credentials(
     user: Optional[str],
     password: Optional[str],
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     if not is_output_to_terminal() and not all([user, password]):
         raise ProgramTerminatedError("--user and --password are required!")
 

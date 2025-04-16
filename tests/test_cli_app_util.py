@@ -95,8 +95,6 @@ def test_natural_order_group():
         "test-command2",
     ]
 
-    pass
-
 
 @pytest.mark.parametrize(
     "time_seconds,time_txt",

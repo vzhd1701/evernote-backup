@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-
 import logging
 import struct
 import threading
+from collections.abc import Iterable
 from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, as_completed, wait
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Optional
 
 from click import progressbar
 from evernote.edam.error.ttypes import EDAMErrorCode, EDAMSystemException
@@ -47,7 +46,7 @@ def get_note_size(note: Note) -> int:
     return int(size)
 
 
-class NoteClientMemoryManager(object):
+class NoteClientMemoryManager:
     def __init__(self, download_cache_memory_limit: int) -> None:
         self.memory_limit = download_cache_memory_limit * 1024 * 1024
 
@@ -92,7 +91,7 @@ class NoteClientMemoryManager(object):
             return self.memory < self.memory_limit
 
 
-class NoteClientWorker(object):
+class NoteClientWorker:
     def __init__(  # noqa: WPS211
         self,
         token: str,
@@ -182,7 +181,7 @@ class NoteClientWorker(object):
             return self._thread_data.note_clients
 
 
-class NoteSynchronizer(object):  # noqa: WPS214
+class NoteSynchronizer:  # noqa: WPS214
     def __init__(
         self,
         note_client: EvernoteClientSync,
@@ -215,7 +214,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
             max_chunk_results=self.note_client.max_chunk_results,
             download_cache_memory_limit=download_cache_memory_limit,
         )
-        self.linked_notebooks_auth: Dict[str, NotebookAuth] = {}
+        self.linked_notebooks_auth: dict[str, NotebookAuth] = {}
 
     def sync(self) -> None:
         self._raise_on_wrong_user()
@@ -233,7 +232,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
         notes_to_sync = self.storage.notes.get_notes_for_sync()
 
         if notes_to_sync:
-            logger.info("{0} note(s) to download...".format(len(notes_to_sync)))
+            logger.info(f"{len(notes_to_sync)} note(s) to download...")
 
             self._authorize_linked_notebooks_for_notes(notes_to_sync)
             self._download_scheduled_notes(notes_to_sync)
@@ -261,7 +260,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
                 logger.info(f"{msg}: {count}")
 
     def _authorize_linked_notebooks_for_notes(
-        self, notes_to_sync: Tuple[NoteForSync, ...]
+        self, notes_to_sync: tuple[NoteForSync, ...]
     ) -> None:
         linked_notebooks = {
             n.linked_notebook_guid for n in notes_to_sync if n.linked_notebook_guid
@@ -269,9 +268,7 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
         if linked_notebooks:
             logger.info(
-                "Requesting access to {0} linked notebook(s)...".format(
-                    len(linked_notebooks)
-                )
+                f"Requesting access to {len(linked_notebooks)} linked notebook(s)..."
             )
 
             for ln_guid in linked_notebooks:
@@ -345,11 +342,11 @@ class NoteSynchronizer(object):  # noqa: WPS214
 
     def _expunge(
         self,
-        expunged_notebooks: Optional[List[str]] = None,
-        expunged_notes: Optional[List[str]] = None,
-        expunged_linked_notebooks: Optional[List[str]] = None,
-        expunged_tasks: Optional[List[str]] = None,
-        expunged_reminders: Optional[List[str]] = None,
+        expunged_notebooks: Optional[list[str]] = None,
+        expunged_notes: Optional[list[str]] = None,
+        expunged_linked_notebooks: Optional[list[str]] = None,
+        expunged_tasks: Optional[list[str]] = None,
+        expunged_reminders: Optional[list[str]] = None,
     ) -> None:
         if expunged_notebooks:
             self.storage.notebooks.expunge_notebooks(expunged_notebooks)
@@ -390,8 +387,8 @@ class NoteSynchronizer(object):  # noqa: WPS214
         self.storage.notebooks.expunge_notebooks((notebook.guid,))
         self.storage.notes.expunge_notes_by_notebook(notebook.guid)
 
-    def _download_scheduled_notes(self, notes_to_sync: Tuple[NoteForSync, ...]) -> None:
-        logger.info("Downloading {0} note(s)...".format(len(notes_to_sync)))
+    def _download_scheduled_notes(self, notes_to_sync: tuple[NoteForSync, ...]) -> None:
+        logger.info(f"Downloading {len(notes_to_sync)} note(s)...")
         logger.debug(f"Sync worker threads: {self.max_download_workers}")
 
         with ThreadPoolExecutor(max_workers=self.max_download_workers) as executor:

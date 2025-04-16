@@ -286,9 +286,9 @@ def test_notes_order(fake_storage):
     for note in test_notes:
         fake_storage.notes.add_note(note)
 
-    result_notes_titles_order = list(
+    result_notes_titles_order = [
         n.title for n in fake_storage.notes.iter_notes("notebook1")
-    )
+    ]
 
     assert result_notes_titles_order == expected_notes_titles_order
 

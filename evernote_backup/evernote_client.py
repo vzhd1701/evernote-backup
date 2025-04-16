@@ -1,7 +1,8 @@
 import json
 import platform
 import uuid
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
 
 from evernote.edam.error.ttypes import (
     EDAMErrorCode,
@@ -20,7 +21,7 @@ from evernote_backup.evernote_types import EvernoteEntityType
 from evernote_backup.token_util import get_token_shard
 
 
-class EvernoteClientBase(object):
+class EvernoteClientBase:
     def __init__(self, backend: str) -> None:
         self.backend = backend
 
@@ -39,7 +40,7 @@ class EvernoteClientBase(object):
 
         self.device_description = "evernote-backup"
         if platform.node():
-            self.device_description += " [{0}]".format(platform.node())
+            self.device_description += f" [{platform.node()}]"
 
     def _get_endpoint(self, path: str = "") -> str:
         return f"https://{self.service_host}/{path}"

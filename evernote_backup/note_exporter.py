@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-
 import logging
+from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable, List, Union
 
 from click import progressbar
 from evernote.edam.type.ttypes import Note, Notebook
@@ -27,7 +25,7 @@ class NothingToExportError(Exception):
     """Raise when database is empty"""
 
 
-class NoteExporter(object):
+class NoteExporter:
     def __init__(
         self,
         storage: SqliteStorage,
@@ -110,7 +108,7 @@ class NoteExporter(object):
             self._output_notebook([], "Trash", notes_source)
 
     def _output_single_notes(
-        self, parent_dir: List[str], notes_source: Iterable[Note]
+        self, parent_dir: list[str], notes_source: Iterable[Note]
     ) -> None:
         for note in notes_source:
             note_path = self.safe_paths.get_file(*parent_dir, f"{note.title}.enex")
@@ -120,7 +118,7 @@ class NoteExporter(object):
             )
 
     def _output_notebook(
-        self, parent_dir: List[str], notebook_name: str, notes_source: Iterable[Note]
+        self, parent_dir: list[str], notebook_name: str, notes_source: Iterable[Note]
     ) -> None:
         notebook_path = self.safe_paths.get_file(*parent_dir, f"{notebook_name}.enex")
 
@@ -128,7 +126,7 @@ class NoteExporter(object):
             notebook_path, notes_source, self.no_export_date, self.add_guid
         )
 
-    def _get_note_tasks(self, note_guid: str) -> List[Task]:
+    def _get_note_tasks(self, note_guid: str) -> list[Task]:
         tasks = sorted(
             self.storage.tasks.iter_tasks(note_guid),
             key=lambda t: t.sortWeight,
@@ -146,7 +144,7 @@ class NoteExporter(object):
         no_export_date: bool,
         add_guid: bool,
     ) -> None:
-        with open(file_path, "w", encoding="utf-8") as f:
+        with file_path.open("w", encoding="utf-8") as f:
             logger.debug(f"Writing file {file_path}")
 
             f.write(ENEX_HEAD)

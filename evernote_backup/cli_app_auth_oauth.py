@@ -29,7 +29,7 @@ def prompt_ota(delivery_hint: str) -> str:
 
     one_time_hint = ""
     if delivery_hint:
-        one_time_hint = " ({0})".format(delivery_hint)
+        one_time_hint = f" ({delivery_hint})"
 
     return str(click.prompt(f"Enter one-time code{one_time_hint}"))
 

@@ -1,7 +1,7 @@
 import json
 from dataclasses import asdict, dataclass, field
 from enum import IntEnum
-from typing import List, Optional
+from typing import Optional
 
 
 # @evernote/tasks-data-model/dist/ReminderEntity.js
@@ -77,7 +77,7 @@ class Task:
     assignedByUserId: Optional[int] = None
     recurrence: Optional[str] = None
     repeatAfterCompletion: Optional[bool] = None
-    reminders: List[Reminder] = field(default_factory=list)
+    reminders: list[Reminder] = field(default_factory=list)
 
     def to_json(self) -> str:
         data = {k: v for k, v in asdict(self).items() if v is not None}
@@ -92,10 +92,10 @@ class Task:
 @dataclass
 class SyncChunkV2:
     last_timestamp: int
-    tasks: List[Task] = field(default_factory=list)
-    reminders: List[Reminder] = field(default_factory=list)
-    expunged_tasks: List[str] = field(default_factory=list)
-    expunged_reminders: List[str] = field(default_factory=list)
+    tasks: list[Task] = field(default_factory=list)
+    reminders: list[Reminder] = field(default_factory=list)
+    expunged_tasks: list[str] = field(default_factory=list)
+    expunged_reminders: list[str] = field(default_factory=list)
 
 
 # @evernote/data-model/dist/sync-types/SyncDocuments.js

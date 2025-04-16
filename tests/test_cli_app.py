@@ -208,4 +208,4 @@ def test_cli_main_call(mocker):
 
 
 def test_cli_main_import():
-    from evernote_backup import __main__
+    from evernote_backup import __main__  # noqa: F401

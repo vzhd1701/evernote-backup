@@ -471,8 +471,7 @@ def test_export_yes_export_date(cli_invoker, fake_storage, tmp_path):
 
     book1_path = test_out_path / "name1.enex"
 
-    with open(book1_path, "r") as f:
-        book1_xml = f.read()
+    book1_xml = book1_path.read_text()
 
     assert result.exit_code == 0
     assert "export-date" in book1_xml
@@ -508,8 +507,7 @@ def test_export_no_export_date(cli_invoker, fake_storage, tmp_path):
 
     book1_path = test_out_path / "name1.enex"
 
-    with open(book1_path, "r") as f:
-        book1_xml = f.read()
+    book1_xml = book1_path.read_text()
 
     assert result.exit_code == 0
     assert "export-date" not in book1_xml
@@ -545,8 +543,7 @@ def test_export_add_guid(cli_invoker, fake_storage, tmp_path):
 
     book1_path = test_out_path / "name1.enex"
 
-    with open(book1_path, "r") as f:
-        book1_xml = f.read()
+    book1_xml = book1_path.read_text()
 
     assert result.exit_code == 0
     assert "<guid>id1</guid>" in book1_xml
@@ -609,8 +606,7 @@ def test_export_note_with_tasks(cli_invoker, fake_storage, tmp_path):
 
     book1_path = test_out_path / "name1.enex"
 
-    with open(book1_path, "r") as f:
-        book1_xml = f.read()
+    book1_xml = book1_path.read_text()
 
     assert result.exit_code == 0
     assert expected_tasks_xml in book1_xml

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from evernote.edam.type.ttypes import (
     Data,
     Note,

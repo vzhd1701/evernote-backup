@@ -17,7 +17,7 @@ class EvernoteClientAuth(EvernoteClient):
         consumer_key: str,
         consumer_secret: str,
     ):
-        super().__init__(  # noqa: S106
+        super().__init__(
             backend=backend,
             token="",
             network_error_retry_count=network_error_retry_count,

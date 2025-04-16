@@ -1,7 +1,7 @@
 import logging
-import os
 import ssl
 import tempfile
+from pathlib import Path
 from pprint import pformat
 from ssl import create_default_context, get_server_certificate
 
@@ -37,7 +37,7 @@ def log_ssl_debug_info(backend_host: str, use_system_ssl_ca: bool):
 
     logger.debug(f"You can verify it here: {ssl_verify_url}")
     logger.debug(
-        f"Certificate serial number should match,"
+        "Certificate serial number should match,"
         " otherwise your firewall or proxy is intercepting HTTPS traffic"
     )
 
@@ -52,7 +52,7 @@ def _get_ssl_cert_info(hostname, port=443):
 
     cert_dict = ssl._ssl._test_decode_cert(tmp_cert_file.name)
 
-    os.unlink(tmp_cert_file.name)
+    Path(tmp_cert_file.name).unlink()
 
     return cert_dict
 

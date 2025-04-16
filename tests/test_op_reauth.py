@@ -1,10 +1,7 @@
 import pytest
-from evernote.edam.error.ttypes import EDAMUserException
-
-from evernote_backup.cli_app_util import ProgramTerminatedError
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_click_prompt(mocker):
     click_mock = mocker.patch("evernote_backup.cli_app_util.click.prompt")
     click_mock.fake_input = None
@@ -356,7 +353,7 @@ def test_custom_network_retry_count_fail(
 ):
     fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
-    mocker.patch("evernote_backup.evernote_client_util.time.sleep")
+    mocker.patch("evernote_backup.evernote_client_api_http.time.sleep")
 
     test_network_retry_count = 10
     mock_evernote_client.fake_network_counter = test_network_retry_count + 1
@@ -381,7 +378,7 @@ def test_custom_network_retry_count(
 ):
     fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
-    mocker.patch("evernote_backup.evernote_client_util.time.sleep")
+    mocker.patch("evernote_backup.evernote_client_api_http.time.sleep")
 
     test_network_retry_count = 90
     mock_evernote_client.fake_network_counter = test_network_retry_count - 1

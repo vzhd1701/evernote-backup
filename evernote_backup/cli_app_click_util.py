@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 import click
 
@@ -19,7 +19,7 @@ FILE_ONLY = click.Path(
 
 
 class NaturalOrderGroup(click.Group):
-    def list_commands(self, ctx: Any) -> List[str]:
+    def list_commands(self, ctx: Any) -> list[str]:
         return list(self.commands.keys())
 
 

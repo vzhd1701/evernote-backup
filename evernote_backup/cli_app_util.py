@@ -2,7 +2,8 @@ import base64
 import io
 import os
 import sys
-from typing import Iterable, Iterator, List, Optional, Sequence, TextIO
+from collections.abc import Iterable, Iterator, Sequence
+from typing import Optional, TextIO
 
 import click
 
@@ -11,7 +12,7 @@ class ProgramTerminatedError(Exception):
     """Terminate program with an error"""
 
 
-def unscramble(scrambled_data: bytes) -> List[str]:
+def unscramble(scrambled_data: bytes) -> list[str]:
     scrambled_data = base64.b64decode(scrambled_data)
 
     unscrambled = b""

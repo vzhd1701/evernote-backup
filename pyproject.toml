@@ -70,76 +70,80 @@ black = "^25.1.0"
 isort = "^6.0.1"
 mdformat = "0.7.17"
 
-[tool.flakeheaven]
-base = "https://raw.githubusercontent.com/wemake-services/wemake-python-styleguide/master/styles/flakeheaven.toml"
-extended_default_ignore=[]
-max_line_length = 88
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
 exclude = [
-    "tests/*.py",
+    "evernote_client_api_tokenized.py",
 ]
+select = [
+    # Complexity
+    #"PL",   # pylint
+    #"C90",  # maccabe
 
-[tool.flakeheaven.plugins]
-# Maybe disable
-# WPS211 too many arguments
-# WPS214 too many methods
-# WPS602 forbids @staticmethod
-# E800 Found commented out code
-# WPS306 forces to use class ClassName(object) <- purely for consistency
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    ##"COM",  # flake8-commas
+    ##"D",    # pydocstyle
+    "DTZ",  # flake8-datetimez
+    "E",    # pycodestyle
+    #"ERA",  # flake8-eradicate
+    "EXE",  # flake8-executable
+    "F",    # pyflakes
+    ##"FBT",  # flake8-boolean-trap
+    "FLY",  # pyflint
+    ##"FURB", # refurb
+    ##"G",    # flake8-logging-format
+    "I",    # isort
+    "ICN",  # flake8-import-conventions
+    "ISC",  # flake8-implicit-str-concat
+    "LOG",  # flake8-logging
+    ##"N",    # pep8-naming
+    "PERF", # perflint
+    "PIE",  # flake8-pie
+    "PT",   # flake8-pytest-style
+    "PTH",  # flake8-use-pathlib
+    "Q",    # flake8-quotes
+    ##"RET",  # flake8-return
+    "RSE",  # flake8-raise
+    "RUF",  # ruff
+    "S",    # flake8-bandit
+    ##"SIM",  # flake8-simpify
+    ##"SLF",  # flake8-self
+    "SLOT", # flake8-slots
+    "T100", # flake8-debugger
+    "TRY",  # tryceratops
+    "UP",   # pyupgrade
+    "W",    # pycodestyle
+    "YTT",  # flake8-2020
+]
+ignore = [
+    "B904",     # raise from
+    "DTZ901",   # timezone on datetime.max
+    "E501",     # Line too long
+    "PERF203",  # try inside loop
+    "PT006",    # parametrize type
+    "PT011",    # broad pytest catch
+    "S301",     # unpickling from databse
+    "TRY003",   # long exception messages
+    "TRY301",   # abstract raise
+]
+external = [ "WPS" ]
 
-# Disabled [personal preference]
-# WPS111 short names
-# WPS305 forbids f-strings
-# WPS326 implicit line concat
-# Docstings, don't have any
-# WPS226 String constant overuse
-# S301, S403 Pickle deserialize, it's my own data
-
-# Exceptions [false positives & formatting]
-# WPS323 Found `%` string formatting
-# C812 trailing comma <- handled by black
-# E203 whitespace before : <- handled by black
-# W503 Line break occurred before a binary operator
-
-# E800 TEMPORARILY DISABLE COMMENTED CODE
-#flake8-eradicate = ["+*", "-E800"]
-
-pycodestyle = ["+*", "-E203", "-W503"]
-flake8-bandit = ["+*", "-S301", "-S403"]
-flake8-commas = ["+*", "-C812"]
-flake8-quotes = ["+*", "-Q000"]
-flake8-rst-docstrings = ["-*"]
-flake8-docstrings = ["-*"]
-flake8-darglint = ["-*"]
-wemake-python-styleguide = ["+*", "-WPS111", "-WPS323", "-WPS326", "-WPS305", "-WPS226"]
-
-[tool.flakeheaven.exceptions."evernote_backup/evernote_client_util.py"]
-# Complex decorator
-mccabe = ["+*", "-C901"]
-wemake-python-styleguide = ["-WPS231", "-WPS232", "-WPS220"]
-
-[tool.flakeheaven.exceptions."evernote_backup/cli.py"]
-# Too many arguments, argv options and decorators
-wemake-python-styleguide = ["-WPS211", "-WPS216"]
-
-[tool.flakeheaven.exceptions."evernote_backup/cli_app.py"]
-# Too many arguments, argv options
-wemake-python-styleguide = ["-WPS211"]
-
-[tool.flakeheaven.exceptions."evernote_backup/cli_app_auth.py"]
-# Too many arguments, argv options
-wemake-python-styleguide = ["-WPS211"]
-
-[tool.flakeheaven.exceptions."evernote_backup/evernote_client.py"]
-# Too many arguments, argv options
-wemake-python-styleguide = ["-WPS211"]
-
-[tool.flakeheaven.exceptions."evernote_backup/version.py"]
-# I like it this way
-wemake-python-styleguide = ["-WPS410"]
-
-[tool.flakeheaven.exceptions."evernote_backup/note_formatter_util.py"]
-# Time algorithm
-wemake-python-styleguide = ["-WPS432", "-WPS509", "-WPS221"]
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = [
+    "S",
+    "PL",
+]
 
 [tool.black]
 line-length = 88

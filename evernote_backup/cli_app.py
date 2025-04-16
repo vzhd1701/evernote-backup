@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import logging
 from pathlib import Path
 from ssl import SSLError
@@ -225,7 +223,7 @@ def manage_ping(
             f"SSL certificate verification failed for host '{backend_host}': {e}"
         )
 
-    logger.info(f"Connection OK!")
+    logger.info("Connection OK!")
 
     logger.debug(f"Backend: {backend}")
     logger.debug(f"UserStore endpoint URL: {backend_url}")

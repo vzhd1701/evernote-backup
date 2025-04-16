@@ -1,7 +1,7 @@
 import functools
 import time
 from http.client import HTTPException
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Optional
 
 from requests.utils import DEFAULT_CA_BUNDLE_PATH, extract_zipped_paths
 from six.moves import http_client
@@ -53,7 +53,7 @@ class BinaryHttpThriftClient:
         self,
         url: str,
         user_agent: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         use_system_ssl_ca: bool = False,
     ):
         self.url = url
@@ -97,7 +97,7 @@ class UserStoreClient(TokenizedUserStoreClient):
         auth_token: str,
         store_url: str,
         user_agent: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         use_system_ssl_ca: bool = False,
     ):
         self._base_client = BinaryHttpThriftClient(
@@ -115,7 +115,7 @@ class NoteStoreClient(TokenizedNoteStoreClient):
         auth_token: str,
         store_url: str,
         user_agent: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         use_system_ssl_ca: bool = False,
     ):
         self._base_client = BinaryHttpThriftClient(
@@ -138,7 +138,7 @@ class RetryableMixin:
         retry_max: int = DEFAULT_RETRY_MAX,
         retry_delay: float = DEFAULT_RETRY_DELAY,
         retry_backoff_factor: float = DEFAULT_RETRY_BACKOFF_FACTOR,
-        retry_exceptions: Tuple[Type[Exception], ...] = DEFAULT_RETRY_EXCEPTIONS,
+        retry_exceptions: tuple[type[Exception], ...] = DEFAULT_RETRY_EXCEPTIONS,
         **kwargs,
     ):
         self._retry_max = retry_max
@@ -186,13 +186,13 @@ class UserStoreClientRetryable(RetryableMixin, UserStoreClient):
         auth_token: str,
         store_url: str,
         user_agent: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         use_system_ssl_ca: bool = False,
         # RetryableMixin params
         retry_max: int = DEFAULT_RETRY_MAX,
         retry_delay: float = DEFAULT_RETRY_DELAY,
         retry_backoff_factor: float = DEFAULT_RETRY_BACKOFF_FACTOR,
-        retry_exceptions: Tuple[Type[Exception], ...] = DEFAULT_RETRY_EXCEPTIONS,
+        retry_exceptions: tuple[type[Exception], ...] = DEFAULT_RETRY_EXCEPTIONS,
     ):
         super().__init__(
             auth_token=auth_token,
@@ -215,13 +215,13 @@ class NoteStoreClientRetryable(RetryableMixin, NoteStoreClient):
         auth_token: str,
         store_url: str,
         user_agent: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         use_system_ssl_ca: bool = False,
         # RetryableMixin params
         retry_max: int = DEFAULT_RETRY_MAX,
         retry_delay: float = DEFAULT_RETRY_DELAY,
         retry_backoff_factor: float = DEFAULT_RETRY_BACKOFF_FACTOR,
-        retry_exceptions: Tuple[Type[Exception], ...] = DEFAULT_RETRY_EXCEPTIONS,
+        retry_exceptions: tuple[type[Exception], ...] = DEFAULT_RETRY_EXCEPTIONS,
     ):
         super().__init__(
             auth_token=auth_token,

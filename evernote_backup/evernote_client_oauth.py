@@ -1,5 +1,6 @@
 import threading
 import time
+from enum import IntEnum
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from requests_oauthlib import OAuth1Session
@@ -13,25 +14,25 @@ class OAuthDeclinedError(Exception):
     """Raise when user cancels authentication"""
 
 
-class CallbackHandler(BaseHTTPRequestHandler):
-    http_codes = {
-        "OK": 200,
-        "NOT FOUND": 404,
-    }
+class HTTPCode(IntEnum):
+    OK = 200
+    NOT_FOUND = 404
 
+
+class CallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if not self.path.startswith("/oauth_callback?"):
-            self.send_response(self.http_codes["NOT FOUND"])
+            self.send_response(HTTPCode.NOT_FOUND)
             self.end_headers()
             return
 
         self.server.callback_response = self.path
 
-        self.send_response(self.http_codes["OK"])
+        self.send_response(HTTPCode.OK)
         self.end_headers()
         self.wfile.write(
-            "<html><head><title>OAuth Callback</title></head>"
-            "<body>You can close this tab now...</body></html>".encode("utf-8")
+            b"<html><head><title>OAuth Callback</title></head>"
+            b"<body>You can close this tab now...</body></html>"
         )
 
     def log_message(self, *args, **kwargs) -> None:  # type: ignore
@@ -51,7 +52,7 @@ class StoppableHTTPServer(HTTPServer):
             self.server_close()
 
 
-class EvernoteOAuthCallbackHandler(object):
+class EvernoteOAuthCallbackHandler:
     def __init__(
         self, oauth_client: "EvernoteOAuthClient", oauth_port: int, server_host: str
     ) -> None:

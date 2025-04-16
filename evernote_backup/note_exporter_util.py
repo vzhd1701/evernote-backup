@@ -1,10 +1,9 @@
 from pathlib import Path
-from typing import Dict, Tuple
 
 MAX_FILE_NAME_LEN = 255
 
 
-class SafePath(object):
+class SafePath:
     """Ensures path for tuples of directory names that may contain bad symbols
 
     Use case:
@@ -14,7 +13,7 @@ class SafePath(object):
     """
 
     def __init__(self, base_dir: Path, overwrite: bool = False) -> None:
-        self.safe_paths: Dict[Tuple[str, ...], Path] = {}
+        self.safe_paths: dict[tuple[str, ...], Path] = {}
 
         self.main_base_dir = base_dir
         self.overwrite = overwrite

@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 import json
 import re
 import uuid
-from typing import List, Optional
+from typing import Optional
 
 import xmltodict
 from evernote.edam.type.ttypes import Note, Resource
@@ -11,14 +10,14 @@ from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.note_formatter_util import fmt_binary, fmt_content, fmt_time
 
 
-class NoteFormatter(object):
+class NoteFormatter:
     """https://xml.evernote.com/pub/evernote-export3.dtd"""
 
     def __init__(self, add_guid: bool = False) -> None:
         self._raw_elements: dict = {}
         self.add_guid = add_guid
 
-    def format_note(self, note: Note, note_tasks: List[Task]) -> str:
+    def format_note(self, note: Note, note_tasks: list[Task]) -> str:
         self._raw_elements = {}
 
         note_skeleton = {

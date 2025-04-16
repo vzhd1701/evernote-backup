@@ -99,7 +99,7 @@ class FakeEvernoteUserStore:
             raise ConnectionError
 
         if self.fake_values.fake_auth_verify_unexpected_error:
-            raise EDAMUserException()
+            raise EDAMUserException
         if self.fake_values.fake_is_token_expired:
             raise EDAMUserException(
                 errorCode=EDAMErrorCode.AUTH_EXPIRED, parameter="authenticationToken"
@@ -130,7 +130,7 @@ class FakeEvernoteUserStore:
 
     def authenticateLongSessionV2(self, authParams: AuthenticationParameters):
         if self.fake_values.fake_auth_unexpected_error:
-            raise EDAMUserException()
+            raise EDAMUserException
         if self.fake_values.fake_auth_invalid_pass or (
             self.fake_values.fake_valid_password
             and self.fake_values.fake_valid_password != authParams.password
@@ -158,7 +158,7 @@ class FakeEvernoteUserStore:
         deviceDescription,
     ):
         if self.fake_values.fake_auth_twofactor_unexpected_error:
-            raise EDAMUserException()
+            raise EDAMUserException
         if self.fake_values.fake_auth_invalid_ota:
             raise EDAMUserException(
                 errorCode=EDAMErrorCode.INVALID_AUTH, parameter="oneTimeCode"
@@ -174,7 +174,7 @@ class FakeEvernoteUserStore:
                 parameter="authenticationToken",
             )
         if self.fake_values.fake_auth_get_jwt_unexpected_error:
-            raise EDAMUserException()
+            raise EDAMUserException
         return self.fake_values.fake_jwt_token
 
 
@@ -330,7 +330,7 @@ class FakeSyncEventSource(MagicMock):
         return False  # Don't suppress exceptions
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_evernote_client(mocker):
     fake_values = FakeEvernoteValues()
 
@@ -359,13 +359,13 @@ def mock_evernote_client(mocker):
     return fake_values
 
 
-@pytest.fixture()
+@pytest.fixture
 def cli_invoker():
     cli_runner = CliRunner()
     return lambda *x: cli_runner.invoke(cli, x, catch_exceptions=False)
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_storage(monkeypatch):
     db = sqlite3.connect(":memory:")
     db.row_factory = sqlite3.Row
@@ -383,7 +383,7 @@ def fake_storage(monkeypatch):
     db.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_init_db(fake_storage, fake_token, mock_evernote_client):
     mock_evernote_client.fake_user = "fake_user"
 
@@ -401,7 +401,7 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_init_db_china(fake_storage, fake_token, mock_evernote_client):
     mock_evernote_client.fake_user = "fake_user"
 
@@ -419,7 +419,7 @@ def fake_init_db_china(fake_storage, fake_token, mock_evernote_client):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_token():
     return "S=1:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
 
@@ -479,7 +479,7 @@ def mock_oauth_http_server(mock_oauth_client, mocker):
     return mock_server
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_output_to_terminal(mocker, monkeypatch):
     tty_mock = MagicMock()
 

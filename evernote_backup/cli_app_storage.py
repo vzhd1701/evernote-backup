@@ -12,14 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 def get_storage(database_path: Path) -> SqliteStorage:
-    logger.info("Reading database {0}...".format(database_path.name))
+    logger.info(f"Reading database {database_path.name}...")
 
     try:
         return SqliteStorage(database_path)
     except FileNotFoundError:
         raise ProgramTerminatedError(
-            f"Database file {database_path} does not exist."
-            f" Initialize database first!"
+            f"Database file {database_path} does not exist. Initialize database first!"
         )
 
 
@@ -41,7 +40,7 @@ def raise_on_existing_database(database_path: Path) -> None:
 
 
 def initialize_storage(database_path: Path, force: bool) -> SqliteStorage:
-    logger.info("Initializing database {0}...".format(database_path.name))
+    logger.info(f"Initializing database {database_path.name}...")
 
     if force:
         if database_path.exists():

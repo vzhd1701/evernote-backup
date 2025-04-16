@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import Dict, Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
 
 from evernote.edam.error.ttypes import EDAMNotFoundException
 from evernote.edam.notestore import NoteStore
@@ -38,7 +39,7 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         )
 
         self._tags: Optional[dict] = None
-        self._notebook_tags: Dict[str, Dict[str, str]] = {}
+        self._notebook_tags: dict[str, dict[str, str]] = {}
         self._linked_notebooks: Optional[dict] = None
         self.max_chunk_results = max_chunk_results
 
@@ -48,7 +49,11 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         logger.debug(f"Downloading note [{note_guid}]")
 
         note = self.note_store.getNote(
-            note_guid, True, True, True, True  # noqa: WPS425
+            note_guid,
+            True,
+            True,
+            True,
+            True,  # noqa: WPS425
         )
 
         if note.tagGuids:
@@ -139,7 +144,7 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         return NotebookAuth(token=auth_token, shard=l_notebook.shardId)
 
     @property
-    def linked_notebooks(self) -> Dict[str, LinkedNotebook]:
+    def linked_notebooks(self) -> dict[str, LinkedNotebook]:
         if self._linked_notebooks is None:
             self._linked_notebooks = {
                 ln.guid: ln for ln in self.note_store.listLinkedNotebooks()
@@ -147,12 +152,12 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         return self._linked_notebooks
 
     @property
-    def tags(self) -> Dict[str, str]:
+    def tags(self) -> dict[str, str]:
         if self._tags is None:
             self._tags = {t.guid: t.name for t in self.note_store.listTags()}
         return self._tags
 
-    def list_notebook_tags(self, notebook_guid: str) -> Dict[str, str]:
+    def list_notebook_tags(self, notebook_guid: str) -> dict[str, str]:
         if notebook_guid not in self._notebook_tags:
             self._notebook_tags[notebook_guid] = {
                 t.guid: t.name

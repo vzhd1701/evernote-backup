@@ -1,6 +1,4 @@
-import time
-from http.client import HTTPException
-from typing import Any, Callable, NamedTuple, Union
+from typing import NamedTuple, Union
 
 from evernote.edam.error.ttypes import (
     EDAMErrorCode,
