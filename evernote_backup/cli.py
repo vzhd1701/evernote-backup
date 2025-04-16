@@ -3,6 +3,7 @@ import logging
 import sys
 import traceback
 from pathlib import Path
+from ssl import SSLError
 from typing import Callable, Optional
 
 import click
@@ -74,6 +75,20 @@ opt_database = click.option(
     help="Database file where notes are stored.",
 )
 
+opt_backend = click.option(
+    "--backend",
+    default=config_defaults.BACKEND,
+    show_default=True,
+    type=click.Choice(["evernote", "china", "china:sandbox"]),
+    help="API backend to connect to. If you are using Yinxiang, select 'china'.",
+)
+
+opt_use_system_ssl_ca = click.option(
+    "--use-system-ssl-ca",
+    is_flag=True,
+    help="Use system provided Certificate Authority (CA) for SSL. (Advanced option)",
+)
+
 
 def handle_errors(f: Callable) -> Callable:
     logger = logging.getLogger(__name__)
@@ -84,6 +99,11 @@ def handle_errors(f: Callable) -> Callable:
             return f(*args, **kwargs)
         except ProgramTerminatedError as e:
             logger.critical(e)
+        except SSLError as e:
+            logger.critical(f"SSL error: {e}")
+            logger.critical(
+                "To debug this problem, run 'evernote-backup -v manage ping'"
+            )
         except EDAMSystemException as e:
             if e.errorCode != EDAMErrorCode.RATE_LIMIT_REACHED:
                 logger.critical(traceback.format_exc())
@@ -151,14 +171,9 @@ def cli(quiet: bool, verbose: bool, log: Path) -> None:
     is_flag=True,
     help="Overwrite existing database file.",
 )
-@click.option(
-    "--backend",
-    default=config_defaults.BACKEND,
-    show_default=True,
-    type=click.Choice(["evernote", "china", "china:sandbox"]),
-    help="API backend to connect to. If you are using Yinxiang, select 'china'.",
-)
+@opt_backend
 @opt_network_retry_count
+@opt_use_system_ssl_ca
 @handle_errors
 def init_db(
     database: Path,
@@ -170,6 +185,7 @@ def init_db(
     force: bool,
     backend: str,
     network_retry_count: int,
+    use_system_ssl_ca: bool,
 ) -> None:
     """Initialize storage & log in to Evernote."""
 
@@ -183,6 +199,7 @@ def init_db(
         force=force,
         backend=backend,
         network_retry_count=network_retry_count,
+        use_system_ssl_ca=use_system_ssl_ca,
     )
 
 
@@ -216,6 +233,7 @@ def init_db(
     ),
 )
 @opt_network_retry_count
+@opt_use_system_ssl_ca
 @click.option(
     "--include-tasks",
     is_flag=True,
@@ -229,6 +247,7 @@ def sync(
     max_download_workers: int,
     download_cache_memory_limit: int,
     network_retry_count: int,
+    use_system_ssl_ca: bool,
     include_tasks: bool,
     token: Optional[str],
 ) -> None:
@@ -240,6 +259,7 @@ def sync(
         max_download_workers=max_download_workers,
         download_cache_memory_limit=download_cache_memory_limit,
         network_retry_count=network_retry_count,
+        use_system_ssl_ca=use_system_ssl_ca,
         include_tasks=include_tasks,
         token=token,
     )
@@ -310,6 +330,7 @@ def export(
 @opt_database
 @group_options(opt_user, opt_password, opt_oauth_port, opt_oauth_host, opt_token)
 @opt_network_retry_count
+@opt_use_system_ssl_ca
 @handle_errors
 def reauth(
     database: Path,
@@ -319,6 +340,7 @@ def reauth(
     oauth_host: str,
     token: Optional[str],
     network_retry_count: int,
+    use_system_ssl_ca: bool,
 ) -> None:
     """Refresh login to Evernote, run when token expires."""
 
@@ -330,6 +352,32 @@ def reauth(
         auth_oauth_host=oauth_host,
         auth_token=token,
         network_retry_count=network_retry_count,
+        use_system_ssl_ca=use_system_ssl_ca,
+    )
+
+
+@cli.group("manage")
+@handle_errors
+def manage():
+    """Managing your backup database and other functions"""
+
+
+@manage.command("ping")
+@opt_backend
+@opt_network_retry_count
+@opt_use_system_ssl_ca
+@handle_errors
+def manage_ping(
+    backend: str,
+    network_retry_count: int,
+    use_system_ssl_ca: bool,
+):
+    """Test connection to Evernote API server"""
+
+    cli_app.manage_ping(
+        backend=backend,
+        network_retry_count=network_retry_count,
+        use_system_ssl_ca=use_system_ssl_ca,
     )
 
 

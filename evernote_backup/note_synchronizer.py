@@ -98,6 +98,7 @@ class NoteClientWorker(object):
         token: str,
         backend: str,
         network_error_retry_count: int,
+        use_system_ssl_ca: bool,
         max_chunk_results: int,
         download_cache_memory_limit: int,
     ) -> None:
@@ -105,6 +106,7 @@ class NoteClientWorker(object):
         self.token = token
         self.backend = backend
         self.network_error_retry_count = network_error_retry_count
+        self.use_system_ssl_ca = use_system_ssl_ca
         self.max_chunk_results = max_chunk_results
 
         self.memory_manager = NoteClientMemoryManager(download_cache_memory_limit)
@@ -130,6 +132,7 @@ class NoteClientWorker(object):
                 token=auth_data.token,
                 backend=self.backend,
                 network_error_retry_count=self.network_error_retry_count,
+                use_system_ssl_ca=self.use_system_ssl_ca,
                 max_chunk_results=self.max_chunk_results,
             )
 
@@ -205,11 +208,12 @@ class NoteSynchronizer(object):  # noqa: WPS214
         self.include_tasks = include_tasks
 
         self.note_worker = NoteClientWorker(
-            self.note_client.token,
-            self.note_client.backend,
-            self.note_client.network_error_retry_count,
-            self.note_client.max_chunk_results,
-            download_cache_memory_limit,
+            token=self.note_client.token,
+            backend=self.note_client.backend,
+            network_error_retry_count=self.note_client.network_error_retry_count,
+            use_system_ssl_ca=self.note_client.use_system_ssl_ca,
+            max_chunk_results=self.note_client.max_chunk_results,
+            download_cache_memory_limit=download_cache_memory_limit,
         )
         self.linked_notebooks_auth: Dict[str, NotebookAuth] = {}
 

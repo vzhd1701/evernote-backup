@@ -86,3 +86,22 @@ def test_note_store_client_bad_init(mocker):
         NoteStoreClientRetryable(auth_token="test-token", store_url="https://test.com")
 
     assert str(e.value) == "Failed to create Thrift binary http client: test"
+
+
+def test_note_store_client_init_certifi_ca(mocker):
+    client = NoteStoreClientRetryable(
+        auth_token="test-token",
+        store_url="https://test.com",
+    )
+
+    assert client._base_client.protocol.trans.context is not None
+
+
+def test_note_store_client_init_system_ca(mocker):
+    client = NoteStoreClientRetryable(
+        auth_token="test-token",
+        store_url="https://test.com",
+        use_system_ssl_ca=True,
+    )
+
+    assert client._base_client.protocol.trans.context is None

@@ -1,8 +1,9 @@
 import io
 import logging
+from ssl import SSLError
 
 import pytest
-from evernote.edam.error.ttypes import EDAMSystemException, EDAMErrorCode
+from evernote.edam.error.ttypes import EDAMErrorCode, EDAMSystemException
 from thrift.Thrift import TApplicationException
 
 from evernote_backup import cli as cli_module
@@ -152,6 +153,19 @@ def test_cli_program_error_rate_limit(cli_invoker, mocker):
 
     assert result.exit_code == 1
     assert "Rate limit reached" in result.output
+
+
+def test_cli_program_error_ssl_error(cli_invoker, mocker):
+    cli_app_mock = mocker.patch("evernote_backup.cli.cli_app")
+    cli_app_mock.init_db.side_effect = SSLError("test ssl error")
+
+    result = cli_invoker("init-db")
+
+    assert result.exit_code == 1
+    assert "test ssl error" in result.output
+    assert (
+        "To debug this problem, run 'evernote-backup -v manage ping'" in result.output
+    )
 
 
 @pytest.mark.parametrize(

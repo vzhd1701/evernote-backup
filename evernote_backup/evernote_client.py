@@ -8,6 +8,7 @@ from evernote.edam.error.ttypes import (
     EDAMSystemException,
     EDAMUserException,
 )
+from evernote.edam.userstore.constants import EDAM_VERSION_MAJOR, EDAM_VERSION_MINOR
 from requests_sse import EventSource, MessageEvent
 
 from evernote_backup.evernote_client_api_http import (
@@ -46,17 +47,31 @@ class EvernoteClientBase(object):
 
 class EvernoteClient(EvernoteClientBase):
     def __init__(
-        self, backend: str, token: str, network_error_retry_count: int
+        self,
+        backend: str,
+        token: Optional[str] = None,
+        network_error_retry_count: Optional[int] = 5,
+        use_system_ssl_ca: bool = False,
     ) -> None:
         super().__init__(backend=backend)
 
-        self.token = token
-        self.shard = get_token_shard(token)
+        if token:
+            self.token = token
+            self.shard = get_token_shard(token)
+        else:
+            self.token = ""
+            self.shard = None
 
         self.network_error_retry_count = network_error_retry_count
+        self.use_system_ssl_ca = use_system_ssl_ca
 
         self._user: Optional[str] = None
         self._token_jwt: Optional[str] = None
+
+    def check_version(self):
+        return self.user_store.checkVersion(
+            self.user_agent, EDAM_VERSION_MAJOR, EDAM_VERSION_MINOR
+        )
 
     def verify_token(self) -> None:
         try:
@@ -74,6 +89,7 @@ class EvernoteClient(EvernoteClientBase):
             store_url=user_store_uri,
             user_agent=self.user_agent,
             retry_max=self.network_error_retry_count,
+            use_system_ssl_ca=self.use_system_ssl_ca,
         )
 
     @property
@@ -100,6 +116,7 @@ class EvernoteClient(EvernoteClientBase):
             store_url=note_store_uri,
             user_agent=self.user_agent,
             retry_max=self.network_error_retry_count,
+            use_system_ssl_ca=self.use_system_ssl_ca,
         )
 
     def refresh_jwt_token(self):

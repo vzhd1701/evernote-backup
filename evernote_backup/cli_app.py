@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from ssl import SSLError
 from typing import Optional
 
 from evernote_backup.cli_app_auth import get_auth_token, get_sync_client
@@ -13,6 +14,8 @@ from evernote_backup.cli_app_storage import (
 )
 from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.config import CURRENT_DB_VERSION
+from evernote_backup.evernote_client import EvernoteClient
+from evernote_backup.evernote_client_util_ssl import log_ssl_debug_info
 from evernote_backup.note_exporter import NoteExporter, NothingToExportError
 from evernote_backup.note_synchronizer import NoteSynchronizer, WrongAuthUserError
 
@@ -29,6 +32,7 @@ def init_db(
     force: bool,
     backend: str,
     network_retry_count: int,
+    use_system_ssl_ca: bool,
 ) -> None:
     if not force:
         raise_on_existing_database(database)
@@ -41,9 +45,17 @@ def init_db(
             auth_oauth_host,
             backend,
             network_retry_count,
+            use_system_ssl_ca,
         )
 
-    note_client = get_sync_client(auth_token, backend, network_retry_count, 1, False)
+    note_client = get_sync_client(
+        auth_token=auth_token,
+        backend=backend,
+        network_error_retry_count=network_retry_count,
+        use_system_ssl_ca=use_system_ssl_ca,
+        max_chunk_results=1,
+        is_jwt_needed=False,
+    )
 
     storage = initialize_storage(database, force)
 
@@ -67,6 +79,7 @@ def reauth(
     auth_oauth_host: str,
     auth_token: Optional[str],
     network_retry_count: int,
+    use_system_ssl_ca: bool,
 ) -> None:
     storage = get_storage(database)
 
@@ -76,12 +89,13 @@ def reauth(
 
     if not auth_token:
         auth_token = get_auth_token(
-            auth_user,
-            auth_password,
-            auth_oauth_port,
-            auth_oauth_host,
-            backend,
-            network_retry_count,
+            auth_user=auth_user,
+            auth_password=auth_password,
+            auth_oauth_port=auth_oauth_port,
+            auth_oauth_host=auth_oauth_host,
+            backend=backend,
+            network_retry_count=network_retry_count,
+            use_system_ssl_ca=use_system_ssl_ca,
         )
 
     note_client = get_sync_client(
@@ -90,6 +104,7 @@ def reauth(
         network_error_retry_count=network_retry_count,
         max_chunk_results=1,
         is_jwt_needed=False,
+        use_system_ssl_ca=use_system_ssl_ca,
     )
 
     local_user = storage.config.get_config_value("user")
@@ -111,6 +126,7 @@ def sync(
     max_download_workers: int,
     download_cache_memory_limit: int,
     network_retry_count: int,
+    use_system_ssl_ca: bool,
     include_tasks: bool,
     token: Optional[str],
 ) -> None:
@@ -124,11 +140,12 @@ def sync(
     is_jwt_needed = include_tasks
 
     note_client = get_sync_client(
-        auth_token,
-        backend,
-        network_retry_count,
-        max_chunk_results,
-        is_jwt_needed,
+        auth_token=auth_token,
+        backend=backend,
+        network_error_retry_count=network_retry_count,
+        use_system_ssl_ca=use_system_ssl_ca,
+        max_chunk_results=max_chunk_results,
+        is_jwt_needed=is_jwt_needed,
     )
 
     note_synchronizer = NoteSynchronizer(
@@ -182,3 +199,33 @@ def export(
         )
 
     logger.info("All notes have been exported!")
+
+
+def manage_ping(
+    backend: str,
+    network_retry_count: int,
+    use_system_ssl_ca: bool,
+):
+    client = EvernoteClient(
+        backend=backend,
+        network_error_retry_count=network_retry_count,
+    )
+
+    backend_url = client.user_store._base_client.url
+    backend_host = client.user_store._base_client.protocol.trans.host
+
+    try:
+        check_response = client.check_version()
+    except SSLError as e:
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            log_ssl_debug_info(backend_host, use_system_ssl_ca)
+
+        raise ProgramTerminatedError(
+            f"SSL certificate verification failed for host '{backend_host}': {e}"
+        )
+
+    logger.info(f"Connection OK!")
+
+    logger.debug(f"Backend: {backend}")
+    logger.debug(f"UserStore endpoint URL: {backend_url}")
+    logger.debug(f"Version check status: {check_response}")

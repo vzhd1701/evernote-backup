@@ -15,6 +15,7 @@ def get_sync_client(
     auth_token: str,
     backend: str,
     network_error_retry_count: int,
+    use_system_ssl_ca: bool,
     max_chunk_results: int,
     is_jwt_needed: bool,
 ) -> EvernoteClientSync:
@@ -24,6 +25,7 @@ def get_sync_client(
         token=auth_token,
         backend=backend,
         network_error_retry_count=network_error_retry_count,
+        use_system_ssl_ca=use_system_ssl_ca,
         max_chunk_results=max_chunk_results,
     )
 
@@ -55,6 +57,7 @@ def get_auth_token(
     auth_oauth_host: str,
     backend: str,
     network_retry_count: int,
+    use_system_ssl_ca: bool,
 ) -> str:
     logger.info("Logging in to Evernote...")
 
@@ -66,7 +69,12 @@ def get_auth_token(
             auth_password,
             backend,
             network_retry_count,
+            use_system_ssl_ca,
         )
 
     logger.info("Using OAuth authentication...")
-    return evernote_login_oauth(backend, auth_oauth_port, auth_oauth_host)
+    return evernote_login_oauth(
+        backend,
+        auth_oauth_port,
+        auth_oauth_host,
+    )

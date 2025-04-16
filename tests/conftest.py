@@ -2,6 +2,7 @@ import json
 import sqlite3
 import uuid
 from pathlib import Path
+from ssl import SSLError
 from unittest.mock import MagicMock
 
 import pytest
@@ -69,6 +70,8 @@ class FakeEvernoteValues:
         self.fake_auth_twofactor_unexpected_error = False
         self.fake_auth_linked_notebook_error = False
 
+        self.fake_ping_ssl_error = False
+
         self.last_maxEntries = None
         self.fake_network_counter = 0
 
@@ -78,8 +81,17 @@ class FakeEvernoteValues:
 class FakeEvernoteUserStore:
     fake_values = None
 
-    def __init__(self, auth_token: str, store_url: str, user_agent: str, headers=None):
+    def __init__(
+        self,
+        auth_token: str,
+        store_url: str,
+        user_agent: str,
+        headers=None,
+        use_system_ssl_ca=False,
+    ):
         self.auth_token = auth_token
+
+        self._base_client = MagicMock()
 
     def getUser(self):
         if self.fake_values.fake_network_counter > 0:
@@ -104,6 +116,17 @@ class FakeEvernoteUserStore:
 
     def getNoteStoreUrl(self):
         return "https://www.evernote.com/shard/s520/notestore"
+
+    def checkVersion(
+        self,
+        clientName: str,
+        edamVersionMajor: int,
+        edamVersionMinor: int,
+    ):
+        if self.fake_values.fake_ping_ssl_error:
+            raise SSLError("test ssl error")
+
+        return True
 
     def authenticateLongSessionV2(self, authParams: AuthenticationParameters):
         if self.fake_values.fake_auth_unexpected_error:
@@ -158,9 +181,18 @@ class FakeEvernoteUserStore:
 class FakeEvernoteNoteStore:
     fake_values = None
 
-    def __init__(self, auth_token: str, store_url: str, user_agent: str, headers=None):
+    def __init__(
+        self,
+        auth_token: str,
+        store_url: str,
+        user_agent: str,
+        headers=None,
+        use_system_ssl_ca=False,
+    ):
         self.auth_token = auth_token
         self.shard = store_url[store_url.rfind("/") + 1 :]
+
+        self._base_client = MagicMock()
 
     def getSyncState(self):
         return MagicMock(updateCount=self.fake_values.fake_usn)
@@ -365,6 +397,7 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
         force=False,
         backend="evernote",
         network_retry_count=50,
+        use_system_ssl_ca=False,
     )
 
 
@@ -382,6 +415,7 @@ def fake_init_db_china(fake_storage, fake_token, mock_evernote_client):
         force=False,
         backend="china",
         network_retry_count=50,
+        use_system_ssl_ca=False,
     )
 
 
