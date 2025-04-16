@@ -66,9 +66,8 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.2.0"
-black = "^25.1.0"
-isort = "^6.0.1"
 mdformat = "0.7.17"
+ruff = "0.11.5"
 
 [tool.ruff]
 target-version = "py39"

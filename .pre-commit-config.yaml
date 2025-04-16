@@ -19,18 +19,11 @@ repos:
 
 -   repo: local
     hooks:
-    -   id: isort
-        name: isort
+    -   id: ruff
+        name: ruff
         stages: [commit]
         language: system
-        entry: poetry run isort
-        types: [python]
-
-    -   id: black
-        name: black
-        stages: [commit]
-        language: system
-        entry: poetry run black
+        entry: poetry run ruff format
         types: [python]
 
     -   id: mdformat
