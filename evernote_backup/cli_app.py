@@ -209,6 +209,7 @@ def manage_ping(
     client = EvernoteClient(
         backend=backend,
         network_error_retry_count=network_retry_count,
+        use_system_ssl_ca=use_system_ssl_ca,
     )
 
     backend_url = client.user_store._base_client.url
