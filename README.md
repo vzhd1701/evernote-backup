@@ -149,6 +149,12 @@ To sync tasks & reminders, you will need:
 
 Sorry for the extra steps, tasks and reminders are not accessible using current public API, so I had to use Evernote's new sync API which is not available for third party apps yet. I have placed a request to grant my app key access to the new API, but I have not received a response yet.
 
+### SSL Errors
+
+If you get any SSL errors, please run `evernote-backup -v manage ping` to check your connection to Evernote server and get full information about the SSL environment.
+
+You can also try using `--use-system-ssl-ca` flag to make `evernote-backup` use system Certificate Authority (CA) storage instead of the bundled one.
+
 ### How to refresh expired token
 
 In case your auth token that you initialized your database with expires, you have an option to re-authorize it by running the `evernote-backup reauth` command. It has the same options as the `init-db` command.
