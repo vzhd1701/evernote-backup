@@ -57,6 +57,15 @@ opt_token = click.option(
     ),
 )
 
+opt_token_one_off = click.option(
+    "--token",
+    "-t",
+    help=(
+        "Manually provide authentication token to use with Evernote API."
+        " (Used only for this run, ignores existing one in the database)"
+    ),
+)
+
 opt_network_retry_count = click.option(
     "--network-retry-count",
     default=config_defaults.NETWORK_ERROR_RETRY_COUNT,
@@ -239,7 +248,7 @@ def init_db(
     is_flag=True,
     help="Download tasks and reminders on sync.",
 )
-@opt_token
+@opt_token_one_off
 @handle_errors
 def sync(
     database: Path,
