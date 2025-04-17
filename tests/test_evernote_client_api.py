@@ -79,7 +79,9 @@ def test_note_store_client_init():
 
 
 def test_note_store_client_bad_init(mocker):
-    mock_tbin = mocker.patch("evernote_backup.evernote_client_api_http.TBinaryProtocol")
+    mock_tbin = mocker.patch(
+        "evernote_backup.evernote_client_api_http.TBinaryProtocolHotfix"
+    )
     mock_tbin.side_effect = RuntimeError("test")
 
     with pytest.raises(ConnectionError) as e:

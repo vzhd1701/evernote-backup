@@ -19,6 +19,15 @@ DEFAULT_RETRY_BACKOFF_FACTOR = 2.0
 DEFAULT_RETRY_EXCEPTIONS = (HTTPException, ConnectionError)
 
 
+class TBinaryProtocolHotfix(TBinaryProtocol):
+    """
+    Hotfix to prevent crash on bad data string from server
+    """
+
+    def readString(self):  # pragma: no cover
+        return self.readBinary().decode("utf-8", errors="replace")
+
+
 class THttpClientHotfix(THttpClient):
     """
     Hotfix for deprecated `key_file` and `cert_file` args
@@ -82,7 +91,7 @@ class BinaryHttpThriftClient:
         try:
             thrift_http_client = THttpClientHotfix(self.url, cafile=cafile)
             thrift_http_client.setCustomHeaders(self._default_headers)
-            return TBinaryProtocol(thrift_http_client)
+            return TBinaryProtocolHotfix(thrift_http_client)
         except Exception as e:
             raise ConnectionError(f"Failed to create Thrift binary http client: {e}")
 
