@@ -1,3 +1,15 @@
+## [1.12.0](https://github.com/vzhd1701/evernote-backup/compare/1.11.0...1.12.0) (2025-04-17)
+
+### Features
+
+- add --api-data option to init-db and reauth for custom API data ([4edd04e](https://github.com/vzhd1701/evernote-backup/commit/4edd04ea707c6401b6fb857ce980c6623ce08f1e)), closes [#129](https://github.com/vzhd1701/evernote-backup/issues/129)
+- add options to debug SSL errors ([c28bd70](https://github.com/vzhd1701/evernote-backup/commit/c28bd700222b458623d22de9d8041e4ff4dcf0a0))
+
+### Bug Fixes
+
+- avoid crash on bad string data from server ([70392e6](https://github.com/vzhd1701/evernote-backup/commit/70392e607a0943497cb44ddbdabfe4a6f4dbe328))
+- use use_system_ssl_ca flag to init client on manage ping ([e9f8667](https://github.com/vzhd1701/evernote-backup/commit/e9f866726c1a3166579ee811a06161666a0aa52b))
+
 ## [1.11.0](https://github.com/vzhd1701/evernote-backup/compare/1.10.0...1.11.0) (2025-04-15)
 
 ### Features
