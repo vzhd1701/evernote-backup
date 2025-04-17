@@ -4,10 +4,18 @@ import tempfile
 from pathlib import Path
 from pprint import pformat
 from ssl import create_default_context, get_server_certificate
+from typing import Optional
 
 from requests.utils import DEFAULT_CA_BUNDLE_PATH, extract_zipped_paths
 
 logger = logging.getLogger(__name__)
+
+
+def get_cafile_path(use_system_ssl_ca: bool) -> Optional[str]:
+    if use_system_ssl_ca:
+        return None
+
+    return extract_zipped_paths(DEFAULT_CA_BUNDLE_PATH)
 
 
 def log_ssl_debug_info(backend_host: str, use_system_ssl_ca: bool):
@@ -16,11 +24,11 @@ def log_ssl_debug_info(backend_host: str, use_system_ssl_ca: bool):
     cert_serial_number = cert_info.get("serialNumber")
     cert_expiration = cert_info.get("notAfter")
 
+    cafile = get_cafile_path(use_system_ssl_ca)
+
     if use_system_ssl_ca:
-        cafile = None
         logger.debug("SSL CA store: system")
     else:
-        cafile = extract_zipped_paths(DEFAULT_CA_BUNDLE_PATH)
         logger.debug("SSL CA store: certifi")
         logger.debug(f"SSL CA store path: {cafile}")
 

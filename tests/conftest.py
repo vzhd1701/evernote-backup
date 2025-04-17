@@ -87,7 +87,7 @@ class FakeEvernoteUserStore:
         store_url: str,
         user_agent: str,
         headers=None,
-        use_system_ssl_ca=False,
+        cafile=None,
     ):
         self.auth_token = auth_token
 
@@ -187,7 +187,7 @@ class FakeEvernoteNoteStore:
         store_url: str,
         user_agent: str,
         headers=None,
-        use_system_ssl_ca=False,
+        cafile=None,
     ):
         self.auth_token = auth_token
         self.shard = store_url[store_url.rfind("/") + 1 :]

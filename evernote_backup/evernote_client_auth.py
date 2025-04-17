@@ -1,3 +1,5 @@
+from typing import Optional
+
 from evernote.edam.error.ttypes import EDAMUserException
 from evernote.edam.userstore.ttypes import (
     AuthenticationParameters,
@@ -13,15 +15,15 @@ class EvernoteClientAuth(EvernoteClient):
         self,
         backend: str,
         network_error_retry_count: int,
-        use_system_ssl_ca: bool,
         consumer_key: str,
         consumer_secret: str,
+        cafile: Optional[str],
     ):
         super().__init__(
             backend=backend,
             token="",
             network_error_retry_count=network_error_retry_count,
-            use_system_ssl_ca=use_system_ssl_ca,
+            cafile=cafile,
         )
 
         self.consumer_key = consumer_key

@@ -52,7 +52,7 @@ class EvernoteClient(EvernoteClientBase):
         backend: str,
         token: Optional[str] = None,
         network_error_retry_count: Optional[int] = 5,
-        use_system_ssl_ca: bool = False,
+        cafile: Optional[str] = None,
     ) -> None:
         super().__init__(backend=backend)
 
@@ -64,7 +64,7 @@ class EvernoteClient(EvernoteClientBase):
             self.shard = None
 
         self.network_error_retry_count = network_error_retry_count
-        self.use_system_ssl_ca = use_system_ssl_ca
+        self.cafile = cafile
 
         self._user: Optional[str] = None
         self._token_jwt: Optional[str] = None
@@ -90,7 +90,7 @@ class EvernoteClient(EvernoteClientBase):
             store_url=user_store_uri,
             user_agent=self.user_agent,
             retry_max=self.network_error_retry_count,
-            use_system_ssl_ca=self.use_system_ssl_ca,
+            cafile=self.cafile,
         )
 
     @property
@@ -117,7 +117,7 @@ class EvernoteClient(EvernoteClientBase):
             store_url=note_store_uri,
             user_agent=self.user_agent,
             retry_max=self.network_error_retry_count,
-            use_system_ssl_ca=self.use_system_ssl_ca,
+            cafile=self.cafile,
         )
 
     def refresh_jwt_token(self):

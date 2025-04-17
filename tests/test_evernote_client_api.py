@@ -4,6 +4,7 @@ from evernote_backup.evernote_client_api_http import (
     NoteStoreClientRetryable,
     UserStoreClientRetryable,
 )
+from evernote_backup.evernote_client_util_ssl import get_cafile_path
 
 
 def test_user_store_client_init():
@@ -91,9 +92,12 @@ def test_note_store_client_bad_init(mocker):
 
 
 def test_note_store_client_init_certifi_ca(mocker):
+    cafile = get_cafile_path(use_system_ssl_ca=False)
+
     client = NoteStoreClientRetryable(
         auth_token="test-token",
         store_url="https://test.com",
+        cafile=cafile,
     )
 
     assert client._base_client.protocol.trans.context is not None
@@ -103,7 +107,6 @@ def test_note_store_client_init_system_ca(mocker):
     client = NoteStoreClientRetryable(
         auth_token="test-token",
         store_url="https://test.com",
-        use_system_ssl_ca=True,
     )
 
     assert client._base_client.protocol.trans.context is None

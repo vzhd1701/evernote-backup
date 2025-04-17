@@ -97,15 +97,15 @@ class NoteClientWorker:
         token: str,
         backend: str,
         network_error_retry_count: int,
-        use_system_ssl_ca: bool,
         max_chunk_results: int,
         download_cache_memory_limit: int,
+        cafile: Optional[str],
     ) -> None:
         self.stop = False
         self.token = token
         self.backend = backend
         self.network_error_retry_count = network_error_retry_count
-        self.use_system_ssl_ca = use_system_ssl_ca
+        self.cafile = cafile
         self.max_chunk_results = max_chunk_results
 
         self.memory_manager = NoteClientMemoryManager(download_cache_memory_limit)
@@ -131,7 +131,7 @@ class NoteClientWorker:
                 token=auth_data.token,
                 backend=self.backend,
                 network_error_retry_count=self.network_error_retry_count,
-                use_system_ssl_ca=self.use_system_ssl_ca,
+                cafile=self.cafile,
                 max_chunk_results=self.max_chunk_results,
             )
 
@@ -210,7 +210,7 @@ class NoteSynchronizer:  # noqa: WPS214
             token=self.note_client.token,
             backend=self.note_client.backend,
             network_error_retry_count=self.note_client.network_error_retry_count,
-            use_system_ssl_ca=self.note_client.use_system_ssl_ca,
+            cafile=self.note_client.cafile,
             max_chunk_results=self.note_client.max_chunk_results,
             download_cache_memory_limit=download_cache_memory_limit,
         )

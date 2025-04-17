@@ -28,14 +28,14 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         backend: str,
         token: str,
         network_error_retry_count: int,
-        use_system_ssl_ca: bool,
         max_chunk_results: int,
+        cafile: Optional[str],
     ) -> None:
         super().__init__(
             backend=backend,
             token=token,
             network_error_retry_count=network_error_retry_count,
-            use_system_ssl_ca=use_system_ssl_ca,
+            cafile=cafile,
         )
 
         self._tags: Optional[dict] = None

@@ -3,7 +3,11 @@ from pathlib import Path
 from ssl import SSLError
 from typing import Optional
 
-from evernote_backup.cli_app_auth import get_auth_token, get_sync_client
+from evernote_backup.cli_app_auth import (
+    get_auth_token,
+    get_ping_client,
+    get_sync_client,
+)
 from evernote_backup.cli_app_storage import (
     get_storage,
     initialize_storage,
@@ -12,7 +16,6 @@ from evernote_backup.cli_app_storage import (
 )
 from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.config import CURRENT_DB_VERSION
-from evernote_backup.evernote_client import EvernoteClient
 from evernote_backup.evernote_client_util_ssl import log_ssl_debug_info
 from evernote_backup.note_exporter import NoteExporter, NothingToExportError
 from evernote_backup.note_synchronizer import NoteSynchronizer, WrongAuthUserError
@@ -204,7 +207,7 @@ def manage_ping(
     network_retry_count: int,
     use_system_ssl_ca: bool,
 ):
-    client = EvernoteClient(
+    client = get_ping_client(
         backend=backend,
         network_error_retry_count=network_retry_count,
         use_system_ssl_ca=use_system_ssl_ca,

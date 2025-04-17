@@ -3,7 +3,6 @@ import time
 from http.client import HTTPException
 from typing import Any, Callable, Optional
 
-from requests.utils import DEFAULT_CA_BUNDLE_PATH, extract_zipped_paths
 from six.moves import http_client
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 from thrift.transport.THttpClient import THttpClient
@@ -63,10 +62,10 @@ class BinaryHttpThriftClient:
         url: str,
         user_agent: Optional[str] = None,
         headers: Optional[dict[str, str]] = None,
-        use_system_ssl_ca: bool = False,
+        cafile: Optional[str] = None,
     ):
         self.url = url
-        self.use_system_ssl_ca = use_system_ssl_ca
+        self.cafile = cafile
 
         self._default_headers = {
             "x-feature-version": "3",
@@ -83,13 +82,8 @@ class BinaryHttpThriftClient:
         self._protocol = self._create_protocol()
 
     def _create_protocol(self):
-        if self.use_system_ssl_ca:
-            cafile = None
-        else:
-            cafile = extract_zipped_paths(DEFAULT_CA_BUNDLE_PATH)
-
         try:
-            thrift_http_client = THttpClientHotfix(self.url, cafile=cafile)
+            thrift_http_client = THttpClientHotfix(self.url, cafile=self.cafile)
             thrift_http_client.setCustomHeaders(self._default_headers)
             return TBinaryProtocolHotfix(thrift_http_client)
         except Exception as e:
@@ -107,13 +101,13 @@ class UserStoreClient(TokenizedUserStoreClient):
         store_url: str,
         user_agent: Optional[str] = None,
         headers: Optional[dict[str, str]] = None,
-        use_system_ssl_ca: bool = False,
+        cafile: Optional[str] = None,
     ):
         self._base_client = BinaryHttpThriftClient(
             url=store_url,
             user_agent=user_agent,
             headers=headers,
-            use_system_ssl_ca=use_system_ssl_ca,
+            cafile=cafile,
         )
         super().__init__(auth_token, self._base_client.protocol)
 
@@ -125,13 +119,13 @@ class NoteStoreClient(TokenizedNoteStoreClient):
         store_url: str,
         user_agent: Optional[str] = None,
         headers: Optional[dict[str, str]] = None,
-        use_system_ssl_ca: bool = False,
+        cafile: Optional[str] = None,
     ):
         self._base_client = BinaryHttpThriftClient(
             url=store_url,
             user_agent=user_agent,
             headers=headers,
-            use_system_ssl_ca=use_system_ssl_ca,
+            cafile=cafile,
         )
         super().__init__(auth_token, self._base_client.protocol)
 
@@ -196,7 +190,7 @@ class UserStoreClientRetryable(RetryableMixin, UserStoreClient):
         store_url: str,
         user_agent: Optional[str] = None,
         headers: Optional[dict[str, str]] = None,
-        use_system_ssl_ca: bool = False,
+        cafile: Optional[str] = None,
         # RetryableMixin params
         retry_max: int = DEFAULT_RETRY_MAX,
         retry_delay: float = DEFAULT_RETRY_DELAY,
@@ -208,7 +202,7 @@ class UserStoreClientRetryable(RetryableMixin, UserStoreClient):
             store_url=store_url,
             user_agent=user_agent,
             headers=headers,
-            use_system_ssl_ca=use_system_ssl_ca,
+            cafile=cafile,
             retry_max=retry_max,
             retry_delay=retry_delay,
             retry_backoff_factor=retry_backoff_factor,
@@ -225,7 +219,7 @@ class NoteStoreClientRetryable(RetryableMixin, NoteStoreClient):
         store_url: str,
         user_agent: Optional[str] = None,
         headers: Optional[dict[str, str]] = None,
-        use_system_ssl_ca: bool = False,
+        cafile: Optional[str] = None,
         # RetryableMixin params
         retry_max: int = DEFAULT_RETRY_MAX,
         retry_delay: float = DEFAULT_RETRY_DELAY,
@@ -237,7 +231,7 @@ class NoteStoreClientRetryable(RetryableMixin, NoteStoreClient):
             store_url=store_url,
             user_agent=user_agent,
             headers=headers,
-            use_system_ssl_ca=use_system_ssl_ca,
+            cafile=cafile,
             retry_max=retry_max,
             retry_delay=retry_delay,
             retry_backoff_factor=retry_backoff_factor,
