@@ -329,12 +329,13 @@ def test_note_with_many_tasks(mocker):
     )
 
     note_tasks = [
-        Task(label="test1"),
+        Task(taskId="tid1", label="test1"),
         Task(
+            taskId="tid2",
             label="test2",
             reminders=[
-                Reminder(created=1713129600000),
-                Reminder(created=1713159600000),
+                Reminder(reminderId="rid1", created=1713129600000),
+                Reminder(reminderId="rid2", created=1713159600000),
             ],
         ),
     ]

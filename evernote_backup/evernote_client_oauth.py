@@ -2,6 +2,7 @@ import threading
 import time
 from enum import IntEnum
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Optional
 
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib.oauth1_session import TokenMissing, TokenRequestDenied
@@ -26,7 +27,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
-        self.server.callback_response = self.path
+        self.server.callback_response = self.path  # type: ignore
 
         self.send_response(HTTPCode.OK)
         self.end_headers()
@@ -102,7 +103,7 @@ class EvernoteOAuthClient(EvernoteClientBase):
         self.client_key = consumer_key
         self.client_secret = consumer_secret
 
-        self._session = None
+        self._session: Optional[OAuth1Session] = None
 
     def get_authorize_url(self, callback_url: str) -> str:
         self._session = OAuth1Session(
@@ -113,9 +114,12 @@ class EvernoteOAuthClient(EvernoteClientBase):
 
         self._session.fetch_request_token(self._get_endpoint("oauth"))
 
-        return self._session.authorization_url(self._get_endpoint("OAuth.action"))
+        return str(self._session.authorization_url(self._get_endpoint("OAuth.action")))
 
     def get_access_token(self, callback_response_raw: str) -> str:
+        if not self._session:
+            raise RuntimeError("Session used before initialization")
+
         try:
             self._session.parse_authorization_response(callback_response_raw)
         except TokenMissing:
@@ -126,4 +130,4 @@ class EvernoteOAuthClient(EvernoteClientBase):
         except TokenRequestDenied:
             raise OAuthDeclinedError
 
-        return access_token["oauth_token"]
+        return str(access_token["oauth_token"])

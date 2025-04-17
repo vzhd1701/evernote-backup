@@ -438,7 +438,12 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
 
             return [r["guid"] for r in sorted_notes]
 
-    def _get_raw_note(self, note_title: str, note_guid: str, raw_note: bytes):
+    def _get_raw_note(
+        self,
+        note_title: str,
+        note_guid: str,
+        raw_note: bytes,
+    ) -> Optional[Note]:
         try:
             return pickle.loads(lzma.decompress(raw_note))
         except Exception:
@@ -446,6 +451,8 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                 logger.exception(f"Note '{note_title}' [{note_guid}] is corrupt")
 
             logger.warning(f"Note '{note_title}' [{note_guid}] is corrupt")
+
+        return None
 
     # def _mark_note_for_redownload(self, note_guid: str):
     #     with self.db as con:
@@ -497,6 +504,8 @@ class TasksStorage(SqliteStorage):  # noqa: WPS214
 
             logger.warning(f"Task [{task_guid}] is corrupt")
 
+        return None
+
 
 class RemindersStorage(SqliteStorage):  # noqa: WPS214
     def add_reminders(self, reminders: Iterable[Reminder]) -> None:
@@ -542,6 +551,8 @@ class RemindersStorage(SqliteStorage):  # noqa: WPS214
                 logger.exception(f"Reminder [{guid}] is corrupt")
 
             logger.warning(f"Reminder [{guid}] is corrupt")
+
+        return None
 
 
 class ConfigStorage(SqliteStorage):

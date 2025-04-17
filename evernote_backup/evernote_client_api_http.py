@@ -1,7 +1,7 @@
 import functools
 import time
 from http.client import HTTPException
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 from six.moves import http_client
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
@@ -23,8 +23,8 @@ class TBinaryProtocolHotfix(TBinaryProtocol):
     Hotfix to prevent crash on bad data string from server
     """
 
-    def readString(self):  # pragma: no cover
-        return self.readBinary().decode("utf-8", errors="replace")
+    def readString(self) -> str:  # pragma: no cover
+        return cast(str, self.readBinary().decode("utf-8", errors="replace"))
 
 
 class THttpClientHotfix(THttpClient):
@@ -34,7 +34,7 @@ class THttpClientHotfix(THttpClient):
     https://github.com/apache/thrift/pull/3108
     """
 
-    def open(self):  # pragma: no cover
+    def open(self) -> None:  # pragma: no cover
         if self.scheme == "http":
             self._THttpClient__http = http_client.HTTPConnection(
                 self.host,
@@ -81,7 +81,7 @@ class BinaryHttpThriftClient:
 
         self._protocol = self._create_protocol()
 
-    def _create_protocol(self):
+    def _create_protocol(self) -> TBinaryProtocolHotfix:
         try:
             thrift_http_client = THttpClientHotfix(self.url, cafile=self.cafile)
             thrift_http_client.setCustomHeaders(self._default_headers)
@@ -90,7 +90,7 @@ class BinaryHttpThriftClient:
             raise ConnectionError(f"Failed to create Thrift binary http client: {e}")
 
     @property
-    def protocol(self):
+    def protocol(self) -> TBinaryProtocolHotfix:
         return self._protocol
 
 
@@ -137,12 +137,12 @@ class RetryableMixin:
 
     def __init__(
         self,
-        *args,
+        *args: Any,
         retry_max: int = DEFAULT_RETRY_MAX,
         retry_delay: float = DEFAULT_RETRY_DELAY,
         retry_backoff_factor: float = DEFAULT_RETRY_BACKOFF_FACTOR,
         retry_exceptions: tuple[type[Exception], ...] = DEFAULT_RETRY_EXCEPTIONS,
-        **kwargs,
+        **kwargs: Any,
     ):
         self._retry_max = retry_max
         self._retry_delay = retry_delay
@@ -162,7 +162,7 @@ class RetryableMixin:
     def _retry(self) -> Callable:
         def decorator(func: Callable) -> Callable:
             @functools.wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
                 delay = self._retry_delay
 
                 for attempt in range(self._retry_max + 1):

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 
-def fmt_utcfromtimestamp(timestamp: int):
+def fmt_utcfromtimestamp(timestamp: int) -> datetime:
     return datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
 

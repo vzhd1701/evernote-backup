@@ -3,7 +3,7 @@ import ssl
 import tempfile
 from pathlib import Path
 from pprint import pformat
-from typing import Optional
+from typing import Optional, cast
 
 from requests.utils import DEFAULT_CA_BUNDLE_PATH, extract_zipped_paths
 
@@ -14,10 +14,10 @@ def get_cafile_path(use_system_ssl_ca: bool) -> Optional[str]:
     if use_system_ssl_ca:
         return None
 
-    return extract_zipped_paths(DEFAULT_CA_BUNDLE_PATH)
+    return str(extract_zipped_paths(DEFAULT_CA_BUNDLE_PATH))
 
 
-def log_ssl_debug_info(backend_host: str, use_system_ssl_ca: bool):
+def log_ssl_debug_info(backend_host: str, use_system_ssl_ca: bool) -> None:
     cert_info = _get_ssl_cert_info(backend_host)
     cert_domains = ", ".join(_parse_cert_domains(cert_info))
     cert_serial_number = cert_info.get("serialNumber")
@@ -49,7 +49,7 @@ def log_ssl_debug_info(backend_host: str, use_system_ssl_ca: bool):
     )
 
 
-def _get_ssl_cert_info(hostname, port=443):
+def _get_ssl_cert_info(hostname: str, port: int = 443) -> dict:
     with tempfile.NamedTemporaryFile(
         "w",
         encoding="utf-8",
@@ -58,14 +58,14 @@ def _get_ssl_cert_info(hostname, port=443):
         tmp_cert_file.write(ssl.get_server_certificate((hostname, port)))
         tmp_cert_file_path = Path(tmp_cert_file.name)
 
-    cert_dict = ssl._ssl._test_decode_cert(str(tmp_cert_file_path))
+    cert_dict = ssl._ssl._test_decode_cert(str(tmp_cert_file_path))  # type: ignore
 
     tmp_cert_file_path.unlink()
 
-    return cert_dict
+    return cast(dict, cert_dict)
 
 
-def _parse_cert_domains(cert_dict):
+def _parse_cert_domains(cert_dict: dict) -> list[str]:
     domains = set()
 
     for type_name, value in cert_dict.get("subjectAltName", []):

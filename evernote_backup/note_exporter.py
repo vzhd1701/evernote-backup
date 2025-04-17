@@ -129,7 +129,7 @@ class NoteExporter:
     def _get_note_tasks(self, note_guid: str) -> list[Task]:
         tasks = sorted(
             self.storage.tasks.iter_tasks(note_guid),
-            key=lambda t: t.sortWeight,
+            key=lambda t: str(t.sortWeight),
         )
 
         for task in tasks:

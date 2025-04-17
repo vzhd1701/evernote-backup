@@ -50,7 +50,7 @@ class EvernoteClientAuth(EvernoteClient):
 
     def two_factor_auth(self, auth_token: str, ota_code: str) -> AuthenticationResult:
         try:
-            self.note_store.auth_token = auth_token
+            self.token = auth_token
             return self.user_store.completeTwoFactorAuthentication(
                 oneTimeCode=ota_code,
                 deviceIdentifier="",

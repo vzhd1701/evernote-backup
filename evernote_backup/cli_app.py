@@ -206,7 +206,7 @@ def manage_ping(
     backend: str,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-):
+) -> None:
     client = get_ping_client(
         backend=backend,
         network_error_retry_count=network_retry_count,

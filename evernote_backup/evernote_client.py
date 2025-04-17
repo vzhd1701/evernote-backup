@@ -52,7 +52,7 @@ class EvernoteClient(EvernoteClientBase):
         self,
         backend: str,
         token: Optional[str] = None,
-        network_error_retry_count: Optional[int] = 5,
+        network_error_retry_count: int = 5,
         cafile: Optional[str] = None,
     ) -> None:
         super().__init__(backend=backend)
@@ -62,7 +62,7 @@ class EvernoteClient(EvernoteClientBase):
             self.shard = get_token_shard(token)
         else:
             self.token = ""
-            self.shard = None
+            self.shard = ""
 
         self.network_error_retry_count = network_error_retry_count
         self.cafile = cafile
@@ -70,7 +70,7 @@ class EvernoteClient(EvernoteClientBase):
         self._user: Optional[str] = None
         self._token_jwt: Optional[str] = None
 
-    def check_version(self):
+    def check_version(self) -> bool:
         return self.user_store.checkVersion(
             self.user_agent, EDAM_VERSION_MAJOR, EDAM_VERSION_MINOR
         )
@@ -121,7 +121,7 @@ class EvernoteClient(EvernoteClientBase):
             cafile=self.cafile,
         )
 
-    def refresh_jwt_token(self):
+    def refresh_jwt_token(self) -> None:
         try:
             self._token_jwt = self.user_store.getNAPAccessToken()
         except (EDAMUserException, EDAMSystemException) as e:

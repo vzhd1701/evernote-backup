@@ -1,7 +1,7 @@
 import json
 import logging
 from collections.abc import Iterator
-from typing import Optional
+from typing import Any, Optional
 
 from evernote.edam.error.ttypes import EDAMNotFoundException
 from evernote.edam.notestore import NoteStore
@@ -198,13 +198,13 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
 
 
 # conduit-core/dist/repositories/sync/ConduitNSyncProcessor.js
-def _parse_sync_event_data(sync_data) -> SyncChunkV2:
+def _parse_sync_event_data(sync_data: list[dict]) -> SyncChunkV2:
     del_operations = {
         EvernoteSyncOperationType.DELETE,
         EvernoteSyncOperationType.EXPUNGE,
     }
 
-    result = {
+    result: dict[str, Any] = {
         "tasks": {},
         "reminders": {},
         "expunged_tasks": set(),

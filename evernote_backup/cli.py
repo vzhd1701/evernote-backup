@@ -4,7 +4,7 @@ import sys
 import traceback
 from pathlib import Path
 from ssl import SSLError
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import click
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
@@ -103,7 +103,7 @@ def handle_errors(f: Callable) -> Callable:
     logger = logging.getLogger(__name__)
 
     @functools.wraps(f)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return f(*args, **kwargs)
         except ProgramTerminatedError as e:
@@ -367,7 +367,7 @@ def reauth(
 
 @cli.group("manage")
 @handle_errors
-def manage():
+def manage() -> None:
     """Managing your backup database and other functions"""
 
 
@@ -380,7 +380,7 @@ def manage_ping(
     backend: str,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-):
+) -> None:
     """Test connection to Evernote API server"""
 
     cli_app.manage_ping(

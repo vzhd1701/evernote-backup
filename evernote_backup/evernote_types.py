@@ -14,7 +14,7 @@ from typing import Optional
 # >
 @dataclass
 class Reminder:
-    reminderId: Optional[str] = None
+    reminderId: str
     sourceId: Optional[str] = None
     sourceType: Optional[int] = None
     noteLevelID: Optional[str] = None
@@ -48,7 +48,7 @@ class Reminder:
 # >
 @dataclass
 class Task:
-    taskId: Optional[str] = None
+    taskId: str
     parentId: Optional[str] = None
     parentType: Optional[int] = None
     noteLevelID: Optional[str] = None

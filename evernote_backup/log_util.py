@@ -3,7 +3,7 @@ import logging.config
 import sys
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from evernote.edam.type.ttypes import Note, Notebook
 
@@ -13,7 +13,7 @@ IS_TESTING = "pytest" in sys.modules
 
 
 class LevelPrefixFormatter(logging.Formatter):
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         formatted_message = super().format(record)
 
         # For INFO level, return the formatted message as-is
@@ -38,7 +38,7 @@ def init_logging(log_level: str, log_file: Optional[Path] = None) -> None:
     else:
         console_formatter = {"format": format_long}
 
-    config = {
+    config: dict[str, Any] = {
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {

@@ -293,7 +293,7 @@ class NoteSynchronizer:  # noqa: WPS214
             return
 
         last_usn = current_usn
-        with progressbar(  # type: ignore
+        with progressbar(
             length=remote_usn - current_usn,
             show_pos=True,
             file=get_progress_output(),
@@ -392,7 +392,7 @@ class NoteSynchronizer:  # noqa: WPS214
         logger.debug(f"Sync worker threads: {self.max_download_workers}")
 
         with ThreadPoolExecutor(max_workers=self.max_download_workers) as executor:
-            with progressbar(  # type: ignore
+            with progressbar(
                 length=len(notes_to_sync),
                 show_pos=True,
                 file=get_progress_output(),
