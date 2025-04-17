@@ -70,6 +70,9 @@ class FakeEvernoteValues:
         self.fake_auth_twofactor_unexpected_error = False
         self.fake_auth_linked_notebook_error = False
 
+        self.fake_auth_used_api_key = None
+        self.fake_auth_used_api_secret = None
+
         self.fake_ping_ssl_error = False
 
         self.last_maxEntries = None
@@ -129,6 +132,9 @@ class FakeEvernoteUserStore:
         return True
 
     def authenticateLongSessionV2(self, authParams: AuthenticationParameters):
+        self.fake_values.fake_auth_used_api_key = authParams.consumerKey
+        self.fake_values.fake_auth_used_api_secret = authParams.consumerSecret
+
         if self.fake_values.fake_auth_unexpected_error:
             raise EDAMUserException
         if self.fake_values.fake_auth_invalid_pass or (
@@ -398,6 +404,7 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
         backend="evernote",
         network_retry_count=50,
         use_system_ssl_ca=False,
+        custom_api_data=None,
     )
 
 
@@ -416,6 +423,7 @@ def fake_init_db_china(fake_storage, fake_token, mock_evernote_client):
         backend="china",
         network_retry_count=50,
         use_system_ssl_ca=False,
+        custom_api_data=None,
     )
 
 

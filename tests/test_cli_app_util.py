@@ -65,7 +65,7 @@ def test_get_sync_client_unexpected_error(mock_evernote_client):
 
 def test_unscrambler():
     test_data = base64.b64encode(b":8:<2&00000")
-    expected = ["12345", "54321"]
+    expected = ("12345", "54321")
 
     result_data = cli_app_util.unscramble(test_data)
 

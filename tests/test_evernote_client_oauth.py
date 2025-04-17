@@ -21,6 +21,13 @@ def mock_evernote_oauth_client(mock_oauth_client):
     )
 
 
+def test_get_auth_token_before_init(mock_oauth_client, mock_evernote_oauth_client):
+    with pytest.raises(RuntimeError) as e:
+        mock_evernote_oauth_client.get_access_token("test_response")
+
+    assert e.value.args[0] == "Session used before initialization"
+
+
 @pytest.mark.usefixtures("mock_oauth_http_server")
 def test_get_auth_token(mock_oauth_client, mock_evernote_oauth_client):
     oauth_handler = EvernoteOAuthCallbackHandler(

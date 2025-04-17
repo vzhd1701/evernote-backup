@@ -62,7 +62,7 @@ opt_token_one_off = click.option(
     "-t",
     help=(
         "Manually provide authentication token to use with Evernote API."
-        " (Used only for this run, ignores existing one in the database)"
+        " (Used only for this run, ignores existing one in the database.)"
     ),
 )
 
@@ -96,6 +96,11 @@ opt_use_system_ssl_ca = click.option(
     "--use-system-ssl-ca",
     is_flag=True,
     help="Use system provided Certificate Authority (CA) for SSL. (Advanced option)",
+)
+
+opt_api_data = click.option(
+    "--api-data",
+    help="Custom API data, use 'key:secret' format. (Advanced option)",
 )
 
 
@@ -183,6 +188,7 @@ def cli(quiet: bool, verbose: bool, log: Path) -> None:
 @opt_backend
 @opt_network_retry_count
 @opt_use_system_ssl_ca
+@opt_api_data
 @handle_errors
 def init_db(
     database: Path,
@@ -195,6 +201,7 @@ def init_db(
     backend: str,
     network_retry_count: int,
     use_system_ssl_ca: bool,
+    api_data: Optional[str],
 ) -> None:
     """Initialize storage & log in to Evernote."""
 
@@ -209,6 +216,7 @@ def init_db(
         backend=backend,
         network_retry_count=network_retry_count,
         use_system_ssl_ca=use_system_ssl_ca,
+        custom_api_data=api_data,
     )
 
 
@@ -340,6 +348,7 @@ def export(
 @group_options(opt_user, opt_password, opt_oauth_port, opt_oauth_host, opt_token)
 @opt_network_retry_count
 @opt_use_system_ssl_ca
+@opt_api_data
 @handle_errors
 def reauth(
     database: Path,
@@ -350,6 +359,7 @@ def reauth(
     token: Optional[str],
     network_retry_count: int,
     use_system_ssl_ca: bool,
+    api_data: Optional[str],
 ) -> None:
     """Refresh login to Evernote, run when token expires."""
 
@@ -362,6 +372,7 @@ def reauth(
         auth_token=token,
         network_retry_count=network_retry_count,
         use_system_ssl_ca=use_system_ssl_ca,
+        custom_api_data=api_data,
     )
 
 

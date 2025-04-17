@@ -7,12 +7,30 @@ from typing import Optional, TextIO
 
 import click
 
+from evernote_backup.config import API_DATA_EVERNOTE, API_DATA_YINXIANG
+
 
 class ProgramTerminatedError(Exception):
     """Terminate program with an error"""
 
 
-def unscramble(scrambled_data: bytes) -> list[str]:
+def get_api_data(backend: str, custom_api_data: Optional[str]) -> tuple[str, str]:
+    if not custom_api_data:
+        if backend.startswith("china"):
+            return unscramble(API_DATA_YINXIANG)
+        return unscramble(API_DATA_EVERNOTE)
+
+    try:
+        key, secret = custom_api_data.split(":", maxsplit=1)
+    except ValueError:
+        raise ProgramTerminatedError(
+            "Could not parse custom API data. Use 'key:secret' format."
+        )
+
+    return key, secret
+
+
+def unscramble(scrambled_data: bytes) -> tuple[str, str]:
     scrambled_data = base64.b64decode(scrambled_data)
 
     unscrambled = b""
@@ -20,7 +38,9 @@ def unscramble(scrambled_data: bytes) -> list[str]:
         xor = len(scrambled_data) - i
         unscrambled += (char ^ xor).to_bytes(1, byteorder="big")
 
-    return unscrambled.decode().split()
+    key, secret = unscrambled.decode().split(maxsplit=1)
+
+    return key, secret
 
 
 def get_progress_output() -> Optional[TextIO]:

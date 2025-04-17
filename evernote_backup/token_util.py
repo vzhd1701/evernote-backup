@@ -12,7 +12,4 @@ def get_token_expiration_date(token: str) -> datetime:
 
 
 def get_token_shard(token: str) -> str:
-    if not token:
-        return ""
-
     return token[2 : token.index(":")]

@@ -62,6 +62,7 @@ def get_auth_token(
     backend: str,
     network_retry_count: int,
     use_system_ssl_ca: bool,
+    custom_api_data: Optional[str],
 ) -> str:
     logger.info("Logging in to Evernote...")
 
@@ -76,13 +77,15 @@ def get_auth_token(
             backend=backend,
             network_retry_count=network_retry_count,
             cafile=cafile,
+            custom_api_data=custom_api_data,
         )
 
     logger.info("Using OAuth authentication...")
     return evernote_login_oauth(
-        backend,
-        auth_oauth_port,
-        auth_oauth_host,
+        backend=backend,
+        oauth_port=auth_oauth_port,
+        oauth_host=auth_oauth_host,
+        custom_api_data=custom_api_data,
     )
 
 

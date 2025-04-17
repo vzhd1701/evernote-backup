@@ -1,11 +1,12 @@
+from typing import Optional
+
 import click
 
 from evernote_backup.cli_app_util import (
     ProgramTerminatedError,
+    get_api_data,
     is_output_to_terminal,
-    unscramble,
 )
-from evernote_backup.config import API_DATA_EVERNOTE
 from evernote_backup.evernote_client_oauth import (
     EvernoteOAuthCallbackHandler,
     EvernoteOAuthClient,
@@ -13,8 +14,11 @@ from evernote_backup.evernote_client_oauth import (
 )
 
 
-def get_oauth_client(backend: str) -> EvernoteOAuthClient:
-    key, secret = unscramble(API_DATA_EVERNOTE)
+def get_oauth_client(
+    backend: str,
+    custom_api_data: Optional[str],
+) -> EvernoteOAuthClient:
+    key, secret = get_api_data(backend, custom_api_data)
 
     return EvernoteOAuthClient(
         consumer_key=key,
@@ -34,11 +38,16 @@ def prompt_ota(delivery_hint: str) -> str:
     return str(click.prompt(f"Enter one-time code{one_time_hint}"))
 
 
-def evernote_login_oauth(backend: str, oauth_port: int, oauth_host: str) -> str:
+def evernote_login_oauth(
+    backend: str,
+    oauth_port: int,
+    oauth_host: str,
+    custom_api_data: Optional[str],
+) -> str:
     if not is_output_to_terminal():
         raise ProgramTerminatedError("OAuth requires user input!")
 
-    oauth_client = get_oauth_client(backend)
+    oauth_client = get_oauth_client(backend, custom_api_data)
 
     oauth_handler = EvernoteOAuthCallbackHandler(oauth_client, oauth_port, oauth_host)
 

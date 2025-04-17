@@ -67,6 +67,55 @@ def test_password_login(cli_invoker, fake_storage, mock_evernote_client):
 
 
 @pytest.mark.usefixtures("fake_init_db_china")
+def test_password_login_custom_api_data(
+    cli_invoker, fake_storage, mock_evernote_client
+):
+    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+
+    result = cli_invoker(
+        "reauth",
+        "-d",
+        "fake_db",
+        "-u",
+        "fake_user",
+        "-p",
+        "fake_pass",
+        "--api-data",
+        "test_key:test_secret",
+    )
+
+    assert result.exit_code == 0
+    assert (
+        fake_storage.config.get_config_value("auth_token")
+        == mock_evernote_client.fake_auth_token
+    )
+    assert mock_evernote_client.fake_auth_used_api_key == "test_key"
+    assert mock_evernote_client.fake_auth_used_api_secret == "test_secret"
+
+
+@pytest.mark.usefixtures("fake_init_db_china")
+def test_password_login_bad_custom_api_data(
+    cli_invoker, fake_storage, mock_evernote_client
+):
+    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+
+    result = cli_invoker(
+        "reauth",
+        "-d",
+        "fake_db",
+        "-u",
+        "fake_user",
+        "-p",
+        "fake_pass",
+        "--api-data",
+        "test_keytest_secret",
+    )
+
+    assert result.exit_code == 1
+    assert "Could not parse custom API data" in result.output
+
+
+@pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login_unexpected_error(
     cli_invoker, fake_storage, mock_evernote_client
 ):
@@ -285,6 +334,42 @@ def test_oauth_login(
         fake_storage.config.get_config_value("auth_token")
         == mock_oauth_client.fake_token
     )
+
+
+@pytest.mark.usefixtures("mock_oauth_http_server")
+@pytest.mark.usefixtures("mock_output_to_terminal")
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_login_custom_api_data(
+    cli_invoker, fake_storage, mock_evernote_client, mock_oauth_client, mocker
+):
+    mocker.patch("evernote_backup.cli_app_util.click.echo")
+    mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
+
+    import evernote_backup.evernote_client_oauth
+
+    oauth_spy = mocker.spy(evernote_backup.evernote_client_oauth, "OAuth1Session")
+
+    result = cli_invoker(
+        "reauth",
+        "-d",
+        "fake_db",
+        "--api-data",
+        "test_key:test_secret",
+    )
+
+    assert result.exit_code == 0
+    mock_launch.assert_called_once_with(
+        "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
+    )
+    assert (
+        fake_storage.config.get_config_value("auth_token")
+        == mock_oauth_client.fake_token
+    )
+    assert oauth_spy.call_args.kwargs == {
+        "callback_uri": "http://localhost:10500/oauth_callback",
+        "client_key": "test_key",
+        "client_secret": "test_secret",
+    }
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
