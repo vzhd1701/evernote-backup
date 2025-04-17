@@ -163,10 +163,11 @@ class NoteClientWorker:
                     f" while downloading note [{note_id}]"
                 )
             except struct.error:
-                logger.debug(
-                    f"Remote server returned bad data"
-                    f" while downloading note [{note_id}], retrying..."
-                )
+                if logger.getEffectiveLevel() == logging.DEBUG:
+                    logger.exception(
+                        f"Remote server returned bad data"
+                        f" while downloading note [{note_id}], retrying..."
+                    )
 
         raise NoteDownloadException(
             f"Failed to download note [{note_id}] after {retry_count} attempts!"
