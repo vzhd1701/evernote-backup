@@ -32,7 +32,7 @@ jobs:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
       - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: abatilo/actions-poetry@v3
+        uses: abatilo/actions-poetry@v4
         with:
           poetry-version: ${{ env.BUILD_POETRY_VERSION }}
           poetry-plugins: "poetry-plugin-export"
