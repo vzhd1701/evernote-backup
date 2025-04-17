@@ -114,11 +114,11 @@ def handle_errors(f: Callable) -> Callable:
                 "To debug this problem, run 'evernote-backup -v manage ping'"
             )
         except EDAMSystemException as e:
-            if e.errorCode != EDAMErrorCode.RATE_LIMIT_REACHED:
-                logger.critical(traceback.format_exc())
-            else:
+            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
                 time_left = get_time_txt(e.rateLimitDuration)
                 logger.critical(f"Rate limit reached. Restart program in {time_left}.")
+            else:
+                logger.critical(traceback.format_exc())
         except TApplicationException as e:
             message_txt = (
                 e.message.decode("utf-8") if isinstance(e.message, bytes) else e.message

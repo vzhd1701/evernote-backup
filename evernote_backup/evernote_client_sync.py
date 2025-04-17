@@ -320,7 +320,7 @@ def _parse_sync_event_data(sync_data) -> SyncChunkV2:
 
             result["reminders"][guid] = reminder
 
-    last_timestamp = max([item.get("updated", 0) for item in sync_data])
+    last_timestamp = max([sd.get("updated", 0) for sd in sync_data])
 
     return SyncChunkV2(
         last_timestamp=last_timestamp,

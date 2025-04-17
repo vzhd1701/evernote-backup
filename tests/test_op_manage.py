@@ -43,7 +43,7 @@ def test_manage_ping_bad_ssl(cli_invoker, mock_evernote_client, mocker):
     mock_evernote_client.fake_ping_ssl_error = True
 
     fake_ssl_cert = mocker.patch(
-        "evernote_backup.evernote_client_util_ssl.get_server_certificate"
+        "evernote_backup.evernote_client_util_ssl.ssl.get_server_certificate"
     )
     fake_ssl_cert.return_value = FAKE_CERT
 
@@ -57,7 +57,7 @@ def test_manage_ping_certifi_ssl(cli_invoker, mock_evernote_client, mocker):
     mock_evernote_client.fake_ping_ssl_error = True
 
     fake_ssl_cert = mocker.patch(
-        "evernote_backup.evernote_client_util_ssl.get_server_certificate"
+        "evernote_backup.evernote_client_util_ssl.ssl.get_server_certificate"
     )
     fake_ssl_cert.return_value = FAKE_CERT
 
@@ -71,7 +71,7 @@ def test_manage_ping_system_ssl(cli_invoker, mock_evernote_client, mocker):
     mock_evernote_client.fake_ping_ssl_error = True
 
     fake_ssl_cert = mocker.patch(
-        "evernote_backup.evernote_client_util_ssl.get_server_certificate"
+        "evernote_backup.evernote_client_util_ssl.ssl.get_server_certificate"
     )
     fake_ssl_cert.return_value = FAKE_CERT
 

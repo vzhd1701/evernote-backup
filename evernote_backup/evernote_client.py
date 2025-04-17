@@ -38,9 +38,10 @@ class EvernoteClientBase:
         else:
             self.user_agent = "ENScript Windows/309091;"
 
-        self.device_description = "evernote-backup"
-        if platform.node():
-            self.device_description += f" [{platform.node()}]"
+        platform_node = platform.node()
+        platform_node_postfix = f" [{platform_node}]" if platform_node else ""
+
+        self.device_description = f"evernote-backup{platform_node_postfix}"
 
     def _get_endpoint(self, path: str = "") -> str:
         return f"https://{self.service_host}/{path}"
