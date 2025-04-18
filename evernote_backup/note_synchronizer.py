@@ -210,7 +210,7 @@ class NoteSynchronizer:  # noqa: WPS214
         self.include_tasks = include_tasks
 
         self.note_worker = NoteClientWorker(
-            token=self.note_client.token,
+            token=str(self.note_client.token),
             backend=self.note_client.backend,
             network_error_retry_count=self.note_client.network_error_retry_count,
             cafile=self.note_client.cafile,

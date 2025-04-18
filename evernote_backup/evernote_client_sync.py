@@ -135,7 +135,7 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         ln_note_store = self.get_note_store(l_notebook.shardId)
 
         if is_notebook_public:
-            auth_token = self.token
+            auth_token = str(self.token)
         else:
             auth_token = ln_note_store.authenticateToSharedNotebook(
                 notebook_guid

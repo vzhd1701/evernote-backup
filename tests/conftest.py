@@ -21,7 +21,7 @@ import evernote_backup
 from evernote_backup import cli_app, note_storage
 from evernote_backup.cli import cli
 from evernote_backup.evernote_client_api_http import RetryableMixin
-from evernote_backup.token_util import get_token_shard
+from evernote_backup.token_util import EvernoteToken
 
 
 class FakeEvernoteValues:
@@ -214,10 +214,8 @@ class FakeEvernoteNoteStore:
         withResourcesRecognition,
         withResourcesAlternateData,
     ):
-        # if authenticationToken == self.fake_values.fake_linked_notebook_auth_token:
-
         # If client shard is different, means we are trying to get note from linked nb
-        token_shard = get_token_shard(self.auth_token)
+        token_shard = EvernoteToken.from_string(self.auth_token).shard
         if token_shard != self.shard:
             return next(n for n in self.fake_values.fake_l_notes if n.guid == guid)
 
@@ -429,7 +427,7 @@ def fake_init_db_china(fake_storage, fake_token, mock_evernote_client):
 
 @pytest.fixture
 def fake_token():
-    return "S=1:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
+    return "S=s1:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
 
 
 @pytest.fixture

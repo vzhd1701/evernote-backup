@@ -13,7 +13,7 @@ def mock_click_prompt(mocker):
 @pytest.mark.usefixtures("mock_evernote_client")
 @pytest.mark.usefixtures("fake_init_db")
 def test_token_refresh(fake_storage, cli_invoker):
-    fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    fake_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     result = cli_invoker("reauth", "--database", "fake_db", "--token", fake_token)
 
@@ -23,7 +23,7 @@ def test_token_refresh(fake_storage, cli_invoker):
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_user_mismatch_error(fake_storage, cli_invoker, mock_evernote_client):
-    fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    fake_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     mock_evernote_client.fake_user = "user1"
     fake_storage.config.set_config_value("user", "user2")
@@ -53,7 +53,7 @@ def test_no_database_error(cli_invoker, fake_token):
 
 @pytest.mark.usefixtures("fake_init_db_china")
 def test_password_login(cli_invoker, fake_storage, mock_evernote_client):
-    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    mock_evernote_client.fake_auth_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     result = cli_invoker(
         "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
@@ -70,7 +70,7 @@ def test_password_login(cli_invoker, fake_storage, mock_evernote_client):
 def test_password_login_custom_api_data(
     cli_invoker, fake_storage, mock_evernote_client
 ):
-    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    mock_evernote_client.fake_auth_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     result = cli_invoker(
         "reauth",
@@ -97,7 +97,7 @@ def test_password_login_custom_api_data(
 def test_password_login_bad_custom_api_data(
     cli_invoker, fake_storage, mock_evernote_client
 ):
-    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    mock_evernote_client.fake_auth_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     result = cli_invoker(
         "reauth",
@@ -175,7 +175,7 @@ def test_password_login_no_pass(
     cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt
 ):
     mock_click_prompt.fake_input = "asd123"
-    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    mock_evernote_client.fake_auth_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     mock_evernote_client.fake_valid_username = "fake_user"
     mock_evernote_client.fake_valid_password = "asd123"
 
@@ -195,7 +195,7 @@ def test_password_login_no_login(
     cli_invoker, fake_storage, mock_evernote_client, mock_click_prompt
 ):
     mock_click_prompt.fake_input = "fake_user"
-    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    mock_evernote_client.fake_auth_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     mock_evernote_client.fake_valid_username = "fake_user"
     mock_evernote_client.fake_valid_password = "asd123"
 
@@ -216,7 +216,7 @@ def test_password_login_two_factor(
 ):
     mock_click_prompt.fake_input = "123"
     mock_evernote_client.fake_twofactor_req = True
-    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    mock_evernote_client.fake_auth_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     result = cli_invoker(
         "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
@@ -237,7 +237,7 @@ def test_password_login_two_factor_hint(
     mock_click_prompt.fake_input = "123"
     mock_evernote_client.fake_twofactor_req = True
     mock_evernote_client.fake_twofactor_hint = "test_hint"
-    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    mock_evernote_client.fake_auth_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     result = cli_invoker(
         "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
@@ -276,7 +276,7 @@ def test_password_login_two_factor_unexpected_error(
 ):
     mock_click_prompt.fake_input = "123"
     mock_evernote_client.fake_twofactor_req = True
-    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    mock_evernote_client.fake_auth_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     mock_evernote_client.fake_auth_twofactor_unexpected_error = True
 
     result = cli_invoker(
@@ -293,7 +293,7 @@ def test_password_login_two_factor_silent_error(
 ):
     mock_output_to_terminal.is_tty = False
     mock_evernote_client.fake_twofactor_req = True
-    mock_evernote_client.fake_auth_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    mock_evernote_client.fake_auth_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     result = cli_invoker(
         "reauth", "-d", "fake_db", "-u", "fake_user", "-p", "fake_pass"
@@ -436,7 +436,7 @@ def test_old_db_error(cli_invoker, fake_storage, fake_token):
 def test_custom_network_retry_count_fail(
     fake_storage, cli_invoker, mock_evernote_client, mocker
 ):
-    fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    fake_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     mocker.patch("evernote_backup.evernote_client_api_http.time.sleep")
 
@@ -461,7 +461,7 @@ def test_custom_network_retry_count_fail(
 def test_custom_network_retry_count(
     fake_storage, cli_invoker, mock_evernote_client, mocker
 ):
-    fake_token = "S=1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+    fake_token = "S=s1:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
 
     mocker.patch("evernote_backup.evernote_client_api_http.time.sleep")
 

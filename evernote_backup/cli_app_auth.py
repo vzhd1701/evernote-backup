@@ -8,7 +8,6 @@ from evernote_backup.evernote_client import EvernoteClient
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import EvernoteAuthError
 from evernote_backup.evernote_client_util_ssl import get_cafile_path
-from evernote_backup.token_util import get_token_expiration_date
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +45,8 @@ def get_sync_client(
         except EvernoteAuthError as e:
             raise ProgramTerminatedError(e)
 
-    token_expiration = get_token_expiration_date(auth_token)
-
     logger.info(f"Successfully authenticated as {client.user}!")
-    logger.info(f"Current login will expire at {token_expiration}.")
+    logger.info(f"Current login expires at {client.token.expiration_human}.")
 
     return client
 

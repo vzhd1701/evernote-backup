@@ -18,7 +18,7 @@ from evernote_backup.evernote_client_api_http import (
 )
 from evernote_backup.evernote_client_util import EvernoteAuthError, raise_auth_error
 from evernote_backup.evernote_types import EvernoteEntityType
-from evernote_backup.token_util import get_token_shard
+from evernote_backup.token_util import EvernoteToken
 
 
 class EvernoteClientBase:
@@ -57,12 +57,12 @@ class EvernoteClient(EvernoteClientBase):
     ) -> None:
         super().__init__(backend=backend)
 
+        self.token: Optional[EvernoteToken] = None
+        self.shard: Optional[str] = None
+
         if token:
-            self.token = token
-            self.shard = get_token_shard(token)
-        else:
-            self.token = ""
-            self.shard = ""
+            self.token = EvernoteToken.from_string(token)
+            self.shard = self.token.shard
 
         self.network_error_retry_count = network_error_retry_count
         self.cafile = cafile
@@ -84,10 +84,11 @@ class EvernoteClient(EvernoteClientBase):
 
     @property
     def user_store(self) -> "UserStoreClientRetryable":
+        token = str(self.token) if self.token else ""
         user_store_uri = self._get_endpoint("edam/user")
 
         return UserStoreClientRetryable(
-            auth_token=self.token,
+            auth_token=token,
             store_url=user_store_uri,
             user_agent=self.user_agent,
             retry_max=self.network_error_retry_count,
@@ -106,15 +107,14 @@ class EvernoteClient(EvernoteClientBase):
 
     def get_note_store(
         self,
-        shard_id: Optional[str] = None,
+        shard: Optional[str] = None,
     ) -> "NoteStoreClientRetryable":
-        if shard_id is None:
-            shard_id = self.shard
-
-        note_store_uri = self._get_endpoint(f"edam/note/{shard_id}")
+        token = str(self.token) if self.token else ""
+        shard = shard if shard else self.shard
+        note_store_uri = self._get_endpoint(f"edam/note/{shard}")
 
         return NoteStoreClientRetryable(
-            auth_token=self.token,
+            auth_token=token,
             store_url=note_store_uri,
             user_agent=self.user_agent,
             retry_max=self.network_error_retry_count,
@@ -135,6 +135,9 @@ class EvernoteClient(EvernoteClientBase):
             raise
 
     def iter_sync_events(self, last_connection: int) -> Iterator[MessageEvent]:
+        if not self._token_jwt:
+            self.refresh_jwt_token()
+
         headers = {
             "User-Agent": self.user_agent,
             "x-feature-version": "4",

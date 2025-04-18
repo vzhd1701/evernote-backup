@@ -261,10 +261,10 @@ def test_sync_add_linked_notebook_note(cli_invoker, mock_evernote_client, fake_s
     )
 
     mock_evernote_client.fake_linked_notebook_auth_token = (
-        "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+        "S=s200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     )
 
-    result = cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("-v", "sync", "--database", "fake_db")
 
     result_notebooks = list(fake_storage.notebooks.iter_notebooks())
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
@@ -301,7 +301,7 @@ def test_sync_add_linked_notebook_note_public(
     )
 
     mock_evernote_client.fake_linked_notebook_auth_token = (
-        "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+        "S=s200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     )
 
     result = cli_invoker("sync", "--database", "fake_db")
@@ -360,7 +360,7 @@ def test_sync_add_linked_notebook_note_with_tag(
     )
 
     mock_evernote_client.fake_linked_notebook_auth_token = (
-        "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+        "S=s200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     )
 
     result = cli_invoker("sync", "--database", "fake_db")
@@ -395,7 +395,7 @@ def test_sync_expunge_linked_notebook_note(
         LinkedNotebook(guid="id3", shardId="s100")
     )
     mock_evernote_client.fake_linked_notebook_auth_token = (
-        "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+        "S=s200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     )
     mock_evernote_client.fake_usn = 100
 
@@ -450,7 +450,7 @@ def test_sync_add_linked_notebook_note_error_no_access(
     mock_evernote_client.fake_linked_notebooks.append(LinkedNotebook(guid="id3"))
 
     mock_evernote_client.fake_linked_notebook_auth_token = (
-        "S=200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
+        "S=s200:U=ff:E=fff:C=ff:P=1:A=test222:V=2:H=ff"
     )
 
     mock_evernote_client.fake_auth_linked_notebook_error = True
@@ -944,6 +944,8 @@ def test_sync_massive_note_count(
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_add_task(cli_invoker, mock_evernote_client, fake_storage):
+    mock_evernote_client.fake_jwt_token = "fake_jwt"
+
     mock_evernote_client.fake_notebooks.append(
         Notebook(
             guid="nbid1",
