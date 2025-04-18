@@ -1,5 +1,4 @@
 import logging
-import struct
 import threading
 from collections.abc import Iterable
 from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, as_completed, wait
@@ -162,7 +161,10 @@ class NoteClientWorker:
                     f"Remote server returned system error ({e.errorCode.name} - {e.message})"
                     f" while downloading note [{note_id}]"
                 )
-            except struct.error:
+            except Exception:
+                # Known errors so far:
+                # EOFError     - thrift.transport.TTransport, empty body from server
+                # struct.error - some of the fields returned wrong type
                 if logger.getEffectiveLevel() == logging.DEBUG:
                     logger.exception(
                         f"Remote server returned bad data"

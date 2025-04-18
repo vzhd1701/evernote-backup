@@ -638,11 +638,11 @@ def test_sync_unknown_exception_while_download(
     )
     mock_get_note.side_effect = fake_get_note
 
-    result = cli_invoker("sync", "--database", "fake_db")
+    result = cli_invoker("-v", "sync", "--database", "fake_db")
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     assert "Test error" in result.output
-    assert "Unknown exception caught" in result.output
+    assert "Failed to download note [id3] after" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
