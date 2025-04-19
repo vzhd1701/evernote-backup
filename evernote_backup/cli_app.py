@@ -14,10 +14,15 @@ from evernote_backup.cli_app_storage import (
     raise_on_existing_database,
     raise_on_old_database_version,
 )
-from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.cli_app_util import (
+    DatabaseCorruptError,
+    DatabaseEmptyError,
+    ProgramTerminatedError,
+)
 from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.evernote_client_util_ssl import log_ssl_debug_info
-from evernote_backup.note_exporter import NoteExporter, NothingToExportError
+from evernote_backup.note_checker import NoteChecker
+from evernote_backup.note_exporter import NoteExporter
 from evernote_backup.note_synchronizer import NoteSynchronizer, WrongAuthUserError
 
 logger = logging.getLogger(__name__)
@@ -197,7 +202,7 @@ def export(
 
     try:
         exporter.export_notebooks()
-    except NothingToExportError:
+    except DatabaseEmptyError:
         raise ProgramTerminatedError(
             "Database is empty, nothing to export."
             " Execute sync command to populate database first!"
@@ -235,3 +240,29 @@ def manage_ping(
     logger.debug(f"Backend: {backend}")
     logger.debug(f"UserStore endpoint URL: {backend_url}")
     logger.debug(f"Version check status: {check_response}")
+
+
+def manage_check(
+    database: Path,
+    mark_corrupted: bool,
+) -> None:
+    storage = get_storage(database)
+
+    raise_on_old_database_version(storage)
+
+    checker = NoteChecker(storage, mark_corrupted)
+
+    try:
+        checker.check_notes()
+    except DatabaseEmptyError:
+        raise ProgramTerminatedError(
+            "Database is empty, nothing to check."
+            " Execute sync command to populate database first!"
+        )
+    except DatabaseCorruptError:
+        raise ProgramTerminatedError(
+            "Database integrity check failed."
+            " You can try recovering your database or create a new one and do full resync."
+        )
+
+    logger.info("All notes have been checked!")

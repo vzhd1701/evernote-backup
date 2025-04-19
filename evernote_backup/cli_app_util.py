@@ -14,6 +14,14 @@ class ProgramTerminatedError(Exception):
     """Terminate program with an error"""
 
 
+class DatabaseEmptyError(Exception):
+    """Raise when database is empty"""
+
+
+class DatabaseCorruptError(Exception):
+    """Raise when database is corrupt"""
+
+
 def get_api_data(backend: str, custom_api_data: Optional[str]) -> tuple[str, str]:
     if not custom_api_data:
         if backend.startswith("china"):

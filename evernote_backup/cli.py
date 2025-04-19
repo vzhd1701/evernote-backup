@@ -400,5 +400,28 @@ def manage_ping(
     )
 
 
+@manage.command("check")
+@opt_database
+@click.option(
+    "--mark-corrupted",
+    is_flag=True,
+    help=(
+        "Mark corrupted notes for re-download."
+        " (WARNING: This will delete bad note bodies from database)"
+    ),
+)
+@handle_errors
+def manage_check(
+    database: Path,
+    mark_corrupted: bool,
+) -> None:
+    """Check database and notes integrity without exporting them"""
+
+    cli_app.manage_check(
+        database=database,
+        mark_corrupted=mark_corrupted,
+    )
+
+
 def main() -> None:
     cli()

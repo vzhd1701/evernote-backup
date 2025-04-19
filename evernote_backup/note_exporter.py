@@ -6,7 +6,7 @@ from pathlib import Path
 from click import progressbar
 from evernote.edam.type.ttypes import Note, Notebook
 
-from evernote_backup.cli_app_util import get_progress_output
+from evernote_backup.cli_app_util import get_progress_output, DatabaseEmptyError
 from evernote_backup.evernote_types import Task
 from evernote_backup.log_util import log_format_note, log_format_notebook
 from evernote_backup.note_exporter_util import SafePath
@@ -19,10 +19,6 @@ ENEX_HEAD = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE en-export SYSTEM "http://xml.evernote.com/pub/evernote-export4.dtd">
 """
 ENEX_TAIL = "</en-export>\n"
-
-
-class NothingToExportError(Exception):
-    """Raise when database is empty"""
 
 
 class NoteExporter:
@@ -57,7 +53,7 @@ class NoteExporter:
                 logger.debug("Export mode: notebooks")
 
         if count_notes == 0 and count_trash == 0:
-            raise NothingToExportError
+            raise DatabaseEmptyError
 
         if count_notes > 0:
             logger.info("Exporting notebooks...")

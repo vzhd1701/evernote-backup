@@ -114,6 +114,17 @@ class SqliteStorage:
     def reminders(self) -> "RemindersStorage":
         return RemindersStorage(self.db)
 
+    def integrity_check(self) -> str:
+        with self.db as con:
+            cur = con.execute("PRAGMA integrity_check;")
+
+            try:
+                results = cur.fetchall()
+            except sqlite3.Error as e:
+                return str(e)
+
+            return "\n".join(row[0] for row in results)
+
     def check_version(self) -> None:
         try:
             db_version = int(self.config.get_config_value("DB_VERSION"))
@@ -379,6 +390,29 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                 if raw_note:
                     yield raw_note
 
+    def check_notes(self, mark_corrupt: bool) -> Iterator[Optional[Note]]:
+        with self.db as con:
+            cur = con.execute(
+                "select title, guid, raw_note from notes where raw_note is not NULL",
+            )
+
+            for row in cur:
+                raw_note = self._get_raw_note(
+                    row["title"],
+                    row["guid"],
+                    row["raw_note"],
+                )
+
+                if not raw_note:
+                    if mark_corrupt:
+                        logger.info(
+                            f"Marking '{row['title']}' [{row['guid']}] note for re-download"
+                        )
+                        self._mark_note_for_redownload(row["guid"])
+                    yield None
+                else:
+                    yield raw_note
+
     def get_notes_for_sync(self) -> tuple[NoteForSync, ...]:
         with self.db as con:
             cur = con.execute(
@@ -454,12 +488,12 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
 
         return None
 
-    # def _mark_note_for_redownload(self, note_guid: str):
-    #     with self.db as con:
-    #         con.execute(
-    #             "update notes set raw_note=NULL, is_active=NULL where guid=?",
-    #             (note_guid,),
-    #         )
+    def _mark_note_for_redownload(self, note_guid: str):
+        with self.db as con:
+            con.execute(
+                "update notes set raw_note=NULL, is_active=NULL where guid=?",
+                (note_guid,),
+            )
 
 
 class TasksStorage(SqliteStorage):  # noqa: WPS214
