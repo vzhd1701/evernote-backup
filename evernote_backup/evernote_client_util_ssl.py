@@ -47,6 +47,10 @@ def log_ssl_debug_info(backend_host: str, use_system_ssl_ca: bool) -> None:
         "Certificate serial number should match,"
         " otherwise your firewall or proxy is intercepting HTTPS traffic"
     )
+    logger.debug(
+        "If certificate serial number is OK,"
+        " then bundled CA store (certifi) is outdated and you should try using --use-system-ssl-ca flag"
+    )
 
 
 def _get_ssl_cert_info(hostname: str, port: int = 443) -> dict:
