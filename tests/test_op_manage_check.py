@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 from evernote.edam.type.ttypes import Note, Notebook
 
@@ -15,11 +13,8 @@ def test_manage_check_empty_db(cli_invoker, fake_storage):
 @pytest.mark.usefixtures("mock_evernote_client")
 def test_manage_check_corrupt_file(tmp_path, cli_invoker, fake_token):
     test_db_path = tmp_path / "test.db"
-    Path.touch(test_db_path)
 
-    result = cli_invoker(
-        "init-db", "--database", test_db_path, "--token", fake_token, "--force"
-    )
+    result = cli_invoker("init-db", "--database", test_db_path, "--token", fake_token)
 
     assert result.exit_code == 0
     assert test_db_path.stat().st_size > 0
@@ -38,11 +33,8 @@ def test_manage_check_corrupt_file(tmp_path, cli_invoker, fake_token):
 @pytest.mark.usefixtures("mock_evernote_client")
 def test_manage_check_corrupt_file_integrity(tmp_path, cli_invoker, fake_token):
     test_db_path = tmp_path / "test.db"
-    Path.touch(test_db_path)
 
-    result = cli_invoker(
-        "init-db", "--database", test_db_path, "--token", fake_token, "--force"
-    )
+    result = cli_invoker("init-db", "--database", test_db_path, "--token", fake_token)
 
     assert result.exit_code == 0
     assert test_db_path.stat().st_size > 0
