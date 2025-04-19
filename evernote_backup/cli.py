@@ -1,7 +1,6 @@
 import functools
 import logging
 import sys
-import traceback
 from pathlib import Path
 from ssl import SSLError
 from typing import Any, Callable, Optional
@@ -123,7 +122,7 @@ def handle_errors(f: Callable) -> Callable:
                 time_left = get_time_txt(e.rateLimitDuration)
                 logger.critical(f"Rate limit reached. Restart program in {time_left}.")
             else:
-                logger.critical(traceback.format_exc())
+                logger.exception("Evernote server error")
         except TApplicationException as e:
             message_txt = (
                 e.message.decode("utf-8") if isinstance(e.message, bytes) else e.message
