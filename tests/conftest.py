@@ -117,9 +117,6 @@ class FakeEvernoteUserStore:
             )
         return MagicMock(username=self.fake_values.fake_user)
 
-    def getNoteStoreUrl(self):
-        return "https://www.evernote.com/shard/s520/notestore"
-
     def checkVersion(
         self,
         clientName: str,
