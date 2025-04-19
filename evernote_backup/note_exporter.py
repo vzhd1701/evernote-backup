@@ -32,7 +32,8 @@ class NoteExporter:
         add_guid: bool,
         add_metadata: bool,
         overwrite: bool,
-        notebooks: tuple[str],
+        filter_notebooks: tuple[str],
+        filter_tags: tuple[str],
     ) -> None:
         self.storage = storage
         self.safe_paths = SafePath(target_dir, overwrite)
@@ -42,7 +43,8 @@ class NoteExporter:
         self.no_export_date = no_export_date
         self.add_guid = add_guid
         self.add_metadata = add_metadata
-        self.notebooks = notebooks
+        self.filter_notebooks = filter_notebooks
+        self.filter_tags = filter_tags
 
     def export_notebooks(self) -> None:
         count_notes = self.storage.notes.get_notes_count()
@@ -72,10 +74,10 @@ class NoteExporter:
     def _export_active(self) -> None:
         notebooks = list(self.storage.notebooks.iter_notebooks())
 
-        if self.notebooks:
-            notebooks = [n for n in notebooks if n.name in self.notebooks]
+        if self.filter_notebooks:
+            notebooks = [n for n in notebooks if n.name in self.filter_notebooks]
 
-            missed_notebooks = set(self.notebooks) - {n.name for n in notebooks}
+            missed_notebooks = set(self.filter_notebooks) - {n.name for n in notebooks}
 
             for n in missed_notebooks:
                 logger.warning(f"Notebook '{n}' not found in database.")
@@ -96,10 +98,19 @@ class NoteExporter:
 
                 self._export_notes(nb)
 
+    def _filter_tags(self, note: Note) -> bool:
+        if not note.tagNames:
+            return False
+
+        return bool(set(note.tagNames) & set(self.filter_tags))
+
     def _export_notes(self, notebook: Notebook) -> None:
         parent_dir = [notebook.stack] if notebook.stack else []
 
         notes_source = self.storage.notes.iter_notes(notebook.guid)
+
+        if self.filter_tags:
+            notes_source = filter(self._filter_tags, notes_source)
 
         if self.single_notes:
             parent_dir.append(notebook.name)
@@ -109,6 +120,9 @@ class NoteExporter:
 
     def _export_trash(self) -> None:
         notes_source = self.storage.notes.iter_notes_trash()
+
+        if self.filter_tags:
+            notes_source = filter(self._filter_tags, notes_source)
 
         if self.single_notes:
             self._output_single_notes(

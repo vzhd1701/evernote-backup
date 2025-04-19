@@ -323,7 +323,14 @@ def sync(
     "--notebook",
     "-n",
     "notebooks",
-    help="Export notes from specific notebook. (Can be used multiple times)",
+    help="Export notes from specific notebook(s). (Can be used multiple times)",
+    multiple=True,
+)
+@click.option(
+    "--tag",
+    "-t",
+    "tags",
+    help="Export notes with specific tag(s). (Can be used multiple times)",
     multiple=True,
 )
 @click.argument(
@@ -341,6 +348,7 @@ def export(
     add_metadata: bool,
     overwrite: bool,
     notebooks: tuple[str],
+    tags: tuple[str],
     output_path: Path,
 ) -> None:
     """Export all notes from local database into ENEX files."""
@@ -354,6 +362,7 @@ def export(
         add_metadata=add_metadata,
         overwrite=overwrite,
         notebooks=notebooks,
+        tags=tags,
         output_path=output_path,
     )
 

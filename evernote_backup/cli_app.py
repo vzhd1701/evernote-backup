@@ -187,6 +187,7 @@ def export(
     add_metadata: bool,
     overwrite: bool,
     notebooks: tuple[str],
+    tags: tuple[str],
     output_path: Path,
 ) -> None:
     storage = get_storage(database)
@@ -201,7 +202,8 @@ def export(
         no_export_date=no_export_date,
         add_guid=add_guid,
         add_metadata=add_metadata,
-        notebooks=notebooks,
+        filter_notebooks=notebooks,
+        filter_tags=tags,
         overwrite=overwrite,
     )
 

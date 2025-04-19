@@ -190,6 +190,189 @@ def test_export_notebook_not_found(cli_invoker, fake_storage, tmp_path):
 
 
 @pytest.mark.usefixtures("fake_init_db")
+def test_export_tag(cli_invoker, fake_storage, tmp_path):
+    test_out_path = tmp_path / "test_out"
+
+    test_notebooks = [
+        Notebook(guid="nbid1", name="name1"),
+    ]
+
+    test_notes = [
+        Note(
+            guid="id1",
+            title="title1",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+        ),
+        Note(
+            guid="id2",
+            title="title2",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+            tagNames=["tag1"],
+        ),
+        Note(
+            guid="id3",
+            title="title3",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+            tagNames=["tag2"],
+        ),
+        Note(
+            guid="id4",
+            title="title4",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+            tagNames=["tag3"],
+        ),
+        Note(
+            guid="id5",
+            title="title5",
+            content="test",
+            notebookGuid="nbid1",
+            active=False,
+            tagNames=["tag1"],
+        ),
+        Note(
+            guid="id6",
+            title="title6",
+            content="test",
+            notebookGuid="nbid1",
+            active=False,
+            tagNames=["tag4"],
+        ),
+    ]
+
+    fake_storage.notebooks.add_notebooks(test_notebooks)
+
+    for note in test_notes:
+        fake_storage.notes.add_note(note)
+
+    result = cli_invoker(
+        "export",
+        "--database",
+        "fake_db",
+        "--tag",
+        "tag1",
+        "--tag",
+        "tag2",
+        "--single-notes",
+        str(test_out_path),
+    )
+
+    note1_path = test_out_path / "name1" / "title1.enex"
+    note2_path = test_out_path / "name1" / "title2.enex"
+    note3_path = test_out_path / "name1" / "title3.enex"
+    note4_path = test_out_path / "name1" / "title4.enex"
+    note5_path = test_out_path / "Trash" / "title5.enex"
+    note6_path = test_out_path / "Trash" / "title6.enex"
+
+    assert result.exit_code == 0
+    assert not note1_path.exists()
+    assert note2_path.is_file()
+    assert note3_path.is_file()
+    assert not note4_path.exists()
+    assert not note5_path.exists()
+    assert not note6_path.exists()
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_export_tag_with_trash(cli_invoker, fake_storage, tmp_path):
+    test_out_path = tmp_path / "test_out"
+
+    test_notebooks = [
+        Notebook(guid="nbid1", name="name1"),
+    ]
+
+    test_notes = [
+        Note(
+            guid="id1",
+            title="title1",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+        ),
+        Note(
+            guid="id2",
+            title="title2",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+            tagNames=["tag1"],
+        ),
+        Note(
+            guid="id3",
+            title="title3",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+            tagNames=["tag2"],
+        ),
+        Note(
+            guid="id4",
+            title="title4",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+            tagNames=["tag3"],
+        ),
+        Note(
+            guid="id5",
+            title="title5",
+            content="test",
+            notebookGuid="nbid1",
+            active=False,
+            tagNames=["tag1"],
+        ),
+        Note(
+            guid="id6",
+            title="title6",
+            content="test",
+            notebookGuid="nbid1",
+            active=False,
+            tagNames=["tag4"],
+        ),
+    ]
+
+    fake_storage.notebooks.add_notebooks(test_notebooks)
+
+    for note in test_notes:
+        fake_storage.notes.add_note(note)
+
+    result = cli_invoker(
+        "export",
+        "--database",
+        "fake_db",
+        "--tag",
+        "tag1",
+        "--tag",
+        "tag2",
+        "--single-notes",
+        "--include-trash",
+        str(test_out_path),
+    )
+
+    note1_path = test_out_path / "name1" / "title1.enex"
+    note2_path = test_out_path / "name1" / "title2.enex"
+    note3_path = test_out_path / "name1" / "title3.enex"
+    note4_path = test_out_path / "name1" / "title4.enex"
+    note5_path = test_out_path / "Trash" / "title5.enex"
+    note6_path = test_out_path / "Trash" / "title6.enex"
+
+    assert result.exit_code == 0
+    assert not note1_path.exists()
+    assert note2_path.is_file()
+    assert note3_path.is_file()
+    assert not note4_path.exists()
+    assert note5_path.is_file()
+    assert not note6_path.exists()
+
+
+@pytest.mark.usefixtures("fake_init_db")
 def test_export_over_existing(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 
