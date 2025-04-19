@@ -1,3 +1,17 @@
+## [1.13.0](https://github.com/vzhd1701/evernote-backup/compare/1.12.0...1.13.0) (2025-04-19)
+
+### Features
+
+- add --add-metadata option to export mode for embedding metadata into exported notes ([a77f9f2](https://github.com/vzhd1701/evernote-backup/commit/a77f9f21211d56418cb97ee0ce580badecef81eb))
+- add --notebook option to export mode for exporting specific notebook(s) ([fdfd7dd](https://github.com/vzhd1701/evernote-backup/commit/fdfd7ddbb4f2a08abe1fee634a46d96773d8cb37))
+- add --tag option to export mode for exporting notes with specific tag(s) ([69d4695](https://github.com/vzhd1701/evernote-backup/commit/69d46953f1b308dec836bf9ae7769ccd0558584d))
+- add manage check command for db integrity check ([835433b](https://github.com/vzhd1701/evernote-backup/commit/835433b943a831839c61a68df04f2c378a7d9daf))
+- add manage list command for listing db content ([d05803c](https://github.com/vzhd1701/evernote-backup/commit/d05803c048d0b4f6f960c9f6fb5a4c7357a2df88))
+
+### Bug Fixes
+
+- avoid crash on any error during note download ([14636b7](https://github.com/vzhd1701/evernote-backup/commit/14636b781c1d6c0425cd7101f532aefc851f3470))
+
 ## [1.12.0](https://github.com/vzhd1701/evernote-backup/compare/1.11.0...1.12.0) (2025-04-17)
 
 ### Features
