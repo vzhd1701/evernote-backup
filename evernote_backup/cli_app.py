@@ -185,6 +185,7 @@ def export(
     no_export_date: bool,
     add_guid: bool,
     overwrite: bool,
+    notebooks: tuple[str],
     output_path: Path,
 ) -> None:
     storage = get_storage(database)
@@ -198,6 +199,7 @@ def export(
         export_trash=include_trash,
         no_export_date=no_export_date,
         add_guid=add_guid,
+        notebooks=notebooks,
         overwrite=overwrite,
     )
 

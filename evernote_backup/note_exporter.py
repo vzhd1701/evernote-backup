@@ -6,7 +6,7 @@ from pathlib import Path
 from click import progressbar
 from evernote.edam.type.ttypes import Note, Notebook
 
-from evernote_backup.cli_app_util import get_progress_output, DatabaseEmptyError
+from evernote_backup.cli_app_util import DatabaseEmptyError, get_progress_output
 from evernote_backup.evernote_types import Task
 from evernote_backup.log_util import log_format_note, log_format_notebook
 from evernote_backup.note_exporter_util import SafePath
@@ -31,6 +31,7 @@ class NoteExporter:
         no_export_date: bool,
         add_guid: bool,
         overwrite: bool,
+        notebooks: tuple[str],
     ) -> None:
         self.storage = storage
         self.safe_paths = SafePath(target_dir, overwrite)
@@ -39,13 +40,14 @@ class NoteExporter:
         self.export_trash = export_trash
         self.no_export_date = no_export_date
         self.add_guid = add_guid
+        self.notebooks = notebooks
 
     def export_notebooks(self) -> None:
         count_notes = self.storage.notes.get_notes_count()
         count_trash = self.storage.notes.get_notes_count(is_active=False)
 
         if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
-            logger.debug(f"Notes to export: {count_notes}")
+            logger.debug(f"Notes: {count_notes}")
             logger.debug(f"Trashed notes: {count_trash}")
             if self.single_notes:
                 logger.debug("Export mode: single notes")
@@ -66,7 +68,15 @@ class NoteExporter:
             self._export_trash()
 
     def _export_active(self) -> None:
-        notebooks = tuple(self.storage.notebooks.iter_notebooks())
+        notebooks = list(self.storage.notebooks.iter_notebooks())
+
+        if self.notebooks:
+            notebooks = [n for n in notebooks if n.name in self.notebooks]
+
+            missed_notebooks = set(self.notebooks) - {n.name for n in notebooks}
+
+            for n in missed_notebooks:
+                logger.warning(f"Notebook '{n}' not found in database.")
 
         with progressbar(
             notebooks,

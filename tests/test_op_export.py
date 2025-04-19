@@ -84,6 +84,112 @@ def test_export(cli_invoker, fake_storage, tmp_path):
 
 
 @pytest.mark.usefixtures("fake_init_db")
+def test_export_notebook(cli_invoker, fake_storage, tmp_path):
+    test_out_path = tmp_path / "test_out"
+
+    test_notebooks = [
+        Notebook(guid="nbid1", name="name1", stack="stack1"),
+        Notebook(guid="nbid2", name="name2", stack=None),
+        Notebook(guid="nbid3", name="name3", stack=None),
+    ]
+
+    test_notes = [
+        Note(
+            guid="id1",
+            title="title1",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+        ),
+        Note(
+            guid="id2",
+            title="title2",
+            content="test",
+            notebookGuid="nbid2",
+            active=True,
+        ),
+        Note(
+            guid="id3",
+            title="title3",
+            content="test",
+            notebookGuid="nbid3",
+            active=True,
+        ),
+    ]
+
+    fake_storage.notebooks.add_notebooks(test_notebooks)
+
+    for note in test_notes:
+        fake_storage.notes.add_note(note)
+
+    result = cli_invoker(
+        "export",
+        "--database",
+        "fake_db",
+        "--notebook",
+        "name1",
+        "--notebook",
+        "name2",
+        str(test_out_path),
+    )
+
+    book1_path = test_out_path / "stack1" / "name1.enex"
+    book2_path = test_out_path / "name2.enex"
+    book3_path = test_out_path / "name3.enex"
+
+    assert result.exit_code == 0
+    assert book1_path.is_file()
+    assert book2_path.is_file()
+    assert not book3_path.exists()
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_export_notebook_not_found(cli_invoker, fake_storage, tmp_path):
+    test_out_path = tmp_path / "test_out"
+
+    test_notebooks = [
+        Notebook(guid="nbid1", name="name1", stack="stack1"),
+        Notebook(guid="nbid2", name="name2", stack=None),
+        Notebook(guid="nbid3", name="name3", stack=None),
+    ]
+
+    test_notes = [
+        Note(
+            guid="id1",
+            title="title1",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+        ),
+        Note(
+            guid="id2",
+            title="test",
+            content="test",
+            notebookGuid="nbid2",
+            active=True,
+        ),
+    ]
+
+    fake_storage.notebooks.add_notebooks(test_notebooks)
+
+    for note in test_notes:
+        fake_storage.notes.add_note(note)
+
+    result = cli_invoker(
+        "export", "--database", "fake_db", "--notebook", "name4", str(test_out_path)
+    )
+
+    book1_path = test_out_path / "stack1" / "name1.enex"
+    book2_path = test_out_path / "name2.enex"
+
+    assert result.exit_code == 0
+    assert "Notebook 'name4' not found in database" in result.output
+    assert not test_out_path.exists()
+    assert not book1_path.exists()
+    assert not book2_path.exists()
+
+
+@pytest.mark.usefixtures("fake_init_db")
 def test_export_over_existing(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 

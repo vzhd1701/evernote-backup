@@ -314,6 +314,13 @@ def sync(
     is_flag=True,
     help="Overwrite existing ENEX files.",
 )
+@click.option(
+    "--notebook",
+    "-n",
+    "notebooks",
+    help="Export notes from specific notebook. (Can be used multiple times)",
+    multiple=True,
+)
 @click.argument(
     "output_path",
     required=True,
@@ -327,6 +334,7 @@ def export(
     no_export_date: bool,
     add_guid: bool,
     overwrite: bool,
+    notebooks: tuple[str],
     output_path: Path,
 ) -> None:
     """Export all notes from local database into ENEX files."""
@@ -338,6 +346,7 @@ def export(
         no_export_date=no_export_date,
         add_guid=add_guid,
         overwrite=overwrite,
+        notebooks=notebooks,
         output_path=output_path,
     )
 
