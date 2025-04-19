@@ -23,6 +23,7 @@ from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.evernote_client_util_ssl import log_ssl_debug_info
 from evernote_backup.note_checker import NoteChecker
 from evernote_backup.note_exporter import NoteExporter
+from evernote_backup.note_lister import NoteLister
 from evernote_backup.note_synchronizer import NoteSynchronizer, WrongAuthUserError
 
 logger = logging.getLogger(__name__)
@@ -266,3 +267,17 @@ def manage_check(
         )
 
     logger.info("All notes have been checked!")
+
+
+def manage_list(
+    database: Path,
+    notebook: Optional[str],
+    is_list_all: bool,
+) -> None:
+    storage = get_storage(database)
+
+    raise_on_old_database_version(storage)
+
+    checker = NoteLister(storage, notebook, is_list_all)
+
+    checker.list_notebooks()

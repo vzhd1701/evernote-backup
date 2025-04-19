@@ -423,5 +423,33 @@ def manage_check(
     )
 
 
+@manage.command("list")
+@opt_database
+@click.option(
+    "--notebook",
+    "-n",
+    help=("List notes from specific notebook."),
+)
+@click.option(
+    "--all",
+    "is_list_all",
+    is_flag=True,
+    help=("List all notes, not just notebooks."),
+)
+@handle_errors
+def manage_list(
+    database: Path,
+    notebook: Optional[str],
+    is_list_all: bool,
+) -> None:
+    """List database content"""
+
+    cli_app.manage_list(
+        database=database,
+        notebook=notebook,
+        is_list_all=is_list_all,
+    )
+
+
 def main() -> None:
     cli()
