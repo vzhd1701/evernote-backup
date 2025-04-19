@@ -46,7 +46,7 @@ def get_sync_client(
             raise ProgramTerminatedError(e)
 
     logger.info(f"Successfully authenticated as {client.user}!")
-    logger.info(f"Current login expires at {client.token.expiration_human}.")
+    logger.info(f"Current login expires at {client.token.expiration_human}.")  # type: ignore
 
     return client
 

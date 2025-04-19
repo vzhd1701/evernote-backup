@@ -8,6 +8,7 @@ from evernote.edam.userstore.ttypes import (
 
 from evernote_backup.evernote_client import EvernoteClient
 from evernote_backup.evernote_client_util import raise_auth_error
+from evernote_backup.token_util import EvernoteToken
 
 
 class EvernoteClientAuth(EvernoteClient):
@@ -50,7 +51,7 @@ class EvernoteClientAuth(EvernoteClient):
 
     def two_factor_auth(self, auth_token: str, ota_code: str) -> AuthenticationResult:
         try:
-            self.token = auth_token
+            self.token = EvernoteToken.from_string(auth_token)
             return self.user_store.completeTwoFactorAuthentication(
                 oneTimeCode=ota_code,
                 deviceIdentifier="",

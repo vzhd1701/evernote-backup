@@ -167,7 +167,7 @@ ignore = [
     "WPS229", # too long try
 ]
 per-file-ignores = [
-    "./tests/*:WPS118,WPS336,WPS420,WPS430,WPS431,WPS458,WPS473,WPS520,WPS604",
+    "./tests/*:WPS118,WPS301,WPS336,WPS420,WPS430,WPS431,WPS458,WPS473,WPS520,WPS604",
     "version.py:WPS410",
     "evernote_client_api_http.py:WPS116,WPS338",
     "evernote_client_api_tokenized.py:WPS347",

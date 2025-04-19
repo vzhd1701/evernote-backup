@@ -20,7 +20,7 @@ class EvernoteToken:
         return self.raw
 
     @property
-    def expiration_human(self):
+    def expiration_human(self) -> str:
         return _format_datetime_with_difference(self.expiration)
 
     @classmethod
@@ -47,16 +47,16 @@ def _format_datetime_with_difference(dt: datetime) -> str:
     days = diff.days
 
     if days >= 1:
-        time_diff = f"{days} day{'s' if days != 1 else ''}"
+        time_diff = f"{days} day{'s' if days > 1 else ''}"
     elif total_seconds >= 3600:
         hours = round(total_seconds / 3600)
-        time_diff = f"{hours} hour{'s' if hours != 1 else ''}"
+        time_diff = f"{hours} hour{'s' if hours > 1 else ''}"
     elif total_seconds >= 60:
         minutes = round(total_seconds / 60)
-        time_diff = f"{minutes} minute{'s' if minutes != 1 else ''}"
+        time_diff = f"{minutes} minute{'s' if minutes > 1 else ''}"
     else:
         seconds = round(total_seconds)
-        time_diff = f"{seconds} second{'s' if seconds != 1 else ''}"
+        time_diff = f"{seconds} second{'s' if seconds != 1 else ''}"  # noqa: WPS504
 
     return f"{formatted_date} ({time_diff} {time_direction})"
 

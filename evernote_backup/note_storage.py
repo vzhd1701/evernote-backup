@@ -403,15 +403,15 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                     row["raw_note"],
                 )
 
-                if not raw_note:
+                if raw_note:
+                    yield raw_note
+                else:
                     if mark_corrupt:
                         logger.info(
                             f"Marking '{row['title']}' [{row['guid']}] note for re-download"
                         )
                         self._mark_note_for_redownload(row["guid"])
                     yield None
-                else:
-                    yield raw_note
 
     def get_notes_for_sync(self) -> tuple[NoteForSync, ...]:
         with self.db as con:
@@ -488,7 +488,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
 
         return None
 
-    def _mark_note_for_redownload(self, note_guid: str):
+    def _mark_note_for_redownload(self, note_guid: str) -> None:
         with self.db as con:
             con.execute(
                 "update notes set raw_note=NULL, is_active=NULL where guid=?",
