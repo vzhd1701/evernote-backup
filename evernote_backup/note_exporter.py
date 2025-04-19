@@ -30,6 +30,7 @@ class NoteExporter:
         export_trash: bool,
         no_export_date: bool,
         add_guid: bool,
+        add_metadata: bool,
         overwrite: bool,
         notebooks: tuple[str],
     ) -> None:
@@ -40,6 +41,7 @@ class NoteExporter:
         self.export_trash = export_trash
         self.no_export_date = no_export_date
         self.add_guid = add_guid
+        self.add_metadata = add_metadata
         self.notebooks = notebooks
 
     def export_notebooks(self) -> None:
@@ -101,7 +103,7 @@ class NoteExporter:
 
         if self.single_notes:
             parent_dir.append(notebook.name)
-            self._output_single_notes(parent_dir, notes_source)
+            self._output_single_notes(parent_dir, notebook.name, notes_source)
         else:
             self._output_notebook(parent_dir, notebook.name, notes_source)
 
@@ -109,28 +111,38 @@ class NoteExporter:
         notes_source = self.storage.notes.iter_notes_trash()
 
         if self.single_notes:
-            self._output_single_notes(["Trash"], notes_source)
+            self._output_single_notes(
+                ["Trash"],
+                "Trash",
+                notes_source,
+            )
         else:
-            self._output_notebook([], "Trash", notes_source)
+            self._output_notebook(
+                [],
+                "Trash",
+                notes_source,
+            )
 
     def _output_single_notes(
-        self, parent_dir: list[str], notes_source: Iterable[Note]
+        self,
+        parent_dir: list[str],
+        notebook_name: str,
+        notes_source: Iterable[Note],
     ) -> None:
         for note in notes_source:
             note_path = self.safe_paths.get_file(*parent_dir, f"{note.title}.enex")
 
-            self._write_export_file(
-                note_path, [note], self.no_export_date, self.add_guid
-            )
+            self._write_export_file(note_path, notebook_name, [note])
 
     def _output_notebook(
-        self, parent_dir: list[str], notebook_name: str, notes_source: Iterable[Note]
+        self,
+        parent_dir: list[str],
+        notebook_name: str,
+        notes_source: Iterable[Note],
     ) -> None:
         notebook_path = self.safe_paths.get_file(*parent_dir, f"{notebook_name}.enex")
 
-        self._write_export_file(
-            notebook_path, notes_source, self.no_export_date, self.add_guid
-        )
+        self._write_export_file(notebook_path, notebook_name, notes_source)
 
     def _get_note_tasks(self, note_guid: str) -> list[Task]:
         tasks = sorted(
@@ -146,16 +158,15 @@ class NoteExporter:
     def _write_export_file(
         self,
         file_path: Path,
+        notebook_name: str,
         note_source: Iterable[Note],
-        no_export_date: bool,
-        add_guid: bool,
     ) -> None:
         with file_path.open("w", encoding="utf-8") as f:
             logger.debug(f"Writing file {file_path}")
 
             f.write(ENEX_HEAD)
 
-            if no_export_date:
+            if self.no_export_date:
                 f.write('<en-export application="Evernote" version="10.134.4">\n')
             else:
                 now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -164,7 +175,10 @@ class NoteExporter:
                     f' application="Evernote" version="10.134.4">\n'
                 )
 
-            note_formatter = NoteFormatter(add_guid=add_guid)
+            note_formatter = NoteFormatter(
+                add_guid=self.add_guid,
+                add_metadata=self.add_metadata,
+            )
 
             for note in note_source:  # noqa: WPS440
                 n_info = log_format_note(note)
@@ -172,6 +186,12 @@ class NoteExporter:
 
                 note_tasks = self._get_note_tasks(note.guid)
 
-                f.write(note_formatter.format_note(note, note_tasks))
+                f.write(
+                    note_formatter.format_note(
+                        note,
+                        notebook_name,
+                        note_tasks,
+                    )
+                )
 
             f.write(ENEX_TAIL)

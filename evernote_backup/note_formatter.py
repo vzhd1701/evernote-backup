@@ -13,11 +13,17 @@ from evernote_backup.note_formatter_util import fmt_binary, fmt_content, fmt_tim
 class NoteFormatter:
     """https://xml.evernote.com/pub/evernote-export3.dtd"""
 
-    def __init__(self, add_guid: bool = False) -> None:
+    def __init__(self, add_guid: bool = False, add_metadata: bool = False) -> None:
         self._raw_elements: dict = {}
         self.add_guid = add_guid
+        self.add_metadata = add_metadata
 
-    def format_note(self, note: Note, note_tasks: list[Task]) -> str:
+    def format_note(
+        self,
+        note: Note,
+        notebook_name: str,
+        note_tasks: list[Task],
+    ) -> str:
         self._raw_elements = {}
 
         note_skeleton = {
@@ -35,6 +41,16 @@ class NoteFormatter:
 
         if self.add_guid:
             note_skeleton["note"]["guid"] = note.guid
+
+        if self.add_metadata:
+            note_skeleton["note"]["note-custom-metadata"] = {
+                "guid": note.guid,
+                "notebook-guid": note.notebookGuid,
+                "notebook-name": notebook_name,
+                "tag-guids": json.dumps(note.tagGuids) if note.tagGuids else None,
+                "tag-names": json.dumps(note.tagNames) if note.tagNames else None,
+                "is-active": note.active,
+            }
 
         if note.attributes:
             note_skeleton["note"]["note-attributes"] = {

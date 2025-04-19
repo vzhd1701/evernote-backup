@@ -126,7 +126,7 @@ expected_empty_tags = """  <note>
 def test_formatter():
     formatter = NoteFormatter()
 
-    formatted_note = formatter.format_note(test_note_data, [])
+    formatted_note = formatter.format_note(test_note_data, "", [])
 
     assert formatted_note == expected
 
@@ -134,7 +134,7 @@ def test_formatter():
 def test_formatter_empty_tags_resources():
     formatter = NoteFormatter()
 
-    formatted_note = formatter.format_note(test_note_data_empty_tags, [])
+    formatted_note = formatter.format_note(test_note_data_empty_tags, "", [])
 
     assert formatted_note == expected_empty_tags
 
@@ -145,7 +145,7 @@ def test_formatter_empty_note():
     test_empty_note = Note()
     expected_empty_note = "  <note>\n  </note>\n"
 
-    formatted_note = formatter.format_note(test_empty_note, [])
+    formatted_note = formatter.format_note(test_empty_note, "", [])
 
     assert formatted_note == expected_empty_note
 
@@ -163,7 +163,7 @@ def test_formatter_xml_note():
         "  </note>\n"
     )
 
-    formatted_note = formatter.format_note(test_xml_note, [])
+    formatted_note = formatter.format_note(test_xml_note, "", [])
 
     assert formatted_note == expected_xml_note
 
@@ -187,7 +187,7 @@ def test_note_from_future(mocker):
         updated=end_of_times,
     )
 
-    formatted_note = formatter.format_note(note_from_future, [])
+    formatted_note = formatter.format_note(note_from_future, "", [])
 
     assert "<created>99991231T235959Z</created>" in formatted_note
     assert "<updated>96830210T061319Z</updated>" in formatted_note
@@ -205,7 +205,7 @@ def test_note_from_past(mocker):
         updated=before_times,
     )
 
-    formatted_note = formatter.format_note(note_from_future, [])
+    formatted_note = formatter.format_note(note_from_future, "", [])
 
     assert "<created>00010101T000000Z</created>" in formatted_note
     assert "<updated>03850725T070640Z</updated>" in formatted_note
@@ -219,7 +219,7 @@ def test_formatter_add_guid(mocker):
         title="test",
     )
 
-    formatted_note = formatter.format_note(test_note, [])
+    formatted_note = formatter.format_note(test_note, "", [])
 
     assert "<guid>test-guid</guid>" in formatted_note
 
@@ -315,7 +315,7 @@ def test_note_with_task(mocker):
   </note>
 """
 
-    formatted_note = formatter.format_note(note_from_future, note_tasks)
+    formatted_note = formatter.format_note(note_from_future, "", note_tasks)
 
     assert formatted_note == expected_note
 
@@ -357,6 +357,64 @@ def test_note_with_many_tasks(mocker):
   </note>
 """
 
-    formatted_note = formatter.format_note(note_from_future, note_tasks)
+    formatted_note = formatter.format_note(note_from_future, "", note_tasks)
+
+    assert formatted_note == expected_note
+
+
+def test_note_with_metadata(mocker):
+    formatter = NoteFormatter(add_metadata=True)
+
+    test_note = Note(
+        guid="test-guid",
+        title="test",
+        notebookGuid="test-nb-guid",
+        tagGuids=["tag1-guid", "tag2-guid"],
+        tagNames=["tag1 name", "tag2 name"],
+        active=True,
+    )
+
+    expected_note = """  <note>
+    <title>test</title>
+    <tag>tag1 name</tag>
+    <tag>tag2 name</tag>
+    <note-custom-metadata>
+      <guid>test-guid</guid>
+      <notebook-guid>test-nb-guid</notebook-guid>
+      <notebook-name>Test Notebook</notebook-name>
+      <tag-guids>["tag1-guid", "tag2-guid"]</tag-guids>
+      <tag-names>["tag1 name", "tag2 name"]</tag-names>
+      <is-active>true</is-active>
+    </note-custom-metadata>
+  </note>
+"""
+
+    formatted_note = formatter.format_note(test_note, "Test Notebook", [])
+
+    assert formatted_note == expected_note
+
+
+def test_note_with_metadata_no_tags(mocker):
+    formatter = NoteFormatter(add_metadata=True)
+
+    test_note = Note(
+        guid="test-guid",
+        title="test",
+        notebookGuid="test-nb-guid",
+        active=False,
+    )
+
+    expected_note = """  <note>
+    <title>test</title>
+    <note-custom-metadata>
+      <guid>test-guid</guid>
+      <notebook-guid>test-nb-guid</notebook-guid>
+      <notebook-name>Test Notebook</notebook-name>
+      <is-active>false</is-active>
+    </note-custom-metadata>
+  </note>
+"""
+
+    formatted_note = formatter.format_note(test_note, "Test Notebook", [])
 
     assert formatted_note == expected_note

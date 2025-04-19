@@ -184,6 +184,7 @@ def export(
     include_trash: bool,
     no_export_date: bool,
     add_guid: bool,
+    add_metadata: bool,
     overwrite: bool,
     notebooks: tuple[str],
     output_path: Path,
@@ -199,6 +200,7 @@ def export(
         export_trash=include_trash,
         no_export_date=no_export_date,
         add_guid=add_guid,
+        add_metadata=add_metadata,
         notebooks=notebooks,
         overwrite=overwrite,
     )

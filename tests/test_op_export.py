@@ -656,6 +656,43 @@ def test_export_add_guid(cli_invoker, fake_storage, tmp_path):
 
 
 @pytest.mark.usefixtures("fake_init_db")
+def test_export_add_metadata(cli_invoker, fake_storage, tmp_path):
+    test_out_path = tmp_path / "test_out"
+
+    test_notebooks = [
+        Notebook(guid="nbid1", name="name1", stack=None),
+    ]
+
+    fake_storage.notebooks.add_notebooks(test_notebooks)
+
+    fake_storage.notes.add_note(
+        Note(
+            guid="id1",
+            title="title1",
+            content="test",
+            notebookGuid="nbid1",
+            active=True,
+        )
+    )
+
+    result = cli_invoker(
+        "export",
+        "--add-metadata",
+        "--database",
+        "fake_db",
+        str(test_out_path),
+    )
+
+    book1_path = test_out_path / "name1.enex"
+
+    book1_xml = book1_path.read_text()
+
+    assert result.exit_code == 0
+    assert "<guid>id1</guid>" in book1_xml
+    assert "<notebook-guid>nbid1</notebook-guid>" in book1_xml
+
+
+@pytest.mark.usefixtures("fake_init_db")
 def test_export_note_with_tasks(cli_invoker, fake_storage, tmp_path):
     test_out_path = tmp_path / "test_out"
 

@@ -310,6 +310,11 @@ def sync(
     ),
 )
 @click.option(
+    "--add-metadata",
+    is_flag=True,
+    help="Add <note-custom-metadata> block to every exported note. (Advanced option)",
+)
+@click.option(
     "--overwrite",
     is_flag=True,
     help="Overwrite existing ENEX files.",
@@ -333,6 +338,7 @@ def export(
     include_trash: bool,
     no_export_date: bool,
     add_guid: bool,
+    add_metadata: bool,
     overwrite: bool,
     notebooks: tuple[str],
     output_path: Path,
@@ -345,6 +351,7 @@ def export(
         include_trash=include_trash,
         no_export_date=no_export_date,
         add_guid=add_guid,
+        add_metadata=add_metadata,
         overwrite=overwrite,
         notebooks=notebooks,
         output_path=output_path,
