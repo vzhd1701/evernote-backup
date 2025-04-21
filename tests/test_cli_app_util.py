@@ -118,12 +118,9 @@ def test_evernote_token_parser():
         user_id=255,
         creation=datetime(1970, 1, 1, 4, 39, 37, 147000, tzinfo=timezone.utc),
         expiration=datetime(1970, 1, 1, 4, 39, 37, 130000, tzinfo=timezone.utc),
-        permission="1",
         agent="test222",
-        version=2,
-        hash="ff",
         shard_id=200,
-        raw="S=s200:U=ff:E=ffffaa:C=ffffbb:P=1:A=test222:V=2:H=ff",
+        raw=test_token_str,
     )
 
     result_token = EvernoteToken.from_string(test_token_str)
@@ -132,12 +129,30 @@ def test_evernote_token_parser():
 
 
 def test_evernote_token_parser_bad_format():
-    test_token_str = "S=s200:U=ff:E=ffffaa:C=ffffbb:P=1:A=test222:V=2"
+    test_token_str = "S=s200:U=ff:E=ffffaa:P=1:A=test222:V=2"
 
     with pytest.raises(ValueError) as e:
         EvernoteToken.from_string(test_token_str)
 
-    assert "Invalid token format (Token keys mismatch)" in str(e.value)
+    assert "Invalid token format" in str(e.value)
+
+
+def test_evernote_token_parser_extra_fields():
+    test_token_str = "S=s31:U=aabbcc:E=196586d29d4:C=19658363b54:P=100:N=bbbbb:R=aaaaaa:A=yx-w32-xauth-new:V=2:H=aaaaaa"
+
+    expected_token = EvernoteToken(
+        shard="s31",
+        user_id=11189196,
+        creation=datetime(2025, 4, 21, 11, 57, 51, 316000, tzinfo=timezone.utc),
+        expiration=datetime(2025, 4, 21, 12, 57, 51, 316000, tzinfo=timezone.utc),
+        agent="yx-w32-xauth-new",
+        shard_id=31,
+        raw=test_token_str,
+    )
+
+    result_token = EvernoteToken.from_string(test_token_str)
+
+    assert result_token == expected_token
 
 
 @pytest.mark.parametrize(

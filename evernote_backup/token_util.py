@@ -8,10 +8,7 @@ class EvernoteToken:
     user_id: int
     expiration: datetime
     creation: datetime
-    permission: str
     agent: str
-    version: int
-    hash: str
 
     shard_id: int
     raw: str
@@ -68,13 +65,14 @@ def _parse_evernote_token(token: str) -> EvernoteToken:
         key, value = part.split("=", 1)
         token_parts[key] = value
 
-    required_keys = {"S", "U", "E", "C", "P", "A", "V", "H"}
-    if required_keys != set(token_parts.keys()):
-        raise ValueError("Token keys mismatch")
+    required_keys = {"S", "U", "E", "C", "A"}
+    missing_keys = required_keys - set(token_parts.keys())
+
+    if missing_keys:
+        raise ValueError(f"Token keys missing: {missing_keys}")
 
     shard_id = int(token_parts["S"][1:])
     user_id = int(token_parts["U"], 16)
-    version = int(token_parts["V"])
 
     exp_ms = int(token_parts["E"], 16)
     creation_ms = int(token_parts["C"], 16)
@@ -87,10 +85,7 @@ def _parse_evernote_token(token: str) -> EvernoteToken:
         user_id=user_id,
         expiration=expiration_dt,
         creation=creation_dt,
-        permission=token_parts["P"],
         agent=token_parts["A"],
-        version=version,
-        hash=token_parts["H"],
         shard_id=shard_id,
         raw=token,
     )
