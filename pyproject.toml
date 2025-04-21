@@ -71,14 +71,9 @@ ruff = "0.11.5"
 
 [tool.ruff]
 target-version = "py39"
-line-length = 88
-indent-width = 4
 
 [tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
+line-ending = "lf"
 
 [tool.ruff.lint]
 exclude = [
