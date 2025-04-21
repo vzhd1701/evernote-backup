@@ -268,14 +268,14 @@ files = [
 
 [[package]]
 name = "evernote-plus"
-version = "1.28.1.dev1"
+version = "1.28.1.dev2"
 description = "Evernote SDK for Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "evernote_plus-1.28.1.dev1-py3-none-any.whl", hash = "sha256:fc53ef7ba630a8174c81645ad9f3b09f0007fe217ebc6e236993889ee16a7f12"},
-    {file = "evernote_plus-1.28.1.dev1.tar.gz", hash = "sha256:40ae5b5c93745de65e90cb4d1bba1ff63946cbac4ae447b2641f1d1b0f82869e"},
+    {file = "evernote_plus-1.28.1.dev2-py3-none-any.whl", hash = "sha256:9bc61492cc846a80b732597cac7dd0c9370fa3de026a4f91718ba832f5b3abca"},
+    {file = "evernote_plus-1.28.1.dev2.tar.gz", hash = "sha256:fb5e2e6785814205e623bc70c3a1b5abb47dc90a3a7ff28b3d3b0dbc5fb31881"},
 ]
 
 [package.dependencies]
@@ -884,4 +884,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<4.0"
-content-hash = "304f9ba0beaab0905b125c1ea184afe6be88654d9ec5c1ed302db0c81e1a96eb"
+content-hash = "01f1dc120e8f65d997284bc7ea8ce70e8cecb3407e61fff94ffef5bc6911ff7a"
