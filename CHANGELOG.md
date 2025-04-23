@@ -1,3 +1,9 @@
+## [1.13.1](https://github.com/vzhd1701/evernote-backup/compare/1.13.0...1.13.1) (2025-04-23)
+
+### Bug Fixes
+
+- skip parsing unused token parameters ([1f199b3](https://github.com/vzhd1701/evernote-backup/commit/1f199b388545b8dc08f3dd2701b2d61de4b294f0))
+
 ## [1.13.0](https://github.com/vzhd1701/evernote-backup/compare/1.12.0...1.13.0) (2025-04-19)
 
 ### Features

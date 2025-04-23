@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "evernote-backup"
-version = "1.13.0"
+version = "1.13.1"
 description = "Backup & export all Evernote notes and notebooks."
 authors = [
     { name = "vzhd1701", email = "vzhd1701@gmail.com" }
