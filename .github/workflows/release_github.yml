@@ -147,7 +147,7 @@ jobs:
       - name: Get tag version
         run: |
           APP_VERSION=$(sed -n 's/^__version__ = "\([^"]\+\)"$/\1/p' ${{ env.MODULE_NAME }}/version.py)
-          echo "TAG_VERSION=v$APP_VERSION" >> $GITHUB_ENV
+          echo "TAG_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
       - name: Load release python packages
         uses: actions/download-artifact@v4
