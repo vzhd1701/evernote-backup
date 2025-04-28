@@ -66,6 +66,8 @@ jobs:
     strategy:
       matrix:
         include:
+          - os: macos-13
+            OS_CODE: macos_intel
           - os: macos-latest
             OS_CODE: macos
           - os: ubuntu-latest
@@ -77,14 +79,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Get version
-        if: matrix.os == 'macos-latest'
+        if: ${{ startsWith(matrix.os, 'macos-') }}
         shell: bash
         run: |
           APP_VERSION=$(perl -n -e'/^__version__ = "([^"]+)"$/ && print $1' ${{ env.MODULE_NAME }}/version.py)
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
       - name: Get version
-        if: matrix.os != 'macos-latest'
+        if: ${{ ! startsWith(matrix.os, 'macos-') }}
         shell: bash
         run: |
           APP_VERSION=$(sed -n 's/^__version__ = "\([^"]\+\)"$/\1/p' ${{ env.MODULE_NAME }}/version.py)
@@ -112,8 +114,12 @@ jobs:
       - name: Make directory for bins
         run: mkdir dist_bin
 
-      - name: Pack up binary for macos
+      - name: Pack up binary for macos arm64
         if: matrix.os == 'macos-latest'
+        run: zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_arm64.zip ./dist/${{ env.PACKAGE_NAME }}
+
+      - name: Pack up binary for macos x64
+        if: matrix.os == 'macos-13'
         run: zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}
 
       - name: Pack up binary for linux
@@ -167,10 +173,16 @@ jobs:
           name: release_dist_bin_win
           path: dist
 
-      - name: Load release binaries for macos
+      - name: Load release binaries for macos arm64
         uses: actions/download-artifact@v4
         with:
           name: release_dist_bin_macos
+          path: dist
+
+      - name: Load release binaries for macos x64
+        uses: actions/download-artifact@v4
+        with:
+          name: release_dist_bin_macos_intel
           path: dist
 
       - name: Create Release
