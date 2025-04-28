@@ -21,21 +21,21 @@ repos:
     hooks:
     -   id: ruff
         name: ruff
-        stages: [commit]
+        stages: [pre-commit]
         language: system
         entry: poetry run ruff format
         types: [python]
 
     -   id: mdformat
         name: mdformat
-        stages: [commit]
+        stages: [pre-commit]
         language: system
         entry: poetry run mdformat --number
         types: [markdown]
 
     -   id: pytest
         name: pytest
-        stages: [commit]
+        stages: [pre-commit]
         language: system
         entry: poetry run pytest
         types: [python]
