@@ -23,20 +23,20 @@ repos:
         name: ruff
         stages: [pre-commit]
         language: system
-        entry: poetry run ruff format
+        entry: uv run --group dev ruff format
         types: [python]
 
     -   id: mdformat
         name: mdformat
         stages: [pre-commit]
         language: system
-        entry: poetry run mdformat --number
+        entry: uv run --group dev mdformat --number
         types: [markdown]
 
     -   id: pytest
         name: pytest
         stages: [pre-commit]
         language: system
-        entry: poetry run pytest
+        entry: uv run --group test pytest
         types: [python]
         pass_filenames: false
