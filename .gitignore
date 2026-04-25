@@ -152,3 +152,6 @@ Thumbs.db
 
 # Pycharm
 .idea/
+
+# デフォルトDB。コミットしたら駄目だろ！！
+en_backup.db
