@@ -129,8 +129,10 @@ def handle_errors(f: Callable) -> Callable:
             )
         except EDAMSystemException as e:
             if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                time_left = get_time_txt(e.rateLimitDuration)
-                logger.critical(f"Rate limit reached. Restart program in {time_left}.")
+                import datetime
+                current_time = datetime.datetime.now()
+                restart_time = current_time + datetime.timedelta(seconds=e.rateLimitDuration)
+                logger.critical(f"Rate limit reached. Restart program at {restart_time.strftime('%Y-%m-%d %H:%M:%S')}")
             else:
                 logger.exception("Evernote server error")
         except TApplicationException as e:
