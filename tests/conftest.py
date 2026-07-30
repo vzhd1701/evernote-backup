@@ -437,9 +437,8 @@ def fake_token():
 
 
 @pytest.fixture
-def fake_token_jwt():
-    token = TokenBundleMock()
-    return token.token_bundle.to_json()
+def fake_token_jwt(mock_oauth_client):
+    return mock_oauth_client.token_bundle.to_json()
 
 
 @pytest.fixture
