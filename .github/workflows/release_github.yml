@@ -12,7 +12,7 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+"
 
 env:
-  BUILD_PYTHON_VERSION: 3.10
+  BUILD_PYTHON_VERSION: 3.14
   PACKAGE_NAME: evernote-backup
   MODULE_NAME: evernote_backup
 
@@ -22,11 +22,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
-
-      - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
-        uses: actions/setup-python@v7
-        with:
-          python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
