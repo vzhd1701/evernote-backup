@@ -29,7 +29,7 @@ jobs:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
       - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v9
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
 
       - name: Export requirements
         run: uv pip compile pyproject.toml -q --universal --no-annotate --no-header -o requirements.txt
