@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - uses: actions-ecosystem/action-get-latest-tag@v1
         id: get-latest-tag
 
       - name: Update Homebrew formula
-        uses: dawidd6/action-homebrew-bump-formula@v4
+        uses: dawidd6/action-homebrew-bump-formula@v8
         with:
           token: ${{ secrets.BREW_BUMP_TOKEN }}
           formula: ${{ env.PACKAGE_NAME }}

@@ -12,50 +12,44 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+"
 
 env:
-  BUILD_PYTHON_VERSION: 3.9
-  BUILD_POETRY_VERSION: 2.1.2
+  BUILD_PYTHON_VERSION: 3.10
   PACKAGE_NAME: evernote-backup
   MODULE_NAME: evernote_backup
 
 jobs:
   build_python:
     runs-on: ubuntu-latest
-    env:
-      POETRY_VIRTUALENVS_CREATE: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
-      - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: abatilo/actions-poetry@v4
-        with:
-          poetry-version: ${{ env.BUILD_POETRY_VERSION }}
-          poetry-plugins: "poetry-plugin-export"
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v9
 
       - name: Export requirements
-        run: poetry export --without-hashes -f requirements.txt --output requirements.txt
+        run: uv pip compile pyproject.toml -q --universal --no-annotate --no-header -o requirements.txt
 
       - name: Get Git commit timestamp
         run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> $GITHUB_ENV
 
       - name: Build project for distribution
-        run: poetry build
+        run: uv build
         env:
           SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
 
       - name: Save release python requirements
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release_dist_reqs
           path: requirements.txt
 
       - name: Save release python packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release_dist_python
           path: dist
@@ -66,9 +60,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-13
+          - os: macos-15-intel
             OS_CODE: macos_intel
-          - os: macos-latest
+          - os: macos-15
             OS_CODE: macos
           - os: ubuntu-latest
             OS_CODE: linux
@@ -76,7 +70,7 @@ jobs:
             OS_CODE: win
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Get version
         if: ${{ startsWith(matrix.os, 'macos-') }}
@@ -93,12 +87,12 @@ jobs:
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
       - name: Load release python requirements
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release_dist_reqs
 
       - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
@@ -115,11 +109,11 @@ jobs:
         run: mkdir dist_bin
 
       - name: Pack up binary for macos arm64
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-15'
         run: zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_arm64.zip ./dist/${{ env.PACKAGE_NAME }}
 
       - name: Pack up binary for macos x64
-        if: matrix.os == 'macos-13'
+        if: matrix.os == 'macos-15-intel'
         run: zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}
 
       - name: Pack up binary for linux
@@ -133,17 +127,17 @@ jobs:
           zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}.exe
 
       - name: Save release binaries for ${{ matrix.OS_CODE }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release_dist_bin_${{ matrix.OS_CODE }}
           path: dist_bin
 
   release:
     if: github.event_name == 'push' || github.event.inputs.release == 'yes'
-    needs: [build_binaries]
+    needs: [ build_binaries ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Extract release changelog
         run: |
           sed "0,/## \[/d;/## \[/Q" CHANGELOG.md > release_changelog
@@ -156,31 +150,31 @@ jobs:
           echo "TAG_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
       - name: Load release python packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release_dist_python
           path: dist
 
       - name: Load release binaries for linux
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release_dist_bin_linux
           path: dist
 
       - name: Load release binaries for windows
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release_dist_bin_win
           path: dist
 
       - name: Load release binaries for macos arm64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release_dist_bin_macos
           path: dist
 
       - name: Load release binaries for macos x64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release_dist_bin_macos_intel
           path: dist

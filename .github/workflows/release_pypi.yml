@@ -6,8 +6,7 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+"
 
 env:
-  BUILD_PYTHON_VERSION: 3.9
-  BUILD_POETRY_VERSION: 2.1.2
+  BUILD_PYTHON_VERSION: 3.10
   PACKAGE_NAME: evernote-backup
 
 jobs:
@@ -15,37 +14,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python ${{ env.BUILD_PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.BUILD_PYTHON_VERSION }}
 
-      - name: Set up Poetry ${{ env.BUILD_POETRY_VERSION }}
-        uses: abatilo/actions-poetry@v4
-        with:
-          poetry-version: ${{ env.BUILD_POETRY_VERSION }}
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v9
 
       - name: Get Git commit timestamp
         run: echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> $GITHUB_ENV
 
       - name: Build project for distribution
-        run: poetry build
+        run: uv build
         env:
           SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
 
       - name: Publish to PyPI
         env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: poetry publish
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: uv publish
 
   publish_tap:
-    needs: [publish_pypi]
+    needs: [ publish_pypi ]
     runs-on: ubuntu-latest
     steps:
       - name: Update Homebrew formula
-        uses: dawidd6/action-homebrew-bump-formula@v4
+        uses: dawidd6/action-homebrew-bump-formula@v8
         with:
           token: ${{ secrets.BREW_BUMP_TOKEN }}
           formula: ${{ env.PACKAGE_NAME }}
