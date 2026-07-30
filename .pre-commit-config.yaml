@@ -4,39 +4,39 @@
 # pre-commit install --hook-type commit-msg
 
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-    -   id: check-vcs-permalinks
-    -   id: end-of-file-fixer
-    -   id: trailing-whitespace
-        args: [--markdown-linebreak-ext=md]
-    -   id: mixed-line-ending
-        args: ['--fix=lf']
-    -   id: check-toml
-    -   id: check-yaml
-    -   id: no-commit-to-branch
+      - id: check-vcs-permalinks
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [ --markdown-linebreak-ext=md ]
+      - id: mixed-line-ending
+        args: [ '--fix=lf' ]
+      - id: check-toml
+      - id: check-yaml
+      - id: no-commit-to-branch
 
--   repo: local
+  - repo: local
     hooks:
-    -   id: ruff
+      - id: ruff
         name: ruff
-        stages: [pre-commit]
+        stages: [ pre-commit ]
         language: system
-        entry: poetry run ruff format
-        types: [python]
+        entry: uv run ruff format
+        types: [ python ]
 
-    -   id: mdformat
+      - id: mdformat
         name: mdformat
-        stages: [pre-commit]
+        stages: [ pre-commit ]
         language: system
-        entry: poetry run mdformat --number
-        types: [markdown]
+        entry: uv run mdformat --number
+        types: [ markdown ]
 
-    -   id: pytest
+      - id: pytest
         name: pytest
-        stages: [pre-commit]
+        stages: [ pre-commit ]
         language: system
-        entry: poetry run pytest
-        types: [python]
+        entry: uv run pytest
+        types: [ python ]
         pass_filenames: false

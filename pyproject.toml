@@ -1,25 +1,29 @@
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.12.0,<0.13.0"]
+build-backend = "uv_build"
 
 [project]
 name = "evernote-backup"
 version = "1.13.1"
 description = "Backup & export all Evernote notes and notebooks."
-authors = [
-    { name = "vzhd1701", email = "vzhd1701@gmail.com" }
-]
+authors = [{ name = "vzhd1701", email = "vzhd1701@gmail.com" }]
+requires-python = ">=3.10"
 readme = "README.md"
 license = "MIT"
-keywords = ["evernote", "yinxiang", "backup", "export", "enex"]
+keywords = [
+    "evernote",
+    "yinxiang",
+    "backup",
+    "export",
+    "enex",
+]
 classifiers = [
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
     "Natural Language :: English",
@@ -32,16 +36,17 @@ classifiers = [
     "Topic :: Terminals",
     "Topic :: Utilities",
 ]
-requires-python = ">=3.9,<4.0"
 dependencies = [
     "xmltodict==0.13.0",
     "click==8.1.8",
     "click-option-group==0.5.7",
-    "requests-oauthlib==1.3.1",
-    "thrift (==0.21.0)",
-    "evernote-plus (==1.28.1.dev2)",
-    "requests-sse (==0.5.1)",
+    "requests-oauthlib==2.0.0",
+    "thrift==0.21.0",
+    "evernote-plus==1.28.1.dev2",
+    "requests-sse==0.5.1",
+    "pyjwt>=2.8.0",
 ]
+license-files = ["LICENSE"]
 
 [project.urls]
 repository = "https://github.com/vzhd1701/evernote-backup"
@@ -50,27 +55,22 @@ changelog = "https://github.com/vzhd1701/evernote-backup/blob/master/CHANGELOG.m
 [project.scripts]
 evernote-backup = "evernote_backup.cli:main"
 
-[tool.poetry]
-include = ["CHANGELOG.md"]
+[tool.uv.build-backend]
+module-root = ""
+source-include = ["CHANGELOG.md"]
 
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = "^8.3.5"
-pytest-cov = "^6.1.1"
-pytest-mock = "^3.14.0"
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^4.2.0"
-mdformat = "0.7.17"
-ruff = "0.11.5"
-
-[tool.ruff]
-target-version = "py39"
+[dependency-groups]
+test = [
+    "pytest>=8.3.5,<9",
+    "pytest-cov>=6.1.1,<7",
+    "pytest-mock>=3.14.0,<4",
+    "requests-mock>=1.12.1",
+]
+dev = [
+    "pre-commit>=4.2.0,<5",
+    "mdformat==1.0.0",
+    "ruff==0.11.5",
+]
 
 [tool.ruff.format]
 line-ending = "lf"
@@ -128,81 +128,31 @@ ignore = [
     "PERF203",  # try inside loop
     "PT006",    # parametrize type
     "PT011",    # broad pytest catch
-    "S301",     # unpickling from databse
+    "S301",     # unpickling from database
     "TRY003",   # long exception messages
     "TRY301",   # abstract raise
 ]
-external = [ "WPS" ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*.py" = [
-    "S",
-    "PL",
-]
+"tests/*.py" = ["S", "PL"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
-[tool.flake8]
-select = "WPS"
-ignore = [
-    "WPS110", # wrong names
-    "WPS111", # short variable name
-    "WPS115", # upper-case constant
-    "WPS432", # magic numbers
-    # Complexity
-    "WPS2",
-    "WPS202", # too many module members
-    "WPS210", # too many local vars
-    "WPS211", # too many arguments
-    "WPS213", # too many expressions
-    "WPS214", # too many methods
-    "WPS220", # deep nesting
-    "WPS221", # jones complexity
-    "WPS229", # too long try
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self\\.debug",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
 ]
-per-file-ignores = [
-    "./tests/*:WPS118,WPS301,WPS336,WPS420,WPS430,WPS431,WPS458,WPS473,WPS520,WPS604",
-    "version.py:WPS410",
-    "evernote_client_api_http.py:WPS116,WPS338",
-    "evernote_client_api_tokenized.py:WPS347",
-    "log_util.py:WPS301,WPS458",
-    "note_formatter_util.py:WPS509",
-    "note_storage.py:WPS615",
-]
-max-line-length = 88
-count = true
-exclude = [".*"]
 
-[tool.black]
-line-length = 88
-
-[tool.isort]
-profile = "black"
-skip_gitignore = true
-
-[tool.coverage]
-    [tool.coverage.report]
-    show_missing = true
-    exclude_lines = [
-        # Have to re-enable the standard pragma
-        'pragma: no cover',
-
-        # Don't complain about missing debug-only code:
-        'def __repr__',
-        'if self\.debug',
-
-        # Don't complain if tests don't hit defensive assertion code:
-        'raise AssertionError',
-        'raise NotImplementedError',
-
-        # Don't complain if non-runnable code isn't run:
-        'if 0:',
-        'if __name__ == .__main__.:'
-    ]
-    omit = [
-        '*/tests/*'
-    ]
+[tool.coverage.run]
+omit = ["*/tests/*", "evernote_backup/evernote_client_api_tokenized.py"]
 
 [tool.mypy]
 files = "evernote_backup"

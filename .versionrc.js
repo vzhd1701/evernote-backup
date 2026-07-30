@@ -13,9 +13,9 @@ const version_updater_regex = {
   }
 }
 
-let version_updater_poetry = {...version_updater_regex};
-version_updater_poetry.regex = /^version = \"([^\"]+)\"$/m;
-version_updater_poetry.regex_repl = "version = \"$1\"";
+let version_updater_pyproject = {...version_updater_regex};
+version_updater_pyproject.regex = /^version = \"([^\"]+)\"$/m;
+version_updater_pyproject.regex_repl = "version = \"$1\"";
 
 let version_updater_python = {...version_updater_regex};
 version_updater_python.regex = /^__version__ = \"([^\"]+)\"$/m;
@@ -24,7 +24,7 @@ version_updater_python.regex_repl = "__version__ = \"$1\"";
 let packageFiles = [
   {
     filename: "pyproject.toml",
-    updater: version_updater_poetry,
+    updater: version_updater_pyproject,
   }
 ]
 
@@ -42,6 +42,6 @@ module.exports = {
   packageFiles: packageFiles,
   bumpFiles: bumpFiles,
   scripts: {
-    postchangelog: "poetry run mdformat CHANGELOG.md"
+    postchangelog: "uv run mdformat CHANGELOG.md"
   }
 }

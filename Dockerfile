@@ -1,20 +1,18 @@
 FROM debian:12-slim AS build
 
-ENV BUILD_POETRY_VERSION=2.1.2
-
 RUN apt-get update && \
     apt-get install --no-install-suggests --no-install-recommends --yes python3-venv python3-pip && \
     python3 -m venv /venv && \
     /venv/bin/pip install --upgrade pip
 
-RUN pip3 install --break-system-packages poetry==$BUILD_POETRY_VERSION
+RUN pip3 install --break-system-packages uv
 
 FROM build AS build-venv
 
 COPY . /app
 WORKDIR /app
 
-RUN poetry build --no-interaction -f wheel
+RUN uv build --wheel
 RUN /venv/bin/pip install --disable-pip-version-check dist/*.whl
 
 FROM gcr.io/distroless/python3-debian12
