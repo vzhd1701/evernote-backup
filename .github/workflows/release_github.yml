@@ -62,12 +62,22 @@ jobs:
         include:
           - os: macos-15-intel
             OS_CODE: macos_intel
+            OS_CODE_BASE: macos
           - os: macos-15
             OS_CODE: macos
+            OS_CODE_BASE: macos
           - os: ubuntu-latest
             OS_CODE: linux
+            OS_CODE_BASE: linux
+          - os: ubuntu-24.04-arm
+            OS_CODE: linux_arm
+            OS_CODE_BASE: linux
           - os: windows-latest
             OS_CODE: win
+            OS_CODE_BASE: win
+          - os: windows-11-arm
+            OS_CODE: win_arm
+            OS_CODE_BASE: win
 
     steps:
       - uses: actions/checkout@v7
@@ -109,22 +119,32 @@ jobs:
         run: mkdir dist_bin
 
       - name: Pack up binary for macos arm64
-        if: matrix.os == 'macos-15'
-        run: zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_arm64.zip ./dist/${{ env.PACKAGE_NAME }}
+        if: matrix.OS_CODE == 'macos'
+        run: zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE_BASE }}_arm64.zip ./dist/${{ env.PACKAGE_NAME }}
 
       - name: Pack up binary for macos x64
-        if: matrix.os == 'macos-15-intel'
-        run: zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}
+        if: matrix.OS_CODE == 'macos_intel'
+        run: zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE_BASE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}
 
       - name: Pack up binary for linux
-        if: matrix.os == 'ubuntu-latest'
-        run: tar -zcvf dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.tar.gz -C ./dist ${{ env.PACKAGE_NAME }}
+        if: matrix.OS_CODE == 'linux'
+        run: tar -zcvf dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE_BASE }}_x64.tar.gz -C ./dist ${{ env.PACKAGE_NAME }}
+
+      - name: Pack up binary for linux arm64
+        if: matrix.OS_CODE == 'linux_arm'
+        run: tar -zcvf dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE_BASE }}_arm64.tar.gz -C ./dist ${{ env.PACKAGE_NAME }}
 
       - name: Pack up binary for windows
-        if: matrix.os == 'windows-latest'
+        if: matrix.OS_CODE == 'win'
         run: |
           choco install zip
-          zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}.exe
+          zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE_BASE }}_x64.zip ./dist/${{ env.PACKAGE_NAME }}.exe
+
+      - name: Pack up binary for windows arm64
+        if: matrix.OS_CODE == 'win_arm'
+        run: |
+          choco install zip
+          zip -q -j dist_bin/bin_${{ env.MODULE_NAME }}_${{ env.APP_VERSION }}_${{ matrix.OS_CODE_BASE }}_arm64.zip ./dist/${{ env.PACKAGE_NAME }}.exe
 
       - name: Save release binaries for ${{ matrix.OS_CODE }}
         uses: actions/upload-artifact@v7
@@ -161,10 +181,22 @@ jobs:
           name: release_dist_bin_linux
           path: dist
 
+      - name: Load release binaries for linux arm64
+        uses: actions/download-artifact@v8
+        with:
+          name: release_dist_bin_linux_arm
+          path: dist
+
       - name: Load release binaries for windows
         uses: actions/download-artifact@v8
         with:
           name: release_dist_bin_win
+          path: dist
+
+      - name: Load release binaries for windows arm64
+        uses: actions/download-artifact@v8
+        with:
+          name: release_dist_bin_win_arm
           path: dist
 
       - name: Load release binaries for macos arm64
