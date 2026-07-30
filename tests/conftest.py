@@ -1,10 +1,12 @@
 import json
 import sqlite3
+import time
 import uuid
 from pathlib import Path
 from ssl import SSLError
 from unittest.mock import MagicMock
 
+import jwt
 import pytest
 from click.testing import CliRunner
 from evernote.edam.error.ttypes import (
@@ -14,6 +16,7 @@ from evernote.edam.error.ttypes import (
     EDAMUserException,
 )
 from evernote.edam.userstore.ttypes import AuthenticationParameters
+from oauthlib.oauth2 import OAuth2Error
 from requests_oauthlib.oauth1_session import TokenRequestDenied
 from requests_sse import MessageEvent
 
@@ -21,7 +24,7 @@ import evernote_backup
 from evernote_backup import cli_app, note_storage
 from evernote_backup.cli import cli
 from evernote_backup.evernote_client_api_http import RetryableMixin
-from evernote_backup.token_util import EvernoteToken
+from evernote_backup.token_util import EvernoteToken, OAuth2TokenBundle
 
 
 class FakeEvernoteValues:
@@ -52,7 +55,6 @@ class FakeEvernoteValues:
         self.fake_is_token_expired = False
         self.fake_is_token_invalid = False
         self.fake_is_token_bad = False
-        self.fake_is_token_bad_for_jwt = False
 
         self.fake_auth_invalid_pass = False
         self.fake_auth_invalid_name = False
@@ -62,10 +64,8 @@ class FakeEvernoteValues:
         self.fake_linked_notebook_auth_token = None
         self.fake_twofactor_req = False
         self.fake_twofactor_hint = None
-        self.fake_jwt_token = None
 
         self.fake_auth_verify_unexpected_error = False
-        self.fake_auth_get_jwt_unexpected_error = False
         self.fake_auth_unexpected_error = False
         self.fake_auth_twofactor_unexpected_error = False
         self.fake_auth_linked_notebook_error = False
@@ -169,16 +169,6 @@ class FakeEvernoteUserStore:
         return MagicMock(
             authenticationToken=self.fake_values.fake_auth_token,
         )
-
-    def getNAPAccessToken(self):
-        if self.fake_values.fake_is_token_bad_for_jwt:
-            raise EDAMUserException(
-                errorCode=EDAMErrorCode.PERMISSION_DENIED,
-                parameter="authenticationToken",
-            )
-        if self.fake_values.fake_auth_get_jwt_unexpected_error:
-            raise EDAMUserException
-        return self.fake_values.fake_jwt_token
 
 
 class FakeEvernoteNoteStore:
@@ -404,6 +394,25 @@ def fake_init_db(fake_storage, fake_token, mock_evernote_client):
 
 
 @pytest.fixture
+def fake_init_db_jwt(fake_storage, fake_token_jwt, mock_evernote_client):
+    mock_evernote_client.fake_user = "fake_user"
+
+    cli_app.init_db(
+        database=Path("fake_db"),
+        auth_user=None,
+        auth_password=None,
+        auth_oauth_port=10500,
+        auth_oauth_host="localhost",
+        auth_token=fake_token_jwt,
+        force=False,
+        backend="evernote",
+        network_retry_count=50,
+        use_system_ssl_ca=False,
+        custom_api_data=None,
+    )
+
+
+@pytest.fixture
 def fake_init_db_china(fake_storage, fake_token, mock_evernote_client):
     mock_evernote_client.fake_user = "fake_user"
 
@@ -428,42 +437,123 @@ def fake_token():
 
 
 @pytest.fixture
+def fake_token_jwt():
+    token = TokenBundleMock()
+    return token.token_bundle.to_json()
+
+
+@pytest.fixture
+def fake_token_jwt_mock():
+    return TokenBundleMock()
+
+
+class TokenBundleMock(MagicMock):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fake_bad_fetch_token_response = False
+        self.fake_bad_refresh_token_response = False
+        self.fake_malformed_refresh_token_response = False
+
+        self.fake_oauth_code = "aabbcc"
+        self.fake_callback_response = (
+            f"/auth/redirect?code={self.fake_oauth_code}&state=test"
+        )
+
+        self.client_id = "3FE74DA6-ABC8-4E20-9940-28D589D4E808"
+        self.user_id = 111222333
+        self.user_email = "test@example.com"
+        self.user_shard = "s100"
+        self.jwt_key = "12345"
+        self.issued_at = int(time.time())
+        self.expires_at = self.issued_at + 3600
+        self.refresh_expires_at = self.issued_at + 31557600
+
+    @property
+    def token_bundle_raw(self):
+        access_token = {
+            "mono_authn_token": self.token_mono,
+            "evernote_user_id": self.user_id,
+            "client_id": self.client_id,
+            "refresh_token_id": "111aaa",
+            "aud": "api.evernote.com",
+            "exp": self.expires_at,
+            "iat": self.issued_at,
+            "iss": "https://accounts.evernote.com",
+        }
+
+        id_token = {
+            "monolith_token": self.token_mono,
+            "notestore_url": "https://www.evernote.com/shard/s100/notestore",
+            "user_id": str(self.user_id),
+        }
+
+        refresh_token = {
+            "clientId": self.client_id,
+            "consumerKey": "en-w32-xauth-new",
+            "email": self.user_email,
+            "evernoteId": self.user_id,
+            "versionId": "222bbb",
+            "exp": self.refresh_expires_at,
+            "iat": self.issued_at,
+            "iss": "https://accounts.evernote.com",
+            "jti": "333ccc",
+        }
+
+        return {
+            "access_token": jwt.encode(access_token, self.jwt_key),
+            "expires_in": 3600,
+            "id_token": jwt.encode(id_token, self.jwt_key),
+            "refresh_token": jwt.encode(refresh_token, self.jwt_key),
+            "token_type": "Bearer",
+        }
+
+    @property
+    def token_bundle(self):
+        return OAuth2TokenBundle.from_dict(self.token_bundle_raw)
+
+    @property
+    def token_mono(self):
+        return f"S={self.user_shard}:U={self.user_id:#x}:E={self.expires_at * 1000:#x}:C={self.issued_at * 1000:#x}:P=100:A=appname:V=2:H=ffffff"
+
+
+@pytest.fixture
 def mock_oauth_client(mocker):
-    def fake_request(self, url, **request_kwargs):
-        if self._client.client.resource_owner_key is None:
-            token = {
-                "oauth_token": oauth_mock.fake_oauth_token_id,
-                "oauth_token_secret": oauth_mock.fake_oauth_secret,
-                "oauth_callback_confirmed": "true",
-            }
-        else:
-            if oauth_mock.fake_bad_response:
-                raise TokenRequestDenied(None, None)
+    def fake_fetch_token(self, url, **request_kwargs):
+        if oauth_mock.fake_bad_fetch_token_response:
+            raise ValueError("test")
 
-            token = {
-                "oauth_token": oauth_mock.fake_token,
-                "oauth_verifier": "FFF2",
-                "sandbox_lnb": "false",
-            }
+        return oauth_mock.token_bundle_raw
 
-        self._populate_attributes(token)
-        self.token = token
-        return token
+    def fake_refresh_token(self, *args, **kwargs):
+        if oauth_mock.fake_bad_refresh_token_response:
+            raise OAuth2Error("test")
 
-    oauth_mock = mocker.patch.object(
-        evernote_backup.evernote_client_oauth.OAuth1Session,
-        "_fetch_token",
-        fake_request,
+        if oauth_mock.fake_malformed_refresh_token_response:
+            malformed_bundle = oauth_mock.token_bundle_raw.copy()
+            malformed_bundle.pop("refresh_token")
+            return malformed_bundle
+
+        return oauth_mock.token_bundle_raw
+
+    oauth_mock = TokenBundleMock()
+
+    mocker.patch.object(
+        evernote_backup.evernote_client_oauth.OAuth2Session,
+        "fetch_token",
+        fake_fetch_token,
     )
 
-    oauth_mock.fake_oauth_token_id = "fake_app.FFF"
-    oauth_mock.fake_oauth_secret = "FFF1"
+    mocker.patch.object(
+        evernote_backup.evernote_client_oauth.OAuth2Session,
+        "refresh_token",
+        fake_refresh_token,
+    )
 
-    oauth_mock.fake_callback_response = f"/?oauth_token={oauth_mock.fake_oauth_token_id}&oauth_verifier=FFF2&sandbox_lnb=false"
-
-    oauth_mock.fake_token = "S=s100:U=fff:E=ffff:C=ffff:P=100:A=appname:V=2:H=ffffff"
-
-    oauth_mock.fake_bad_response = False
+    mocker.patch(
+        "evernote_backup.evernote_client_oauth.register_mcp_client",
+        return_value={"client_id": oauth_mock.client_id},
+    )
 
     return oauth_mock
 

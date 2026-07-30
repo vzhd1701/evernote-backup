@@ -5,7 +5,6 @@ from collections.abc import Iterator
 from typing import Optional
 
 from evernote.edam.error.ttypes import (
-    EDAMErrorCode,
     EDAMSystemException,
     EDAMUserException,
 )
@@ -54,6 +53,7 @@ class EvernoteClient(EvernoteClientBase):
         token: Optional[str] = None,
         network_error_retry_count: int = 5,
         cafile: Optional[str] = None,
+        jwt_token: Optional[str] = None,
     ) -> None:
         super().__init__(backend=backend)
 
@@ -68,7 +68,8 @@ class EvernoteClient(EvernoteClientBase):
         self.cafile = cafile
 
         self._user: Optional[str] = None
-        self._token_jwt: Optional[str] = None
+        # OAuth2 access_token for new API (tasks). Provided by caller after refresh.
+        self._token_jwt: Optional[str] = jwt_token
 
     def check_version(self) -> bool:
         return self.user_store.checkVersion(
@@ -121,23 +122,7 @@ class EvernoteClient(EvernoteClientBase):
             cafile=self.cafile,
         )
 
-    def refresh_jwt_token(self) -> None:
-        try:
-            self._token_jwt = self.user_store.getNAPAccessToken()
-        except (EDAMUserException, EDAMSystemException) as e:
-            if e.errorCode == EDAMErrorCode.PERMISSION_DENIED:
-                raise EvernoteAuthError(
-                    "This auth token does not have permission to use the new Evernote API."
-                    " Please refer to readme file (Tasks section) for more information:"
-                    " https://github.com/vzhd1701/evernote-backup#tasks"
-                )
-            raise_auth_error(e)
-            raise
-
     def iter_sync_events(self, last_connection: int) -> Iterator[MessageEvent]:
-        if not self._token_jwt:
-            self.refresh_jwt_token()
-
         headers = {
             "User-Agent": self.user_agent,
             "x-feature-version": "4",

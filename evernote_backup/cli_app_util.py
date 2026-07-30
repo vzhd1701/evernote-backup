@@ -7,7 +7,7 @@ from typing import Optional, TextIO
 
 import click
 
-from evernote_backup.config import API_DATA_EVERNOTE, API_DATA_YINXIANG
+from evernote_backup.config import API_DATA_YINXIANG
 
 
 class ProgramTerminatedError(Exception):
@@ -22,11 +22,9 @@ class DatabaseCorruptError(Exception):
     """Raise when database is corrupt"""
 
 
-def get_api_data(backend: str, custom_api_data: Optional[str]) -> tuple[str, str]:
+def get_api_data(custom_api_data: Optional[str]) -> tuple[str, str]:
     if not custom_api_data:
-        if backend.startswith("china"):
-            return unscramble(API_DATA_YINXIANG)
-        return unscramble(API_DATA_EVERNOTE)
+        return unscramble(API_DATA_YINXIANG)
 
     try:
         key, secret = custom_api_data.split(":", maxsplit=1)

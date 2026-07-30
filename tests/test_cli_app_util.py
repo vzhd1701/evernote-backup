@@ -24,7 +24,6 @@ def test_get_sync_client_token_expired_error(mock_evernote_client):
             backend="evernote",
             network_error_retry_count=network_error_retry_count,
             max_chunk_results=max_chunk_results,
-            is_jwt_needed=False,
             use_system_ssl_ca=False,
         )
     assert str(excinfo.value) == "Authentication token expired or revoked!"
@@ -42,7 +41,6 @@ def test_get_sync_client_token_invalid_error(mock_evernote_client):
             backend="evernote",
             network_error_retry_count=network_error_retry_count,
             max_chunk_results=max_chunk_results,
-            is_jwt_needed=False,
             use_system_ssl_ca=False,
         )
     assert str(excinfo.value) == "Invalid authentication token!"
@@ -60,7 +58,6 @@ def test_get_sync_client_unexpected_error(mock_evernote_client):
             backend="evernote",
             network_error_retry_count=network_error_retry_count,
             max_chunk_results=max_chunk_results,
-            is_jwt_needed=False,
             use_system_ssl_ca=False,
         )
 

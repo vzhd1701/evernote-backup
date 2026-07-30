@@ -1,5 +1,7 @@
 import pytest
 
+from evernote_backup.token_util import OAuth2TokenBundle
+
 
 @pytest.fixture
 def mock_click_prompt(mocker):
@@ -19,6 +21,19 @@ def test_token_refresh(fake_storage, cli_invoker):
 
     assert result.exit_code == 0
     assert fake_storage.config.get_config_value("auth_token") == fake_token
+
+
+@pytest.mark.usefixtures("mock_evernote_client")
+@pytest.mark.usefixtures("fake_init_db")
+def test_token_refresh_jwt(
+    fake_storage, cli_invoker, mock_oauth_client, fake_token_jwt
+):
+    refresh_token = OAuth2TokenBundle.from_json(fake_token_jwt).refresh_token
+
+    result = cli_invoker("reauth", "--database", "fake_db", "--token", refresh_token)
+
+    assert result.exit_code == 0
+    assert fake_storage.config.get_config_value("auth_token") == fake_token_jwt
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -327,49 +342,14 @@ def test_oauth_login(
     result = cli_invoker("reauth", "-d", "fake_db")
 
     assert result.exit_code == 0
-    mock_launch.assert_called_once_with(
-        "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
+    mock_launch.assert_called_once()
+    assert mock_launch.call_args[0][0].startswith(
+        "https://accounts.evernote.com/auth/authorize?response_type=code"
     )
     assert (
         fake_storage.config.get_config_value("auth_token")
-        == mock_oauth_client.fake_token
+        == mock_oauth_client.token_bundle.to_json()
     )
-
-
-@pytest.mark.usefixtures("mock_oauth_http_server")
-@pytest.mark.usefixtures("mock_output_to_terminal")
-@pytest.mark.usefixtures("fake_init_db")
-def test_oauth_login_custom_api_data(
-    cli_invoker, fake_storage, mock_evernote_client, mock_oauth_client, mocker
-):
-    mocker.patch("evernote_backup.cli_app_util.click.echo")
-    mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
-
-    import evernote_backup.evernote_client_oauth
-
-    oauth_spy = mocker.spy(evernote_backup.evernote_client_oauth, "OAuth1Session")
-
-    result = cli_invoker(
-        "reauth",
-        "-d",
-        "fake_db",
-        "--api-data",
-        "test_key:test_secret",
-    )
-
-    assert result.exit_code == 0
-    mock_launch.assert_called_once_with(
-        "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
-    )
-    assert (
-        fake_storage.config.get_config_value("auth_token")
-        == mock_oauth_client.fake_token
-    )
-    assert oauth_spy.call_args.kwargs == {
-        "callback_uri": "http://localhost:10500/oauth_callback",
-        "client_key": "test_key",
-        "client_secret": "test_secret",
-    }
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
@@ -391,12 +371,13 @@ def test_oauth_login_custom_port(
 
     assert result.exit_code == 0
     mock_oauth_http_server.assert_any_call(("localhost", test_port), mocker.ANY)
-    mock_launch.assert_called_once_with(
-        "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
+    mock_launch.assert_called_once()
+    assert mock_launch.call_args[0][0].startswith(
+        "https://accounts.evernote.com/auth/authorize?response_type=code"
     )
     assert (
         fake_storage.config.get_config_value("auth_token")
-        == mock_oauth_client.fake_token
+        == mock_oauth_client.token_bundle.to_json()
     )
 
 
@@ -404,9 +385,14 @@ def test_oauth_login_custom_port(
 @pytest.mark.usefixtures("mock_output_to_terminal")
 @pytest.mark.usefixtures("fake_init_db")
 def test_oauth_login_declined_error(
-    cli_invoker, fake_storage, mock_evernote_client, mock_oauth_client, mocker
+    cli_invoker,
+    fake_storage,
+    fake_token,
+    mock_evernote_client,
+    mock_oauth_client,
+    mocker,
 ):
-    mock_oauth_client.fake_callback_response = "/"
+    mock_oauth_client.fake_bad_fetch_token_response = True
 
     mocker.patch("evernote_backup.cli_app_util.click.echo")
     mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
@@ -415,10 +401,11 @@ def test_oauth_login_declined_error(
 
     assert result.exit_code == 1
     assert "declined" in result.output
-
-    mock_launch.assert_called_once_with(
-        "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
+    mock_launch.assert_called_once()
+    assert mock_launch.call_args[0][0].startswith(
+        "https://accounts.evernote.com/auth/authorize?response_type=code"
     )
+    assert fake_storage.config.get_config_value("auth_token") == fake_token
 
 
 @pytest.mark.usefixtures("mock_evernote_client")

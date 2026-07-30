@@ -15,6 +15,7 @@ from evernote.edam.type.ttypes import (
 
 from evernote_backup import note_synchronizer
 from evernote_backup.evernote_types import Reminder, Task
+from evernote_backup.token_util import OAuth2TokenBundle
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -942,10 +943,8 @@ def test_sync_massive_note_count(
     assert result_notes == mock_evernote_client.fake_notes
 
 
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_jwt")
 def test_sync_add_task(cli_invoker, mock_evernote_client, fake_storage):
-    mock_evernote_client.fake_jwt_token = "fake_jwt"
-
     mock_evernote_client.fake_notebooks.append(
         Notebook(
             guid="nbid1",
@@ -1052,7 +1051,7 @@ def test_sync_add_task(cli_invoker, mock_evernote_client, fake_storage):
     assert result_tasks == [test_task]
 
 
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_jwt")
 def test_sync_add_task_with_reminder(cli_invoker, mock_evernote_client, fake_storage):
     mock_evernote_client.fake_notebooks.append(
         Notebook(
@@ -1175,7 +1174,7 @@ def test_sync_add_task_with_reminder(cli_invoker, mock_evernote_client, fake_sto
     assert result_reminders == [test_reminder]
 
 
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_jwt")
 def test_sync_expunge_task(cli_invoker, mock_evernote_client, fake_storage):
     test_task = Task(
         taskId="c16d6ec7-9a4f-4860-b490-12d93774897c",
@@ -1219,7 +1218,7 @@ def test_sync_expunge_task(cli_invoker, mock_evernote_client, fake_storage):
     assert len(result_tasks_before) == 1
 
 
-@pytest.mark.usefixtures("fake_init_db")
+@pytest.mark.usefixtures("fake_init_db_jwt")
 def test_sync_expunge_reminder(cli_invoker, mock_evernote_client, fake_storage):
     test_reminder = Reminder(
         reminderId="c16d6ec7-9a4f-4860-b490-12d93774897c",
@@ -1265,22 +1264,133 @@ def test_sync_expunge_reminder(cli_invoker, mock_evernote_client, fake_storage):
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_sync_bad_token_for_jwt(cli_invoker, mock_evernote_client, fake_storage):
-    mock_evernote_client.fake_is_token_bad_for_jwt = True
-
     result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
 
     assert result.exit_code == 1
-    assert (
-        "This auth token does not have permission to use the new Evernote API"
-        in result.output
-    )
+    assert "OAuth2 access token is required for tasks sync" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
-def test_sync_unknown_error_on_jwt(cli_invoker, mock_evernote_client, fake_storage):
-    mock_evernote_client.fake_auth_get_jwt_unexpected_error = True
+def test_sync_one_off_jwt(
+    cli_invoker,
+    mock_evernote_client,
+    mock_oauth_client,
+    fake_storage,
+    fake_token,
+    fake_token_jwt,
+):
+    one_off_token = OAuth2TokenBundle.from_json(fake_token_jwt).refresh_token
 
-    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+    result = cli_invoker("sync", "--database", "fake_db", "--token", one_off_token)
+
+    assert result.exit_code == 0
+    assert "Refreshing OAuth2 access token" in result.output
+    assert fake_storage.config.get_config_value("auth_token") == fake_token
+
+
+@pytest.mark.usefixtures("fake_init_db_jwt")
+def test_sync_update_jwt(
+    cli_invoker,
+    mock_evernote_client,
+    mock_oauth_client,
+    fake_storage,
+    fake_token_jwt,
+    fake_token_jwt_mock,
+):
+    fake_token_jwt_mock.expires_at = int(time.time()) - 1000
+
+    fake_storage.config.set_config_value(
+        "auth_token", fake_token_jwt_mock.token_bundle.to_json()
+    )
+
+    result = cli_invoker("sync", "--database", "fake_db")
+
+    assert result.exit_code == 0
+    assert "Stored refreshed OAuth2 token bundle" in result.output
+    assert fake_storage.config.get_config_value("auth_token") == fake_token_jwt
+
+
+@pytest.mark.usefixtures("fake_init_db_jwt")
+def test_sync_update_jwt_refresh_error(
+    cli_invoker,
+    mock_evernote_client,
+    mock_oauth_client,
+    fake_storage,
+    fake_token_jwt,
+    fake_token_jwt_mock,
+):
+    fake_token_jwt_mock.expires_at = int(time.time()) - 1000
+
+    fake_storage.config.set_config_value(
+        "auth_token", fake_token_jwt_mock.token_bundle.to_json()
+    )
+
+    mock_oauth_client.fake_bad_refresh_token_response = True
+
+    result = cli_invoker("sync", "--database", "fake_db")
 
     assert result.exit_code == 1
-    assert "EDAMUserException" in result.output
+    assert "Token refresh failed" in result.output
+    assert (
+        fake_storage.config.get_config_value("auth_token")
+        == fake_token_jwt_mock.token_bundle.to_json()
+    )
+
+
+@pytest.mark.usefixtures("fake_init_db_jwt")
+def test_sync_update_jwt_malformed_token_error(
+    cli_invoker,
+    mock_evernote_client,
+    mock_oauth_client,
+    fake_storage,
+    fake_token_jwt,
+    fake_token_jwt_mock,
+):
+    fake_token_jwt_mock.expires_at = int(time.time()) - 1000
+
+    fake_storage.config.set_config_value(
+        "auth_token", fake_token_jwt_mock.token_bundle.to_json()
+    )
+
+    mock_oauth_client.fake_malformed_refresh_token_response = True
+
+    result = cli_invoker("sync", "--database", "fake_db")
+
+    assert result.exit_code == 1
+    assert "OAuth2 token bundle missing field" in result.output
+    assert (
+        fake_storage.config.get_config_value("auth_token")
+        == fake_token_jwt_mock.token_bundle.to_json()
+    )
+
+
+@pytest.mark.usefixtures("fake_init_db_jwt")
+def test_sync_update_jwt_malformed_token_in_db_bad_json(
+    cli_invoker, mock_evernote_client, mock_oauth_client, fake_storage, fake_token_jwt
+):
+    fake_storage.config.set_config_value("auth_token", "{{{")
+
+    result = cli_invoker("sync", "--database", "fake_db")
+
+    assert result.exit_code == 1
+    assert "Invalid OAuth2 token JSON" in result.output
+
+
+@pytest.mark.usefixtures("fake_init_db_jwt")
+def test_sync_expired_refresh_token_jwt(
+    cli_invoker,
+    mock_evernote_client,
+    mock_oauth_client,
+    fake_storage,
+    fake_token_jwt_mock,
+):
+    fake_token_jwt_mock.refresh_expires_at = int(time.time()) - 1000
+
+    fake_storage.config.set_config_value(
+        "auth_token", fake_token_jwt_mock.token_bundle.to_json()
+    )
+
+    result = cli_invoker("sync", "--database", "fake_db")
+
+    assert result.exit_code == 1
+    assert "OAuth2 refresh token is expired or about to expire" in result.output

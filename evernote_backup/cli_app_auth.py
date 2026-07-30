@@ -18,7 +18,7 @@ def get_sync_client(
     network_error_retry_count: int,
     use_system_ssl_ca: bool,
     max_chunk_results: int,
-    is_jwt_needed: bool,
+    jwt_token: Optional[str] = None,
 ) -> EvernoteClientSync:
     logger.info(f"Authorizing auth token, {backend} backend...")
 
@@ -30,20 +30,13 @@ def get_sync_client(
         network_error_retry_count=network_error_retry_count,
         cafile=cafile,
         max_chunk_results=max_chunk_results,
+        jwt_token=jwt_token,
     )
 
     try:
         client.verify_token()
     except EvernoteAuthError as e:
         raise ProgramTerminatedError(e)
-
-    if is_jwt_needed:
-        logger.info("Retrieving JWT token...")
-
-        try:
-            client.refresh_jwt_token()
-        except EvernoteAuthError as e:
-            raise ProgramTerminatedError(e)
 
     logger.info(f"Successfully authenticated as {client.user}!")
     logger.info(f"Current login expires at {client.token.expiration_human}.")  # type: ignore
@@ -82,7 +75,6 @@ def get_auth_token(
         backend=backend,
         oauth_port=auth_oauth_port,
         oauth_host=auth_oauth_host,
-        custom_api_data=custom_api_data,
     )
 
 

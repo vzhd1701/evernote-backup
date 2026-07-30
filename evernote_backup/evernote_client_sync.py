@@ -30,12 +30,14 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         network_error_retry_count: int,
         max_chunk_results: int,
         cafile: Optional[str],
+        jwt_token: Optional[str] = None,
     ) -> None:
         super().__init__(
             backend=backend,
             token=token,
             network_error_retry_count=network_error_retry_count,
             cafile=cafile,
+            jwt_token=jwt_token,
         )
 
         self._tags: Optional[dict] = None

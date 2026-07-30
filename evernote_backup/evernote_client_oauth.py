@@ -2,17 +2,25 @@ import threading
 import time
 from enum import IntEnum
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Optional
+from typing import Any, Optional
 
-from requests_oauthlib import OAuth1Session
-from requests_oauthlib.oauth1_session import TokenMissing, TokenRequestDenied
+import requests
+from oauthlib.oauth2 import OAuth2Error
+from requests_oauthlib import OAuth2Session
 
 from evernote_backup.cli_app_util import is_inside_docker
+from evernote_backup.config import MCP_NAME
+from evernote_backup.config_defaults import (
+    OAUTH_SCOPES,
+    EVERNOTE_AUTHORIZE_URL,
+    EVERNOTE_TOKEN_URL,
+    EVERNOTE_DISCOVERY_URL,
+)
+from evernote_backup.errors import OAuthDeclinedError
 from evernote_backup.evernote_client import EvernoteClientBase
-
-
-class OAuthDeclinedError(Exception):
-    """Raise when user cancels authentication"""
+from evernote_backup.token_util import (
+    OAuth2TokenBundle,
+)
 
 
 class HTTPCode(IntEnum):
@@ -68,7 +76,9 @@ class EvernoteOAuthCallbackHandler:
         )
 
     def wait_for_token(self) -> str:
-        return self.client.get_access_token(self._wait_for_callback())
+        """Complete OAuth code exchange and return token bundle JSON for storage."""
+        bundle = self.client.get_access_token(self._wait_for_callback())
+        return bundle.to_json()
 
     def _wait_for_callback(self) -> str:
         if is_inside_docker():
@@ -92,42 +102,77 @@ class EvernoteOAuthCallbackHandler:
 
 
 class EvernoteOAuthClient(EvernoteClientBase):
-    def __init__(
-        self,
-        backend: str,
-        consumer_key: str,
-        consumer_secret: str,
-    ) -> None:
+    def __init__(self, backend: str) -> None:
         super().__init__(backend=backend)
 
-        self.client_key = consumer_key
-        self.client_secret = consumer_secret
-
-        self._session: Optional[OAuth1Session] = None
+        self._session: Optional[OAuth2Session] = None
+        self._client_id: Optional[str] = None
 
     def get_authorize_url(self, callback_url: str) -> str:
-        self._session = OAuth1Session(
-            client_key=self.client_key,
-            client_secret=self.client_secret,
-            callback_uri=callback_url,
+        mcp_client = register_mcp_client(callback_url)
+
+        self._client_id = mcp_client["client_id"]
+
+        self._session = OAuth2Session(
+            client_id=self._client_id,
+            scope=OAUTH_SCOPES,
+            redirect_uri=callback_url,
+            pkce="S256",
         )
 
-        self._session.fetch_request_token(self._get_endpoint("oauth"))
+        authorization_url, _state = self._session.authorization_url(
+            EVERNOTE_AUTHORIZE_URL
+        )
 
-        return str(self._session.authorization_url(self._get_endpoint("OAuth.action")))
+        return str(authorization_url)
 
-    def get_access_token(self, callback_response_raw: str) -> str:
+    def get_access_token(self, callback_response_raw: str) -> OAuth2TokenBundle:
         if not self._session:
             raise RuntimeError("Session used before initialization")
 
         try:
-            self._session.parse_authorization_response(callback_response_raw)
-        except TokenMissing:
-            raise OAuthDeclinedError
+            token = self._session.fetch_token(
+                EVERNOTE_TOKEN_URL,
+                authorization_response=callback_response_raw,
+                include_client_id=True,
+            )
+        except (OAuth2Error, ValueError) as e:
+            raise OAuthDeclinedError(str(e)) from e
 
-        try:
-            access_token = self._session.fetch_access_token(self._get_endpoint("oauth"))
-        except TokenRequestDenied:
-            raise OAuthDeclinedError
+        return OAuth2TokenBundle.from_dict(token)
 
-        return str(access_token["oauth_token"])
+
+def register_mcp_client(redirect_uri: str) -> dict[str, Any]:
+    disc_response = requests.get(EVERNOTE_DISCOVERY_URL, timeout=30)
+    disc_response.raise_for_status()
+    metadata = disc_response.json()
+
+    registration_endpoint = metadata.get("registration_endpoint")
+    if not registration_endpoint:
+        raise RuntimeError(
+            "The authorization server does not support"
+            " Dynamic Client Registration (DCR)."
+        )
+
+    registration_payload = {
+        "client_name": MCP_NAME,
+        "redirect_uris": [redirect_uri],
+        "grant_types": ["authorization_code", "refresh_token"],
+        "response_types": ["code"],
+        "token_endpoint_auth_method": "none",
+    }
+
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+
+    reg_response = requests.post(
+        registration_endpoint,
+        json=registration_payload,
+        headers=headers,
+        timeout=30,
+    )
+    if reg_response.status_code not in (200, 201):
+        raise RuntimeError(
+            f"Registration failed [{reg_response.status_code}]: {reg_response.text}"
+        )
+
+    return reg_response.json()

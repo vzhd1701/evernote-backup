@@ -1,5 +1,24 @@
+import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any, Optional
+
+import jwt
+import requests
+from oauthlib.oauth2 import OAuth2Error
+from requests_oauthlib import OAuth2Session
+
+from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.config_defaults import (
+    TOKEN_REFRESH_SKEW,
+    EVERNOTE_TOKEN_URL,
+    DESKTOP_REDIRECT_URI,
+    DESKTOP_CLIENT_ID,
+)
+from evernote_backup.errors import OAuthTokenRefreshError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -89,3 +108,202 @@ def _parse_evernote_token(token: str) -> EvernoteToken:
         shard_id=shard_id,
         raw=token,
     )
+
+
+@dataclass
+class OAuth2TokenBundle:
+    """OAuth2 token response as returned by Evernote /auth/token."""
+
+    access_token: str
+    refresh_token: str
+    id_token: str
+    expires_in: int
+    token_type: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "access_token": self.access_token,
+            "refresh_token": self.refresh_token,
+            "id_token": self.id_token,
+            "expires_in": self.expires_in,
+            "token_type": self.token_type,
+        }
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "OAuth2TokenBundle":
+        try:
+            return cls(
+                access_token=data["access_token"],
+                refresh_token=data["refresh_token"],
+                id_token=data.get("id_token", ""),
+                expires_in=int(data.get("expires_in", 0)),
+                token_type=data.get("token_type", "Bearer"),
+            )
+        except KeyError as e:
+            raise ValueError(f"OAuth2 token bundle missing field: {e}") from e
+
+    @classmethod
+    def from_json(cls, raw: str) -> "OAuth2TokenBundle":
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid OAuth2 token JSON: {e}") from e
+
+        return cls.from_dict(data)
+
+    @property
+    def monolith_token(self) -> str:
+        return str(decode_jwt(self.access_token)["mono_authn_token"])
+
+    @property
+    def access_expiration(self) -> datetime:
+        exp = int(decode_jwt(self.access_token)["exp"])
+        return datetime.fromtimestamp(exp, tz=timezone.utc)
+
+    @property
+    def monolith_expiration(self) -> datetime:
+        return EvernoteToken.from_string(self.monolith_token).expiration
+
+    @property
+    def refresh_expiration(self) -> datetime:
+        exp = int(decode_jwt(self.refresh_token)["exp"])
+        return datetime.fromtimestamp(exp, tz=timezone.utc)
+
+    @property
+    def needs_refresh(self) -> bool:
+        now = datetime.now(timezone.utc)
+        return (
+            self.access_expiration - now <= TOKEN_REFRESH_SKEW
+            or self.monolith_expiration - now <= TOKEN_REFRESH_SKEW
+        )
+
+    @property
+    def is_refresh_expired(self) -> bool:
+        return (
+            self.refresh_expiration - datetime.now(timezone.utc) <= TOKEN_REFRESH_SKEW
+        )
+
+
+@dataclass
+class ResolvedAuth:
+    monolith_token: str
+    jwt_token: Optional[str]
+    auth_for_storage: str
+    updated: bool
+
+
+def decode_jwt(token: str) -> dict[str, Any]:
+    try:
+        return jwt.decode(token, options={"verify_signature": False})
+    except jwt.PyJWTError as e:
+        raise ValueError(f"Failed to decode JWT: {e}") from e
+
+
+def get_client_id_from_refresh_token(refresh_token: str) -> str:
+    return str(decode_jwt(refresh_token)["clientId"])
+
+
+def resolve_auth_token(auth_token: str) -> ResolvedAuth:
+    """
+    Normalize stored / CLI auth into monolith + optional JWT.
+
+    Accepts:
+    - legacy monolith token (S=...)
+    - bare OAuth2 refresh JWT
+    - stored OAuth2 token bundle JSON (from /auth/token)
+    """
+    raw = auth_token.strip()
+
+    try:
+        if _is_oauth_bundle_json(raw):
+            return _resolve_oauth_bundle(OAuth2TokenBundle.from_json(raw))
+
+        if _is_jwt_token(raw):
+            logger.info("Refreshing OAuth2 access token from refresh token...")
+            bundle = refresh_oauth_token(raw)
+            return ResolvedAuth(
+                monolith_token=bundle.monolith_token,
+                jwt_token=bundle.access_token,
+                auth_for_storage=bundle.to_json(),
+                updated=True,
+            )
+
+        # Legacy monolith token
+        EvernoteToken.from_string(raw)
+        return ResolvedAuth(
+            monolith_token=raw,
+            jwt_token=None,
+            auth_for_storage=raw,
+            updated=False,
+        )
+    except (ValueError, OAuthTokenRefreshError) as e:
+        raise ProgramTerminatedError(str(e)) from e
+
+
+def _is_oauth_bundle_json(raw: str) -> bool:
+    return raw.strip().startswith("{")
+
+
+def _is_jwt_token(raw: str) -> bool:
+    try:
+        decode_jwt(raw)
+    except ValueError:
+        return False
+
+    return True
+
+
+def _resolve_oauth_bundle(bundle: OAuth2TokenBundle) -> ResolvedAuth:
+    if bundle.is_refresh_expired:
+        raise ProgramTerminatedError(
+            "OAuth2 refresh token is expired or about to expire."
+            " Re-authenticate or provide a new refresh token."
+        )
+
+    is_updated = False
+
+    if bundle.needs_refresh:
+        logger.info("OAuth2 token expires soon, refreshing...")
+        bundle = refresh_oauth_token(bundle.refresh_token)
+        is_updated = True
+
+    return ResolvedAuth(
+        monolith_token=bundle.monolith_token,
+        jwt_token=bundle.access_token,
+        auth_for_storage=bundle.to_json(),
+        updated=is_updated,
+    )
+
+
+def refresh_oauth_token(refresh_token: str) -> OAuth2TokenBundle:
+    """
+    Exchange a refresh_token for a new OAuth2 token bundle.
+    """
+
+    client_id = get_client_id_from_refresh_token(refresh_token)
+
+    # does MCP need redirect_uri??
+    redirect_uri = None
+    if client_id.upper() == DESKTOP_CLIENT_ID.upper():
+        redirect_uri = DESKTOP_REDIRECT_URI
+
+    session = OAuth2Session(client_id=client_id)
+
+    try:
+        token = session.refresh_token(
+            EVERNOTE_TOKEN_URL,
+            client_id=client_id,
+            refresh_token=refresh_token,
+            redirect_uri=redirect_uri,
+            timeout=30,
+        )
+    except (OAuth2Error, requests.RequestException) as e:
+        raise OAuthTokenRefreshError(f"Token refresh failed: {e}") from e
+
+    try:
+        return OAuth2TokenBundle.from_dict(token)
+    except ValueError as e:
+        raise OAuthTokenRefreshError(str(e)) from e

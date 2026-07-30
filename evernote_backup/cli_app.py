@@ -8,6 +8,7 @@ from evernote_backup.cli_app_auth import (
     get_ping_client,
     get_sync_client,
 )
+from evernote_backup.token_util import resolve_auth_token
 from evernote_backup.cli_app_storage import (
     get_storage,
     initialize_storage,
@@ -25,6 +26,7 @@ from evernote_backup.note_checker import NoteChecker
 from evernote_backup.note_exporter import NoteExporter
 from evernote_backup.note_lister import NoteLister
 from evernote_backup.note_synchronizer import NoteSynchronizer, WrongAuthUserError
+
 
 logger = logging.getLogger(__name__)
 
@@ -57,13 +59,15 @@ def init_db(
             custom_api_data=custom_api_data,
         )
 
+    auth_resolved = resolve_auth_token(auth_token)
+
     note_client = get_sync_client(
-        auth_token=auth_token,
+        auth_token=auth_resolved.monolith_token,
+        jwt_token=auth_resolved.jwt_token,
         backend=backend,
         network_error_retry_count=network_retry_count,
         use_system_ssl_ca=use_system_ssl_ca,
         max_chunk_results=1,
-        is_jwt_needed=False,
     )
 
     storage = initialize_storage(database, force)
@@ -72,7 +76,7 @@ def init_db(
 
     storage.config.set_config_value("DB_VERSION", str(CURRENT_DB_VERSION))
     storage.config.set_config_value("USN", "0")
-    storage.config.set_config_value("auth_token", auth_token)
+    storage.config.set_config_value("auth_token", auth_resolved.auth_for_storage)
     storage.config.set_config_value("user", new_user)
     storage.config.set_config_value("backend", backend)
     storage.config.set_config_value("last_connection_tasks", "0")
@@ -109,12 +113,14 @@ def reauth(
             custom_api_data=custom_api_data,
         )
 
+    auth_resolved = resolve_auth_token(auth_token)
+
     note_client = get_sync_client(
-        auth_token=auth_token,
+        auth_token=auth_resolved.monolith_token,
+        jwt_token=auth_resolved.jwt_token,
         backend=backend,
         network_error_retry_count=network_retry_count,
         max_chunk_results=1,
-        is_jwt_needed=False,
         use_system_ssl_ca=use_system_ssl_ca,
     )
 
@@ -126,7 +132,7 @@ def reauth(
             " Each user must use a different database file."
         )
 
-    storage.config.set_config_value("auth_token", auth_token)
+    storage.config.set_config_value("auth_token", auth_resolved.auth_for_storage)
 
     logger.info(f"Successfully refreshed auth token for {local_user}!")
 
@@ -148,15 +154,26 @@ def sync(
     backend = storage.config.get_config_value("backend")
     auth_token = token or storage.config.get_config_value("auth_token")
 
-    is_jwt_needed = include_tasks
+    auth_resolved = resolve_auth_token(auth_token)
+
+    # Persist refreshed OAuth bundle when using stored credentials (not one-off --token).
+    if auth_resolved.updated and not token:
+        storage.config.set_config_value("auth_token", auth_resolved.auth_for_storage)
+        logger.info("Stored refreshed OAuth2 token bundle in the database.")
+
+    if include_tasks and not auth_resolved.jwt_token:
+        raise ProgramTerminatedError(
+            "OAuth2 access token is required for tasks sync."
+            " Re-authenticate or provide a refresh token via --token."
+        )
 
     note_client = get_sync_client(
-        auth_token=auth_token,
+        auth_token=auth_resolved.monolith_token,
+        jwt_token=auth_resolved.jwt_token,
         backend=backend,
         network_error_retry_count=network_retry_count,
         use_system_ssl_ca=use_system_ssl_ca,
         max_chunk_results=max_chunk_results,
-        is_jwt_needed=is_jwt_needed,
     )
 
     note_synchronizer = NoteSynchronizer(

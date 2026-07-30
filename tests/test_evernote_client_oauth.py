@@ -1,24 +1,28 @@
 import os
 
 import pytest
+import requests
 
+from evernote_backup.config import MCP_NAME
+from evernote_backup.config_defaults import EVERNOTE_DISCOVERY_URL
+from evernote_backup.errors import OAuthDeclinedError
 from evernote_backup.evernote_client_oauth import (
     CallbackHandler,
     EvernoteOAuthCallbackHandler,
     EvernoteOAuthClient,
     HTTPCode,
-    OAuthDeclinedError,
+    register_mcp_client,
 )
 
 FAKE_OAUTH_PORT = 10500
 FAKE_OAUTH_HOST = "localhost"
+FAKE_REDIRECT_URI = f"http://{FAKE_OAUTH_HOST}:{FAKE_OAUTH_PORT}/oauth_callback"
+FAKE_REGISTRATION_ENDPOINT = "https://accounts.evernote.com/auth/register"
 
 
 @pytest.fixture
 def mock_evernote_oauth_client(mock_oauth_client):
-    return EvernoteOAuthClient(
-        backend="evernote", consumer_key="test_key", consumer_secret="test_sec"
-    )
+    return EvernoteOAuthClient(backend="evernote")
 
 
 def test_get_auth_token_before_init(mock_oauth_client, mock_evernote_oauth_client):
@@ -37,7 +41,7 @@ def test_get_auth_token(mock_oauth_client, mock_evernote_oauth_client):
 
     test_token = oauth_handler.wait_for_token()
 
-    assert test_token == mock_oauth_client.fake_token
+    assert test_token == mock_oauth_client.token_bundle.to_json()
 
 
 def test_server_no_docker(
@@ -74,34 +78,21 @@ def test_server_yes_docker(
 
 @pytest.mark.usefixtures("mock_oauth_http_server")
 def test_get_auth_token_url(mock_oauth_client, mock_evernote_oauth_client):
-    expected_url = "https://www.evernote.com/OAuth.action?oauth_token=fake_app.FFF"
+    expected_url = "https://accounts.evernote.com/auth/authorize?response_type=code&client_id=3FE74DA6-ABC8-4E20-9940-28D589D4E808&redirect_uri=http%3A%2F%2Flocalhost%3A10500%2Foauth_callback&scope=openid+profile+mono_authn_token+email+offline_access&state="
     oauth_handler = EvernoteOAuthCallbackHandler(
         mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
     )
 
     url = oauth_handler.get_oauth_url()
 
-    assert url == expected_url
-
-
-@pytest.mark.usefixtures("mock_oauth_http_server")
-def test_get_auth_token_declined(mock_oauth_client, mock_evernote_oauth_client):
-    mock_oauth_client.fake_callback_response = "/"
-
-    oauth_handler = EvernoteOAuthCallbackHandler(
-        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
-    )
-    oauth_handler.get_oauth_url()
-
-    with pytest.raises(OAuthDeclinedError):
-        oauth_handler.wait_for_token()
+    assert url.startswith(expected_url)
 
 
 @pytest.mark.usefixtures("mock_oauth_http_server")
 def test_get_auth_token_declined_bad_response(
     mock_oauth_client, mock_evernote_oauth_client
 ):
-    mock_oauth_client.fake_bad_response = True
+    mock_oauth_client.fake_bad_fetch_token_response = True
 
     oauth_handler = EvernoteOAuthCallbackHandler(
         mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
@@ -152,3 +143,58 @@ def test_callback_handler(mocker):
 
     assert mock_instance.server.callback_response == mock_instance.path
     mock_instance.send_response.assert_called_once_with(HTTPCode.OK)
+
+
+def test_register_mcp_client_success(requests_mock):
+    expected_client = {"client_id": "test-client-id", "client_name": MCP_NAME}
+
+    requests_mock.get(
+        EVERNOTE_DISCOVERY_URL,
+        json={"registration_endpoint": FAKE_REGISTRATION_ENDPOINT},
+    )
+    requests_mock.post(
+        FAKE_REGISTRATION_ENDPOINT, json=expected_client, status_code=200
+    )
+
+    result = register_mcp_client(FAKE_REDIRECT_URI)
+
+    assert result == expected_client
+    assert requests_mock.last_request.json() == {
+        "client_name": MCP_NAME,
+        "redirect_uris": [FAKE_REDIRECT_URI],
+        "grant_types": ["authorization_code", "refresh_token"],
+        "response_types": ["code"],
+        "token_endpoint_auth_method": "none",
+    }
+    assert requests_mock.last_request.headers["Content-Type"] == "application/json"
+
+
+def test_register_mcp_client_discovery_http_error(requests_mock):
+    requests_mock.get(EVERNOTE_DISCOVERY_URL, status_code=503, reason="Server Error")
+
+    with pytest.raises(requests.HTTPError):
+        register_mcp_client(FAKE_REDIRECT_URI)
+
+    assert not requests_mock.request_history[1:]  # only the GET happened, no POST
+
+
+def test_register_mcp_client_missing_registration_endpoint(requests_mock):
+    requests_mock.get(EVERNOTE_DISCOVERY_URL, json={"issuer": "https://example.com"})
+
+    with pytest.raises(RuntimeError, match="Dynamic Client Registration"):
+        register_mcp_client(FAKE_REDIRECT_URI)
+
+
+@pytest.mark.parametrize("status_code", [400, 401, 403, 500])
+def test_register_mcp_client_registration_failed(requests_mock, status_code):
+    error_body = '{"error":"invalid_redirect_uri"}'
+    requests_mock.get(
+        EVERNOTE_DISCOVERY_URL,
+        json={"registration_endpoint": FAKE_REGISTRATION_ENDPOINT},
+    )
+    requests_mock.post(
+        FAKE_REGISTRATION_ENDPOINT, text=error_body, status_code=status_code
+    )
+
+    with pytest.raises(RuntimeError, match=f"Registration failed \\[{status_code}\\]"):
+        register_mcp_client(FAKE_REDIRECT_URI)

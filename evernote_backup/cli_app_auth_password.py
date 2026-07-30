@@ -19,7 +19,7 @@ def get_auth_client(
     cafile: Optional[str],
     custom_api_data: Optional[str],
 ) -> EvernoteClientAuth:
-    key, secret = get_api_data(backend, custom_api_data)
+    key, secret = get_api_data(custom_api_data)
 
     return EvernoteClientAuth(
         consumer_key=key,

@@ -4,27 +4,13 @@ import click
 
 from evernote_backup.cli_app_util import (
     ProgramTerminatedError,
-    get_api_data,
     is_output_to_terminal,
 )
 from evernote_backup.evernote_client_oauth import (
     EvernoteOAuthCallbackHandler,
     EvernoteOAuthClient,
-    OAuthDeclinedError,
 )
-
-
-def get_oauth_client(
-    backend: str,
-    custom_api_data: Optional[str],
-) -> EvernoteOAuthClient:
-    key, secret = get_api_data(backend, custom_api_data)
-
-    return EvernoteOAuthClient(
-        consumer_key=key,
-        consumer_secret=secret,
-        backend=backend,
-    )
+from evernote_backup.errors import OAuthDeclinedError
 
 
 def prompt_ota(delivery_hint: str) -> str:
@@ -42,12 +28,11 @@ def evernote_login_oauth(
     backend: str,
     oauth_port: int,
     oauth_host: str,
-    custom_api_data: Optional[str],
 ) -> str:
     if not is_output_to_terminal():
         raise ProgramTerminatedError("OAuth requires user input!")
 
-    oauth_client = get_oauth_client(backend, custom_api_data)
+    oauth_client = EvernoteOAuthClient(backend=backend)
 
     oauth_handler = EvernoteOAuthCallbackHandler(oauth_client, oauth_port, oauth_host)
 
@@ -62,5 +47,5 @@ def evernote_login_oauth(
 
     try:
         return oauth_handler.wait_for_token()
-    except OAuthDeclinedError:
-        raise ProgramTerminatedError("Authorization declined!")
+    except OAuthDeclinedError as e:
+        raise ProgramTerminatedError(f"OAuth error: {e}")
