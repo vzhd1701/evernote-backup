@@ -110,7 +110,7 @@ def get_time_txt(seconds: int) -> str:
 
 
 def get_time_from_now_txt(seconds: int) -> str:
-    current_time = datetime.datetime.now(datetime.UTC).astimezone()
+    current_time = datetime.datetime.now(datetime.timezone.utc).astimezone()
     restart_time = current_time + datetime.timedelta(seconds=seconds)
 
     return restart_time.strftime("%Y-%m-%d %H:%M:%S")
