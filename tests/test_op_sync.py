@@ -742,7 +742,8 @@ def test_sync_edam_rate_limit_exception_while_download(
     result = cli_invoker("sync", "--database", "fake_db")
 
     assert result.exit_code == 1
-    assert "Rate limit reached. Restart program in 0:10" in result.output
+    assert "Rate limit reached. Restart program at" in result.output
+    assert "(in 0:10)" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")

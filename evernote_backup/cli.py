@@ -18,7 +18,7 @@ from evernote_backup.cli_app_click_util import (
     group_options,
 )
 from evernote_backup.cli_app_util import ProgramTerminatedError
-from evernote_backup.log_util import get_time_txt, init_logging
+from evernote_backup.log_util import get_time_txt, init_logging, get_time_from_now_txt
 from evernote_backup.version import __version__
 
 opt_user = click.option(
@@ -129,10 +129,11 @@ def handle_errors(f: Callable) -> Callable:
             )
         except EDAMSystemException as e:
             if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                import datetime
-                current_time = datetime.datetime.now()
-                restart_time = current_time + datetime.timedelta(seconds=e.rateLimitDuration)
-                logger.critical(f"Rate limit reached. Restart program at {restart_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                time_at = get_time_from_now_txt(e.rateLimitDuration)
+                time_left = get_time_txt(e.rateLimitDuration)
+                logger.critical(
+                    f"Rate limit reached. Restart program at {time_at} (in {time_left})."
+                )
             else:
                 logger.exception("Evernote server error")
         except TApplicationException as e:
