@@ -43,6 +43,7 @@ def init_db(
     network_retry_count: int,
     use_system_ssl_ca: bool,
     custom_api_data: Optional[str],
+    oauth_mcp: bool = False,
 ) -> None:
     if not force:
         raise_on_existing_database(database)
@@ -57,6 +58,7 @@ def init_db(
             network_retry_count=network_retry_count,
             use_system_ssl_ca=use_system_ssl_ca,
             custom_api_data=custom_api_data,
+            oauth_mcp=oauth_mcp,
         )
 
     auth_resolved = resolve_auth_token(auth_token)
@@ -94,6 +96,7 @@ def reauth(
     network_retry_count: int,
     use_system_ssl_ca: bool,
     custom_api_data: Optional[str],
+    oauth_mcp: bool = False,
 ) -> None:
     storage = get_storage(database)
 
@@ -111,6 +114,7 @@ def reauth(
             network_retry_count=network_retry_count,
             use_system_ssl_ca=use_system_ssl_ca,
             custom_api_data=custom_api_data,
+            oauth_mcp=oauth_mcp,
         )
 
     auth_resolved = resolve_auth_token(auth_token)

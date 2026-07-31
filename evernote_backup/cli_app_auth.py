@@ -53,6 +53,7 @@ def get_auth_token(
     network_retry_count: int,
     use_system_ssl_ca: bool,
     custom_api_data: Optional[str],
+    oauth_mcp: bool = False,
 ) -> str:
     logger.info("Logging in to Evernote...")
 
@@ -70,11 +71,16 @@ def get_auth_token(
             custom_api_data=custom_api_data,
         )
 
-    logger.info("Using OAuth authentication...")
+    if oauth_mcp:
+        logger.info("Using MCP OAuth authentication...")
+    else:
+        logger.info("Using Desktop OAuth authentication (paste redirect URL)...")
+
     return evernote_login_oauth(
         backend=backend,
         oauth_port=auth_oauth_port,
         oauth_host=auth_oauth_host,
+        oauth_mcp=oauth_mcp,
     )
 
 

@@ -1,8 +1,10 @@
+import re
 import threading
 import time
 from enum import IntEnum
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 import requests
 from oauthlib.oauth2 import OAuth2Error
@@ -11,16 +13,16 @@ from requests_oauthlib import OAuth2Session
 from evernote_backup.cli_app_util import is_inside_docker
 from evernote_backup.config import MCP_NAME
 from evernote_backup.config_defaults import (
-    OAUTH_SCOPES,
+    DESKTOP_CLIENT_ID,
+    DESKTOP_REDIRECT_URI,
     EVERNOTE_AUTHORIZE_URL,
-    EVERNOTE_TOKEN_URL,
     EVERNOTE_DISCOVERY_URL,
+    EVERNOTE_TOKEN_URL,
+    OAUTH_SCOPES,
 )
 from evernote_backup.errors import OAuthDeclinedError
 from evernote_backup.evernote_client import EvernoteClientBase
-from evernote_backup.token_util import (
-    OAuth2TokenBundle,
-)
+from evernote_backup.token_util import OAuth2TokenBundle
 
 
 class HTTPCode(IntEnum):
@@ -71,7 +73,7 @@ class EvernoteOAuthCallbackHandler:
         self.server_port = oauth_port
 
     def get_oauth_url(self) -> str:
-        return self.client.get_authorize_url(
+        return self.client.get_authorize_url_mcp(
             f"http://{self.server_host}:{self.server_port}/oauth_callback"
         )
 
@@ -101,20 +103,43 @@ class EvernoteOAuthCallbackHandler:
         return callback_server.callback_response
 
 
+class EvernoteOAuthDesktopHandler:
+    """
+    Desktop-client OAuth: browser redirects to evernote://... which we cannot catch.
+    User pastes the full redirect URL into the terminal.
+    """
+
+    def __init__(self, oauth_client: "EvernoteOAuthClient") -> None:
+        self.client = oauth_client
+
+    def get_oauth_url(self) -> str:
+        return self.client.get_authorize_url_desktop()
+
+    def exchange_token(self, redirect_url: str) -> str:
+        """Exchange pasted evernote:// redirect URL for token bundle JSON."""
+        bundle = self.client.get_access_token(
+            normalize_desktop_redirect_url(redirect_url)
+        )
+        return bundle.to_json()
+
+
 class EvernoteOAuthClient(EvernoteClientBase):
     def __init__(self, backend: str) -> None:
         super().__init__(backend=backend)
 
         self._session: Optional[OAuth2Session] = None
-        self._client_id: Optional[str] = None
 
-    def get_authorize_url(self, callback_url: str) -> str:
+    def get_authorize_url_mcp(self, callback_url: str) -> str:
         mcp_client = register_mcp_client(callback_url)
 
-        self._client_id = mcp_client["client_id"]
+        return self.get_authorize_url(mcp_client["client_id"], callback_url)
 
+    def get_authorize_url_desktop(self) -> str:
+        return self.get_authorize_url(DESKTOP_CLIENT_ID, DESKTOP_REDIRECT_URI)
+
+    def get_authorize_url(self, client_id: str, callback_url: str) -> str:
         self._session = OAuth2Session(
-            client_id=self._client_id,
+            client_id=client_id,
             scope=OAUTH_SCOPES,
             redirect_uri=callback_url,
             pkce="S256",
@@ -130,6 +155,9 @@ class EvernoteOAuthClient(EvernoteClientBase):
         if not self._session:
             raise RuntimeError("Session used before initialization")
 
+        # need to add https because oauth checks it in is_secure_transport
+        callback_response_raw = "https://localhost" + callback_response_raw
+
         try:
             token = self._session.fetch_token(
                 EVERNOTE_TOKEN_URL,
@@ -140,6 +168,29 @@ class EvernoteOAuthClient(EvernoteClientBase):
             raise OAuthDeclinedError(str(e)) from e
 
         return OAuth2TokenBundle.from_dict(token)
+
+
+def normalize_desktop_redirect_url(raw: str) -> str:
+    url = raw.strip().strip('"').strip("'")
+
+    try:
+        parsed = urlparse(url)
+    except ValueError as e:
+        raise OAuthDeclinedError(f"Malformed redirect URL: {e}")
+
+    if parsed.scheme != "evernote":
+        raise OAuthDeclinedError(
+            "Expected an evernote:// redirect URL"
+            f" (got: {raw[:120]}{'...' if len(raw) > 120 else ''})"
+        )
+
+    if "code=" not in parsed.query:
+        raise OAuthDeclinedError(
+            "Redirect URL is missing the authorization code parameter"
+        )
+
+    result = parsed._replace(scheme="", netloc="").geturl()
+    return result
 
 
 def register_mcp_client(redirect_uri: str) -> dict[str, Any]:

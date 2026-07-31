@@ -37,14 +37,24 @@ opt_oauth_port = click.option(
     "--oauth-port",
     default=config_defaults.OAUTH_LOCAL_PORT,
     show_default=True,
-    help="OAuth local server port. (Advanced option, ignored for Yinxiang.)",
+    help="OAuth local server port. (Advanced option, works only with --oauth-mcp, ignored for Yinxiang.)",
 )
 
 opt_oauth_host = click.option(
     "--oauth-host",
     default=config_defaults.OAUTH_HOST,
     show_default=True,
-    help="OAuth local server host. (Advanced option, ignored for Yinxiang.)",
+    help="OAuth local server host. (Advanced option, works only with --oauth-mcp, ignored for Yinxiang.)",
+)
+
+opt_oauth_mcp = click.option(
+    "--oauth-mcp",
+    is_flag=True,
+    help=(
+        "Use MCP OAuth with a local callback server."
+        " (Advanced option, ignored for Yinxiang."
+        " Requires an Evernote subscription that allows MCP.)"
+    ),
 )
 
 opt_token = click.option(
@@ -178,7 +188,14 @@ def cli(quiet: bool, verbose: bool, log: Path) -> None:
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_oauth_port, opt_oauth_host, opt_token)
+@group_options(
+    opt_user,
+    opt_password,
+    opt_oauth_port,
+    opt_oauth_host,
+    opt_oauth_mcp,
+    opt_token,
+)
 @click.option(
     "--force",
     is_flag=True,
@@ -195,6 +212,7 @@ def init_db(
     password: Optional[str],
     oauth_port: int,
     oauth_host: str,
+    oauth_mcp: bool,
     token: Optional[str],
     force: bool,
     backend: str,
@@ -216,6 +234,7 @@ def init_db(
         network_retry_count=network_retry_count,
         use_system_ssl_ca=use_system_ssl_ca,
         custom_api_data=api_data,
+        oauth_mcp=oauth_mcp,
     )
 
 
@@ -369,7 +388,14 @@ def export(
 
 @cli.command()
 @opt_database
-@group_options(opt_user, opt_password, opt_oauth_port, opt_oauth_host, opt_token)
+@group_options(
+    opt_user,
+    opt_password,
+    opt_oauth_port,
+    opt_oauth_host,
+    opt_oauth_mcp,
+    opt_token,
+)
 @opt_network_retry_count
 @opt_use_system_ssl_ca
 @opt_api_data
@@ -380,6 +406,7 @@ def reauth(
     password: Optional[str],
     oauth_port: int,
     oauth_host: str,
+    oauth_mcp: bool,
     token: Optional[str],
     network_retry_count: int,
     use_system_ssl_ca: bool,
@@ -397,6 +424,7 @@ def reauth(
         network_retry_count=network_retry_count,
         use_system_ssl_ca=use_system_ssl_ca,
         custom_api_data=api_data,
+        oauth_mcp=oauth_mcp,
     )
 
 
