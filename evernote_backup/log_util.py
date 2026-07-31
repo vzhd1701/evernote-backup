@@ -2,6 +2,7 @@ import logging
 import logging.config
 import sys
 import time
+import datetime
 from pathlib import Path
 from typing import Any, Optional
 
@@ -106,3 +107,10 @@ def get_time_txt(seconds: int) -> str:
         return time.strftime("%M:%S", time.gmtime(seconds))
 
     return time.strftime("0:%S", time.gmtime(seconds))
+
+
+def get_time_from_now_txt(seconds: int) -> str:
+    current_time = datetime.datetime.now(datetime.UTC).astimezone()
+    restart_time = current_time + datetime.timedelta(seconds=seconds)
+
+    return restart_time.strftime("%Y-%m-%d %H:%M:%S")
