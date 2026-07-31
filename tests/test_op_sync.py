@@ -647,6 +647,27 @@ def test_sync_unknown_exception_while_download(
 
 
 @pytest.mark.usefixtures("fake_init_db")
+def test_sync_unknown_exception_caught_while_downloading_note(
+    cli_invoker, mock_evernote_client, fake_storage, mocker
+):
+    test_notes = [Note(guid=f"id{i}", title="test") for i in range(10)]
+
+    mock_evernote_client.fake_notes.extend(test_notes)
+
+    mocker.patch.object(
+        note_synchronizer.NoteClientWorker,
+        "download_note",
+        side_effect=RuntimeError("Test error"),
+    )
+
+    result = cli_invoker("sync", "--database", "fake_db")
+
+    assert result.exit_code == 1
+    assert "Unknown exception caught while downloading note 'test'!" in result.output
+    assert "Aborting, please wait" in result.output
+
+
+@pytest.mark.usefixtures("fake_init_db")
 def test_sync_edam_exception_while_download(
     cli_invoker, mock_evernote_client, fake_storage, mocker
 ):
