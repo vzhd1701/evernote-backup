@@ -67,9 +67,13 @@ def _default_config_dir() -> Path:
         appdata = os.environ.get("APPDATA")
         if appdata:
             return Path(appdata) / "Evernote"
-    elif sys.platform == "darwin":
+        return Path.home() / "Evernote"
+    if sys.platform == "darwin":
         return Path.home() / "Library" / "Application Support" / "Evernote"
-    return Path.home() / "Evernote"
+    raise ProgramTerminatedError(
+        f"Evernote desktop session extraction is only supported on Windows"
+        f" and macOS (this platform is {sys.platform!r})."
+    )
 
 
 def _conduit_subdir(config_dir: Path) -> Path:
