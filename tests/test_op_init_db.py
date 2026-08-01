@@ -93,6 +93,8 @@ def test_init_db_touch_token(cli_invoker, mocker):
 def test_init_db_oauth_import(
     tmp_path, cli_invoker, mock_oauth_client, mocker, fake_token_jwt
 ):
+    mocker.patch("evernote_backup.cli_app_auth_oauth.sys.platform", "win32")
+
     test_db_path = tmp_path / "test.db"
     refresh_token = OAuth2TokenBundle.from_json(fake_token_jwt).refresh_token
 

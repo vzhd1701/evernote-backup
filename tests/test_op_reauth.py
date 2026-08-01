@@ -358,6 +358,8 @@ def test_oauth_login(
 def test_oauth_import(
     cli_invoker, fake_storage, mock_oauth_client, mocker, fake_token_jwt
 ):
+    mocker.patch("evernote_backup.cli_app_auth_oauth.sys.platform", "win32")
+
     refresh_token = OAuth2TokenBundle.from_json(fake_token_jwt).refresh_token
 
     mocker.patch(
@@ -385,6 +387,8 @@ def test_oauth_import(
 def test_oauth_en_user_and_config_dir(
     cli_invoker, fake_storage, mock_oauth_client, mocker, fake_token_jwt, tmp_path
 ):
+    mocker.patch("evernote_backup.cli_app_auth_oauth.sys.platform", "win32")
+
     config_dir = tmp_path / "Evernote"
     config_dir.mkdir()
 
@@ -436,6 +440,8 @@ def test_oauth_import_linux_error(cli_invoker, mocker):
 
 @pytest.mark.usefixtures("fake_init_db")
 def test_oauth_import_missing_refresh_token(cli_invoker, fake_storage, mocker):
+    mocker.patch("evernote_backup.cli_app_auth_oauth.sys.platform", "win32")
+
     mocker.patch(
         "evernote_backup.cli_app_auth_oauth.extract_token",
         return_value=DesktopSession(
