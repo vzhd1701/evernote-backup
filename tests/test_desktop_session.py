@@ -211,19 +211,21 @@ def fake_desktop_session(tmp_path: Path) -> FakeDesktopSession:
 
 
 def test_default_config_dir_windows(monkeypatch):
+    # Build expected with Path / so separators match the host platform
+    # (posix Path uses / even when the base string looks like a Windows path).
+    appdata = r"C:\Users\scott\AppData\Roaming"
     monkeypatch.setattr("sys.platform", "win32")
-    monkeypatch.setenv("APPDATA", r"C:\Users\scott\AppData\Roaming")
-    assert _default_config_dir() == Path(r"C:\Users\scott\AppData\Roaming\Evernote")
+    monkeypatch.setenv("APPDATA", appdata)
+    assert _default_config_dir() == Path(appdata) / "Evernote"
 
 
 def test_default_config_dir_windows_no_appdata(monkeypatch):
     """Without APPDATA, Windows falls through to ~/Evernote."""
+    home = Path(r"C:\Users\scott")
     monkeypatch.setattr("sys.platform", "win32")
     monkeypatch.delenv("APPDATA", raising=False)
-    monkeypatch.setattr(
-        "pathlib.Path.home", lambda: Path(r"C:\Users\scott"), raising=False
-    )
-    assert _default_config_dir() == Path(r"C:\Users\scott\Evernote")
+    monkeypatch.setattr("pathlib.Path.home", lambda: home, raising=False)
+    assert _default_config_dir() == home / "Evernote"
 
 
 def test_default_config_dir_darwin(monkeypatch):
