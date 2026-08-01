@@ -156,7 +156,6 @@ def sync(
     download_cache_memory_limit: int,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-    include_tasks: bool,
     token: Optional[str],
 ) -> None:
     storage = get_storage(database)
@@ -173,10 +172,12 @@ def sync(
         storage.config.set_config_value("auth_token", auth_resolved.auth_for_storage)
         logger.info("Stored refreshed OAuth2 token bundle in the database.")
 
-    if include_tasks and not auth_resolved.jwt_token:
-        raise ProgramTerminatedError(
-            "OAuth2 access token is required for tasks sync."
-            " Re-authenticate or provide a refresh token via --token."
+    # Tasks/reminders use the new sync API and require an OAuth2 JWT access token.
+    include_tasks = auth_resolved.jwt_token is not None
+    if not include_tasks:
+        logger.warning(
+            "Tasks and reminders will not be synced because this database has no"
+            " OAuth2 credentials. Run 'evernote-backup reauth' to enable tasks and reminders sync."
         )
 
     note_client = get_sync_client(

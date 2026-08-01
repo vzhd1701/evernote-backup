@@ -148,12 +148,15 @@ After first initialization, you can schedule `evernote-backup sync` command to k
 
 ### Tasks
 
-To sync tasks & reminders, you will need:
+Tasks and reminders are synced automatically when your database was initialized (or re-authenticated) with OAuth credentials that include a JWT access token.
 
-1. Get the official desktop app authentication token using [evertoken](https://github.com/vzhd1701/evertoken)
-2. Use it with sync command like so: `evernote-backup sync --include-tasks --token "YOUR_TOKEN_HERE"`
+If during `sync` you see a warning that tasks and reminders will not be synced, your database has a legacy auth token. Run:
 
-Sorry for the extra steps, tasks and reminders are not accessible using current public API, so I had to use Evernote's new sync API which is not available for third party apps yet. I have placed a request to grant my app key access to the new API, but I have not received a response yet.
+```console
+$ evernote-backup reauth
+```
+
+(or `reauth --oauth-method import` to reuse a logged-in Desktop Client session, see Step 1 for explanation) and then run `sync` again.
 
 ### SSL Errors
 

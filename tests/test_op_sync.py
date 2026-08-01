@@ -1063,7 +1063,7 @@ def test_sync_add_task(cli_invoker, mock_evernote_client, fake_storage):
         },
     )
 
-    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
     result_tasks = list(fake_storage.tasks.iter_tasks("id1"))
@@ -1184,7 +1184,7 @@ def test_sync_add_task_with_reminder(cli_invoker, mock_evernote_client, fake_sto
         },
     ]
 
-    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
     result_tasks = list(fake_storage.tasks.iter_tasks("id1"))
@@ -1230,7 +1230,7 @@ def test_sync_expunge_task(cli_invoker, mock_evernote_client, fake_storage):
 
     result_tasks_before = list(fake_storage.tasks.iter_tasks("nid1"))
 
-    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_tasks = list(fake_storage.tasks.iter_tasks("nid1"))
 
@@ -1274,7 +1274,7 @@ def test_sync_expunge_reminder(cli_invoker, mock_evernote_client, fake_storage):
 
     result_reminders_before = list(fake_storage.reminders.iter_reminders("tid1"))
 
-    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+    result = cli_invoker("sync", "--database", "fake_db")
 
     result_reminders = list(fake_storage.reminders.iter_reminders("tid1"))
 
@@ -1285,11 +1285,15 @@ def test_sync_expunge_reminder(cli_invoker, mock_evernote_client, fake_storage):
 
 
 @pytest.mark.usefixtures("fake_init_db")
-def test_sync_bad_token_for_jwt(cli_invoker, mock_evernote_client, fake_storage):
-    result = cli_invoker("sync", "--database", "fake_db", "--include-tasks")
+def test_sync_legacy_token_skips_tasks_with_warning(
+    cli_invoker, mock_evernote_client, fake_storage
+):
+    result = cli_invoker("sync", "--database", "fake_db")
 
-    assert result.exit_code == 1
-    assert "OAuth2 access token is required for tasks sync" in result.output
+    assert result.exit_code == 0
+    assert "Tasks and reminders will not be synced" in result.output
+    assert "reauth" in result.output
+    assert "Syncing tasks..." not in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
