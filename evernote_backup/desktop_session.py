@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 import sqlite3
 import sys
@@ -33,6 +34,8 @@ from pathlib import Path
 from typing import List, Optional
 
 from evernote_backup.cli_app_util import ProgramTerminatedError
+
+logger = logging.getLogger(__name__)
 
 # key prefix as stored in the OS secret store (Windows CredMan blob and
 # macOS Keychain password are both prefixed with this same string).
@@ -286,9 +289,16 @@ def extract_token(
     elif len(users) == 1:
         chosen = users[0]
     else:
-        # Multiple users - take the first one and warn via logger? The CLI
-        # is expected to enumerate them for the user via --list.
         chosen = users[0]
+        avail = ", ".join(f"{u.user_id} ({u.email})" for u in users)
+        logger.warning(
+            "Multiple Evernote desktop users found (%s);"
+            " automatically selected first user %s (%s)."
+            " Pass ID with --oauth-en-user to choose a specific user.",
+            avail,
+            chosen.user_id,
+            chosen.email,
+        )
 
     if chosen.storage_path is None or not chosen.storage_path.exists():
         raise ProgramTerminatedError(

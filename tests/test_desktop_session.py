@@ -447,23 +447,28 @@ def test_extract_token_without_user_id_single_user(fake_desktop_session, monkeyp
     assert session.s_token == fake_desktop_session.s_token
 
 
-def test_extract_token_multiple_users_picks_first(tmp_path, monkeypatch):
+def test_extract_token_multiple_users_picks_first(tmp_path, monkeypatch, caplog):
     """With multiple users and no user_id, the first DB row is used."""
     u1 = FakeDesktopSession(tmp_path)
     u1.user_id = "111"
+    u1.email = "one@example.com"
     u1.s_token = "S=s1:U=111:token1"
     u1.write()
 
     u2 = FakeDesktopSession(tmp_path)
     u2.user_id = "222"
+    u2.email = "two@example.com"
     u2.s_token = "S=s1:U=222:token2"
     u2.aes_key = u1.aes_key
     u2.write(clear_db=False)
 
     u1.patch_keyring(monkeypatch)
-    session = extract_token(config_dir=u1.config_dir)
+    with caplog.at_level("WARNING", logger="evernote_backup.desktop_session"):
+        session = extract_token(config_dir=u1.config_dir)
     assert session.user_id == "111"
     assert session.s_token == "S=s1:U=111:token1"
+    assert "automatically selected first user 111 (one@example.com)" in caplog.text
+    assert "111 (one@example.com), 222 (two@example.com)" in caplog.text
 
 
 def test_extract_token_multiple_users_picks_requested(tmp_path, monkeypatch):
