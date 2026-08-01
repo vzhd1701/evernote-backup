@@ -77,9 +77,21 @@ Reading database en_backup.db...
 Successfully initialized database for user!
 ```
 
-If you log in to Evernote, it will prompt you to complete OAuth login using your browser.
+If you log in to **Evernote**, OAuth is used. You can select the login method with `--oauth-method`:
 
-To connect to **Yinxiang** instead of Evernote, use `--backend china` option. It will prompt you to enter your account credentials. You can provide them beforehand with `--user` and `--password` options. OAuth is not supported for **Yinxiang**.
+- **`desktop`** (default) — Uses the same workflow as the Evernote Desktop Client. After you authorize in the browser, cancel the redirect when the site asks to open the OAuth link and instead copy and paste that URL ("Return to Evernote") into the `evernote-backup` terminal window. **Limitation:** the Evernote free plan allows only one active session at a time, so this may sign you out of an existing desktop or mobile client session or later ask you to disconnect this client.
+
+- **`import`** — Imports an OAuth session from an existing Evernote Desktop Client installation. This lets you run the Desktop Client in parallel with `evernote-backup`. It works as long as the Desktop Client stays logged in; if you log out there, the refresh token is invalidated. Supported on Windows and macOS.
+
+- **`mcp`** — Uses the Evernote MCP interface API. Available only on paid Evernote plans. Untested in production.
+
+Example:
+
+```console
+$ evernote-backup init-db --oauth-method import
+```
+
+To connect to **Yinxiang** instead of Evernote, use the `--backend china` option. It will prompt you to enter your account credentials. You can provide them beforehand with `--user` and `--password`. OAuth is not supported for **Yinxiang**.
 
 ### Step 2. Downloading Evernote data
 
