@@ -43,7 +43,9 @@ def init_db(
     network_retry_count: int,
     use_system_ssl_ca: bool,
     custom_api_data: Optional[str],
-    oauth_mcp: bool = False,
+    oauth_method: str = "desktop",
+    oauth_en_user: Optional[str] = None,
+    oauth_en_config_dir: Optional[Path] = None,
 ) -> None:
     if not force:
         raise_on_existing_database(database)
@@ -58,7 +60,9 @@ def init_db(
             network_retry_count=network_retry_count,
             use_system_ssl_ca=use_system_ssl_ca,
             custom_api_data=custom_api_data,
-            oauth_mcp=oauth_mcp,
+            oauth_method=oauth_method,
+            oauth_en_user=oauth_en_user,
+            oauth_en_config_dir=oauth_en_config_dir,
         )
 
     auth_resolved = resolve_auth_token(auth_token)
@@ -96,7 +100,9 @@ def reauth(
     network_retry_count: int,
     use_system_ssl_ca: bool,
     custom_api_data: Optional[str],
-    oauth_mcp: bool = False,
+    oauth_method: str = "desktop",
+    oauth_en_user: Optional[str] = None,
+    oauth_en_config_dir: Optional[Path] = None,
 ) -> None:
     storage = get_storage(database)
 
@@ -114,7 +120,9 @@ def reauth(
             network_retry_count=network_retry_count,
             use_system_ssl_ca=use_system_ssl_ca,
             custom_api_data=custom_api_data,
-            oauth_mcp=oauth_mcp,
+            oauth_method=oauth_method,
+            oauth_en_user=oauth_en_user,
+            oauth_en_config_dir=oauth_en_config_dir,
         )
 
     auth_resolved = resolve_auth_token(auth_token)

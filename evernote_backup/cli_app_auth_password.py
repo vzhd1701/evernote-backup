@@ -3,7 +3,6 @@ from typing import Optional
 import click
 from evernote.edam.userstore.ttypes import AuthenticationResult
 
-from evernote_backup.cli_app_auth_oauth import prompt_ota
 from evernote_backup.cli_app_util import (
     ProgramTerminatedError,
     get_api_data,
@@ -80,9 +79,20 @@ def evernote_login_password(
 def handle_two_factor_auth(
     auth_client: EvernoteClientAuth, token: str, delivery_hint: str
 ) -> AuthenticationResult:
-    ota_code = prompt_ota(delivery_hint)
+    ota_code = _prompt_ota(delivery_hint)
 
     try:
         return auth_client.two_factor_auth(token, ota_code)
     except EvernoteAuthError as e:
         raise ProgramTerminatedError(e)
+
+
+def _prompt_ota(delivery_hint: str) -> str:
+    if not is_output_to_terminal():
+        raise ProgramTerminatedError("Two-factor authentication requires user input!")
+
+    one_time_hint = ""
+    if delivery_hint:
+        one_time_hint = f" ({delivery_hint})"
+
+    return str(click.prompt(f"Enter one-time code{one_time_hint}"))

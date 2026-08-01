@@ -1,9 +1,14 @@
 import logging
+from pathlib import Path
 from typing import Optional
 
-from evernote_backup.cli_app_auth_oauth import evernote_login_oauth
+from evernote_backup.cli_app_auth_oauth import (
+    evernote_login_oauth_import,
+    evernote_login_oauth_mcp,
+    evernote_login_oauth_desktop,
+)
 from evernote_backup.cli_app_auth_password import evernote_login_password
-from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.cli_app_util import ProgramTerminatedError, is_output_to_terminal
 from evernote_backup.evernote_client import EvernoteClient
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import EvernoteAuthError
@@ -53,7 +58,9 @@ def get_auth_token(
     network_retry_count: int,
     use_system_ssl_ca: bool,
     custom_api_data: Optional[str],
-    oauth_mcp: bool = False,
+    oauth_method: str = "desktop",
+    oauth_en_user: Optional[str] = None,
+    oauth_en_config_dir: Optional[Path] = None,
 ) -> str:
     logger.info("Logging in to Evernote...")
 
@@ -71,17 +78,24 @@ def get_auth_token(
             custom_api_data=custom_api_data,
         )
 
-    if oauth_mcp:
-        logger.info("Using MCP OAuth authentication...")
-    else:
-        logger.info("Using Desktop OAuth authentication (paste redirect URL)...")
+    if oauth_method == "import":
+        logger.info(
+            "Importing OAuth refresh token from Evernote Desktop Client session..."
+        )
+        return evernote_login_oauth_import(
+            user_id=oauth_en_user,
+            config_dir=oauth_en_config_dir,
+        )
 
-    return evernote_login_oauth(
-        backend=backend,
-        oauth_port=auth_oauth_port,
-        oauth_host=auth_oauth_host,
-        oauth_mcp=oauth_mcp,
-    )
+    if not is_output_to_terminal():
+        raise ProgramTerminatedError("OAuth requires user input!")
+
+    if oauth_method == "mcp":
+        logger.info("Using MCP OAuth authentication...")
+        return evernote_login_oauth_mcp(backend, auth_oauth_port, auth_oauth_host)
+
+    logger.info("Using Desktop OAuth authentication (paste redirect URL)...")
+    return evernote_login_oauth_desktop(backend)
 
 
 def get_ping_client(

@@ -1,11 +1,14 @@
+import logging
+import sys
+from pathlib import Path
 from typing import Optional
 
 import click
 
 from evernote_backup.cli_app_util import (
     ProgramTerminatedError,
-    is_output_to_terminal,
 )
+from evernote_backup.desktop_session import extract_token
 from evernote_backup.errors import OAuthDeclinedError
 from evernote_backup.evernote_client_oauth import (
     EvernoteOAuthCallbackHandler,
@@ -13,34 +16,40 @@ from evernote_backup.evernote_client_oauth import (
     EvernoteOAuthDesktopHandler,
 )
 
-
-def prompt_ota(delivery_hint: str) -> str:
-    if not is_output_to_terminal():
-        raise ProgramTerminatedError("Two-factor authentication requires user input!")
-
-    one_time_hint = ""
-    if delivery_hint:
-        one_time_hint = f" ({delivery_hint})"
-
-    return str(click.prompt(f"Enter one-time code{one_time_hint}"))
+logger = logging.getLogger(__name__)
 
 
-def evernote_login_oauth(
-    backend: str,
-    oauth_port: int,
-    oauth_host: str,
-    oauth_mcp: bool = False,
+def evernote_login_oauth_import(
+    user_id: Optional[str] = None,
+    config_dir: Optional[Path] = None,
 ) -> str:
-    if not is_output_to_terminal():
-        raise ProgramTerminatedError("OAuth requires user input!")
+    if sys.platform != "darwin" and not sys.platform.startswith("win"):
+        raise ProgramTerminatedError(
+            "Importing an OAuth refresh token from the Evernote Desktop Client is only"
+            " supported on Windows and macOS.\n"
+            "You can extract refresh token manually on another system using evertoken app:"
+            " https://github.com/vzhd1701/evertoken"
+        )
 
-    if oauth_mcp:
-        return _evernote_login_oauth_mcp(backend, oauth_port, oauth_host)
+    session = extract_token(user_id=user_id, config_dir=config_dir)
 
-    return _evernote_login_oauth_desktop(backend)
+    if not session.jwt_refresh:
+        raise ProgramTerminatedError(
+            f"Desktop session for user {session.user_id!r} has no OAuth refresh"
+            " token. Log in again in the Evernote Desktop Client and retry."
+        )
+
+    logger.info(
+        f"Imported OAuth refresh token from Desktop Client session"
+        f" (user {session.user_id}"
+        f"{f', {session.username}' if session.username else ''}"
+        f"{f', {session.email}' if session.email else ''})."
+    )
+
+    return session.jwt_refresh
 
 
-def _evernote_login_oauth_mcp(
+def evernote_login_oauth_mcp(
     backend: str,
     oauth_port: int,
     oauth_host: str,
@@ -63,7 +72,7 @@ def _evernote_login_oauth_mcp(
         raise ProgramTerminatedError(f"OAuth error: {e}") from e
 
 
-def _evernote_login_oauth_desktop(backend: str) -> str:
+def evernote_login_oauth_desktop(backend: str) -> str:
     oauth_client = EvernoteOAuthClient(backend=backend)
     oauth_handler = EvernoteOAuthDesktopHandler(oauth_client)
 
@@ -80,6 +89,8 @@ def _evernote_login_oauth_desktop(backend: str) -> str:
         "\n"
         "WARNING: free Evernote accounts allow only one active login session.\n"
         "This may sign you out of the Evernote Desktop app.\n"
+        "To avoid this, re-run with --oauth-method import to reuse the existing\n"
+        "Desktop Client session instead of starting a new login.\n"
     )
     click.launch(oauth_url)
 

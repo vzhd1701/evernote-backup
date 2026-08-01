@@ -5,6 +5,8 @@ import pytest
 from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.note_storage import SqliteStorage
+from evernote_backup.desktop_session import DesktopSession
+from evernote_backup.token_util import OAuth2TokenBundle
 
 
 @pytest.mark.usefixtures("mock_evernote_client")
@@ -85,3 +87,34 @@ def test_init_db_touch_token(cli_invoker, mocker):
 
     assert result.exit_code == 1
     assert "test error" in result.output
+
+
+@pytest.mark.usefixtures("mock_evernote_client")
+def test_init_db_oauth_import(
+    tmp_path, cli_invoker, mock_oauth_client, mocker, fake_token_jwt
+):
+    test_db_path = tmp_path / "test.db"
+    refresh_token = OAuth2TokenBundle.from_json(fake_token_jwt).refresh_token
+
+    mocker.patch(
+        "evernote_backup.cli_app_auth_oauth.extract_token",
+        return_value=DesktopSession(
+            user_id="151636",
+            username="testuser",
+            email="test@example.com",
+            s_token="S=s1:U=1:E=1:C=1:P=1:A=a:V=2:H=h",
+            shard="s1",
+            host="www.evernote.com",
+            jwt_refresh=refresh_token,
+        ),
+    )
+
+    result = cli_invoker(
+        "init-db", "--database", test_db_path, "--oauth-method", "import"
+    )
+
+    storage = SqliteStorage(test_db_path)
+
+    assert result.exit_code == 0
+    assert "Imported OAuth refresh token" in result.output
+    assert storage.config.get_config_value("auth_token") == fake_token_jwt
