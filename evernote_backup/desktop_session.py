@@ -1,15 +1,8 @@
 """Extract the Evernote auth token from a logged-in Evernote desktop client.
 
-When the legacy Evernote OAuth 1.0a endpoint at www.evernote.com/oauth was
-retired by Bending Spoons (who acquired Evernote in 2023), there is no
-longer a way for ``evernote-backup init-db`` to obtain a fresh ``S=...``
-token on its own. The new Evernote desktop client (Windows / macOS)
-still holds a valid token in the user's local profile - in an encrypted
+The Evernote desktop client (Windows / macOS)
+holds a valid token in the user's local profile - in an encrypted
 blob in the Evernote user config directory.
-
-This module ports the algorithm used by vzhd1701/evertoken (Go) into
-Python so ``evernote-backup`` can recover the token automatically when
-``--from-desktop-session`` is passed.
 
 Algorithm
 ---------
@@ -163,7 +156,6 @@ def _get_os_key(user_id: str) -> bytes:
     except ImportError as e:  # pragma: no cover
         raise ProgramTerminatedError(
             "Reading the Evernote auth key requires the 'keyring' package."
-            " Install it with: `pip install keyring`."
         ) from e
 
     service, account = _keyring_service_and_account(user_id)
@@ -224,8 +216,7 @@ def _decrypt_secure_blob(blob_path: Path, key: bytes) -> dict:
     except ImportError as e:  # pragma: no cover
         raise ProgramTerminatedError(
             "Decrypting the Evernote secure-storage blob requires the"
-            " 'pycryptodome' package. Install it with:"
-            " `pip install pycryptodome`."
+            " 'pycryptodome' package."
         ) from e
 
     if len(key) != 32:

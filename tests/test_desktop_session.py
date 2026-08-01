@@ -10,7 +10,6 @@ import pytest
 
 from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.desktop_session import (
-    DesktopSession,
     _decrypt_secure_blob,
     _default_config_dir,
     _get_os_key,
