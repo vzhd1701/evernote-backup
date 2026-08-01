@@ -1,6 +1,7 @@
 import pytest
 
 from evernote_backup.token_util import OAuth2TokenBundle
+from evernote_backup.desktop_session import DesktopSession
 
 
 @pytest.fixture
@@ -339,7 +340,7 @@ def test_oauth_login(
     mocker.patch("evernote_backup.cli_app_util.click.echo")
     mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
 
-    result = cli_invoker("reauth", "-d", "fake_db", "--oauth-mcp")
+    result = cli_invoker("reauth", "-d", "fake_db", "--oauth-method", "mcp")
 
     assert result.exit_code == 0
     mock_launch.assert_called_once()
@@ -350,6 +351,108 @@ def test_oauth_login(
         fake_storage.config.get_config_value("auth_token")
         == mock_oauth_client.token_bundle.to_json()
     )
+
+
+@pytest.mark.usefixtures("mock_evernote_client")
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_import(
+    cli_invoker, fake_storage, mock_oauth_client, mocker, fake_token_jwt
+):
+    refresh_token = OAuth2TokenBundle.from_json(fake_token_jwt).refresh_token
+
+    mocker.patch(
+        "evernote_backup.cli_app_auth_oauth.extract_token",
+        return_value=DesktopSession(
+            user_id="151636",
+            username="testuser",
+            email="test@example.com",
+            s_token="S=s1:U=1:E=1:C=1:P=1:A=a:V=2:H=h",
+            shard="s1",
+            host="www.evernote.com",
+            jwt_refresh=refresh_token,
+        ),
+    )
+
+    result = cli_invoker("reauth", "-d", "fake_db", "--oauth-method", "import")
+
+    assert result.exit_code == 0
+    assert "Imported OAuth refresh token" in result.output
+    assert fake_storage.config.get_config_value("auth_token") == fake_token_jwt
+
+
+@pytest.mark.usefixtures("mock_evernote_client")
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_en_user_and_config_dir(
+    cli_invoker, fake_storage, mock_oauth_client, mocker, fake_token_jwt, tmp_path
+):
+    config_dir = tmp_path / "Evernote"
+    config_dir.mkdir()
+
+    refresh_token = OAuth2TokenBundle.from_json(fake_token_jwt).refresh_token
+
+    extract_mock = mocker.patch(
+        "evernote_backup.cli_app_auth_oauth.extract_token",
+        return_value=DesktopSession(
+            user_id="999",
+            username="other",
+            email="other@example.com",
+            s_token="S=s1:U=1:E=1:C=1:P=1:A=a:V=2:H=h",
+            shard="s1",
+            host="www.evernote.com",
+            jwt_refresh=refresh_token,
+        ),
+    )
+
+    result = cli_invoker(
+        "reauth",
+        "-d",
+        "fake_db",
+        "--oauth-method",
+        "import",
+        "--oauth-en-user",
+        "999",
+        "--oauth-en-config-dir",
+        str(config_dir),
+    )
+
+    assert result.exit_code == 0
+    extract_mock.assert_called_once()
+    call_kwargs = extract_mock.call_args.kwargs
+    assert call_kwargs["user_id"] == "999"
+    assert call_kwargs["config_dir"] == config_dir.resolve()
+    assert fake_storage.config.get_config_value("auth_token") == fake_token_jwt
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_import_linux_error(cli_invoker, mocker):
+    mocker.patch("evernote_backup.cli_app_auth_oauth.sys.platform", "linux")
+
+    result = cli_invoker("reauth", "-d", "fake_db", "--oauth-method", "import")
+
+    assert result.exit_code == 1
+    assert "only supported on Windows and macOS" in result.output
+    assert "evertoken" in result.output
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_import_missing_refresh_token(cli_invoker, fake_storage, mocker):
+    mocker.patch(
+        "evernote_backup.cli_app_auth_oauth.extract_token",
+        return_value=DesktopSession(
+            user_id="151636",
+            username="testuser",
+            email="test@example.com",
+            s_token="S=s1:U=1:E=1:C=1:P=1:A=a:V=2:H=h",
+            shard="s1",
+            host="www.evernote.com",
+            jwt_refresh=None,
+        ),
+    )
+
+    result = cli_invoker("reauth", "-d", "fake_db", "--oauth-method", "import")
+
+    assert result.exit_code == 1
+    assert "no OAuth refresh token" in result.output
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
@@ -481,7 +584,13 @@ def test_oauth_login_custom_port(
     test_port = 10666
 
     result = cli_invoker(
-        "reauth", "-d", "fake_db", "--oauth-mcp", "--oauth-port", test_port
+        "reauth",
+        "-d",
+        "fake_db",
+        "--oauth-method",
+        "mcp",
+        "--oauth-port",
+        test_port,
     )
 
     assert result.exit_code == 0
@@ -512,7 +621,7 @@ def test_oauth_login_declined_error(
     mocker.patch("evernote_backup.cli_app_util.click.echo")
     mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
 
-    result = cli_invoker("reauth", "-d", "fake_db", "--oauth-mcp")
+    result = cli_invoker("reauth", "-d", "fake_db", "--oauth-method", "mcp")
 
     assert result.exit_code == 1
     assert "declined" in result.output

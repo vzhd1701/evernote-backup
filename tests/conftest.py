@@ -578,13 +578,10 @@ def mock_output_to_terminal(mocker, monkeypatch):
     tty_mock.is_tty = True
     tty_mock.side_effect = lambda *a, **kw: tty_mock.is_tty
 
-    mocker.patch(
-        "evernote_backup.cli_app_auth_oauth.is_output_to_terminal", new=tty_mock
-    )
+    mocker.patch("evernote_backup.cli_app_auth.is_output_to_terminal", new=tty_mock)
     mocker.patch(
         "evernote_backup.cli_app_auth_password.is_output_to_terminal", new=tty_mock
     )
-    # mocker.patch("evernote_backup.cli.is_output_to_terminal", new=tty_mock)
     mocker.patch("evernote_backup.cli_app_util.is_output_to_terminal", new=tty_mock)
     mocker.patch("evernote_backup.log_util.is_output_to_terminal", new=tty_mock)
 

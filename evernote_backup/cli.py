@@ -16,6 +16,8 @@ from evernote_backup.cli_app_click_util import (
     FILE_ONLY,
     NaturalOrderGroup,
     group_options,
+    DescribedChoice,
+    DescribedChoiceCommand,
 )
 from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.log_util import get_time_txt, init_logging, get_time_from_now_txt
@@ -37,23 +39,57 @@ opt_oauth_port = click.option(
     "--oauth-port",
     default=config_defaults.OAUTH_LOCAL_PORT,
     show_default=True,
-    help="OAuth local server port. (Advanced option, works only with --oauth-mcp, ignored for Yinxiang.)",
+    help=(
+        "OAuth local server port. (Advanced option, works only with"
+        " --oauth-method mcp, ignored for Yinxiang.)"
+    ),
 )
 
 opt_oauth_host = click.option(
     "--oauth-host",
     default=config_defaults.OAUTH_HOST,
     show_default=True,
-    help="OAuth local server host. (Advanced option, works only with --oauth-mcp, ignored for Yinxiang.)",
+    help=(
+        "OAuth local server host. (Advanced option, works only with"
+        " --oauth-method mcp, ignored for Yinxiang.)"
+    ),
 )
 
-opt_oauth_mcp = click.option(
-    "--oauth-mcp",
-    is_flag=True,
+
+opt_oauth_method = click.option(
+    "--oauth-method",
+    type=click.Choice(["desktop", "import", "mcp"], case_sensitive=False),
+    default="desktop",
+    show_default=True,
+    cls=DescribedChoice,
+    choice_help={
+        "desktop": "Start new OAuth session presenting as Evernote Desktop Client (default).",
+        "import": (
+            "Import existing OAuth session from a logged-in Evernote Desktop Client."
+            " (Works only on Windows and macOS, recommended for free plan)"
+        ),
+        "mcp": (
+            "Start new OAuth session using MCP interface API."
+            " (Advanced option. Requires Evernote plan that allows MCP.)"
+        ),
+    },
+    help="OAuth method to use. Ignored for Yinxiang.",
+)
+
+opt_oauth_en_user = click.option(
+    "--oauth-en-user",
     help=(
-        "Use MCP OAuth with a local callback server."
-        " (Advanced option, ignored for Yinxiang."
-        " Requires an Evernote subscription that allows MCP.)"
+        "Evernote user ID to import the refresh token from when multiple"
+        " Desktop Client sessions exist. (Works only with --oauth-method import.)"
+    ),
+)
+
+opt_oauth_en_config_dir = click.option(
+    "--oauth-en-config-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    help=(
+        "Path to the Evernote Desktop Client config directory."
+        " (Advanced option, works only with --oauth-method import.)"
     ),
 )
 
@@ -62,7 +98,7 @@ opt_token = click.option(
     "-t",
     help=(
         "Manually provide authentication token to use with Evernote API."
-        " (Advanced option, ignores '--user' and '--password' when used.)"
+        " (Advanced option, ignores '--user', '--password' and '--oauth-method' when used.)"
     ),
 )
 
@@ -189,14 +225,16 @@ def cli(quiet: bool, verbose: bool, log: Path) -> None:
     init_logging(log_level, log)
 
 
-@cli.command()
+@cli.command(cls=DescribedChoiceCommand)
 @opt_database
 @group_options(
     opt_user,
     opt_password,
+    opt_oauth_method,
     opt_oauth_port,
     opt_oauth_host,
-    opt_oauth_mcp,
+    opt_oauth_en_user,
+    opt_oauth_en_config_dir,
     opt_token,
 )
 @click.option(
@@ -213,9 +251,11 @@ def init_db(
     database: Path,
     user: Optional[str],
     password: Optional[str],
+    oauth_method: str,
     oauth_port: int,
     oauth_host: str,
-    oauth_mcp: bool,
+    oauth_en_user: Optional[str],
+    oauth_en_config_dir: Optional[Path],
     token: Optional[str],
     force: bool,
     backend: str,
@@ -237,7 +277,9 @@ def init_db(
         network_retry_count=network_retry_count,
         use_system_ssl_ca=use_system_ssl_ca,
         custom_api_data=api_data,
-        oauth_mcp=oauth_mcp,
+        oauth_method=oauth_method,
+        oauth_en_user=oauth_en_user,
+        oauth_en_config_dir=oauth_en_config_dir,
     )
 
 
@@ -389,14 +431,16 @@ def export(
     )
 
 
-@cli.command()
+@cli.command(cls=DescribedChoiceCommand)
 @opt_database
 @group_options(
     opt_user,
     opt_password,
+    opt_oauth_method,
     opt_oauth_port,
     opt_oauth_host,
-    opt_oauth_mcp,
+    opt_oauth_en_user,
+    opt_oauth_en_config_dir,
     opt_token,
 )
 @opt_network_retry_count
@@ -407,9 +451,11 @@ def reauth(
     database: Path,
     user: Optional[str],
     password: Optional[str],
+    oauth_method: str,
     oauth_port: int,
     oauth_host: str,
-    oauth_mcp: bool,
+    oauth_en_user: Optional[str],
+    oauth_en_config_dir: Optional[Path],
     token: Optional[str],
     network_retry_count: int,
     use_system_ssl_ca: bool,
@@ -427,7 +473,9 @@ def reauth(
         network_retry_count=network_retry_count,
         use_system_ssl_ca=use_system_ssl_ca,
         custom_api_data=api_data,
-        oauth_mcp=oauth_mcp,
+        oauth_method=oauth_method,
+        oauth_en_user=oauth_en_user,
+        oauth_en_config_dir=oauth_en_config_dir,
     )
 
 
