@@ -46,7 +46,13 @@ To log in to Evernote using OAuth with Docker, you'll have to forward port 10500
 $ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 vzhd1701/evernote-backup:latest init-db
 ```
 
-### From source
+### From source (with [uv](https://docs.astral.sh/uv/))
+
+```shell
+$ uv tool install https://github.com/vzhd1701/evernote-backup.git
+```
+
+### From source (for local development)
 
 This project uses [uv](https://docs.astral.sh/uv/) for dependency management and packaging. You will have to install it first. See [uv official documentation](https://docs.astral.sh/uv/getting-started/installation/) for instructions.
 
