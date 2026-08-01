@@ -44,7 +44,9 @@ dependencies = [
     "thrift==0.21.0",
     "evernote-plus==1.28.1.dev2",
     "requests-sse==0.5.1",
-    "pyjwt>=2.8.0",
+    "pyjwt==2.13.0",
+    "pycryptodome==3.23.0 ; sys_platform == 'darwin' or sys_platform == 'win32'",
+    "keyring==25.7.0 ; sys_platform == 'darwin' or sys_platform == 'win32'",
 ]
 license-files = ["LICENSE"]
 

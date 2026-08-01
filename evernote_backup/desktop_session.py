@@ -19,7 +19,7 @@ Algorithm
 3. For each user, locate ``secure-storage/authtoken_user_<userID>`` (a
    JSON file with ``{"iv": "<b64>", "encrypted": "<ISO-8859-1 binary>"}``).
 4. Fetch the AES-256 key for that user from the OS secret store
-   (Windows Credential Manager / macOS Keychain / Linux libsecret).
+   (Windows Credential Manager / macOS Keychain).
 5. Decrypt with AES-256-CBC, strip PKCS7, base64-decode, parse the JSON
    user-store blob. Its ``t`` field is the classic ``S=...`` token.
 
@@ -27,14 +27,13 @@ If multiple users are present the caller can pick one by Evernote user
 ID via :func:`extract_token` ``user_id=``; otherwise the first one is
 returned.
 """
+
 from __future__ import annotations
 
 import base64
 import json
 import os
-import shutil
 import sqlite3
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -45,6 +44,7 @@ from evernote_backup.cli_app_util import ProgramTerminatedError
 # key prefix as stored in the OS secret store (Windows CredMan blob and
 # macOS Keychain password are both prefixed with this same string).
 _KEY_PREFIX = "enote-encr-key"
+_KEYRING_SERVICE = "Evernote"
 
 
 @dataclass
@@ -76,11 +76,6 @@ def _default_config_dir() -> Path:
             return Path(appdata) / "Evernote"
     elif sys.platform == "darwin":
         return Path.home() / "Library" / "Application Support" / "Evernote"
-    else:
-        xdg = os.environ.get("XDG_CONFIG_HOME")
-        if xdg:
-            return Path(xdg) / "Evernote"
-        return Path.home() / ".config" / "Evernote"
     return Path.home() / "Evernote"
 
 
@@ -142,113 +137,78 @@ def list_desktop_users(config_dir: Optional[Path] = None) -> List[DesktopSession
 
 
 # ---------------------------------------------------------------------------
-# OS secret-store reads (per platform)
+# OS secret-store reads via keyring (Windows CredMan / macOS Keychain)
 # ---------------------------------------------------------------------------
 
 
-def _get_key_windows(target: str) -> bytes:
-    """Read a generic credential from Windows Credential Manager."""
+def _keyring_service_and_account(user_id: str) -> tuple[str, str]:
+    """Return ``(service, account)`` for Evernote's AES key in the OS store.
+
+    Evernote (Electron + keytar) stores the key under account
+    ``AuthToken:User:<id>``. On Windows the Credential Manager target name
+    is ``Evernote/AuthToken:User:<id>`` (keyring service name); on macOS
+    the Keychain service is just ``Evernote``.
+    """
+    account = f"AuthToken:User:{user_id}"
+    if sys.platform.startswith("win"):
+        return f"{_KEYRING_SERVICE}/{account}", account
+    return _KEYRING_SERVICE, account
+
+
+def _get_os_key(user_id: str) -> bytes:
+    """Fetch the AES-256 key for *user_id* from the OS secret store."""
     try:
-        import win32cred  # type: ignore
+        import keyring
+        from keyring.errors import KeyringError, KeyringLocked
     except ImportError as e:  # pragma: no cover
         raise ProgramTerminatedError(
-            "Reading the Evernote auth key on Windows requires the"
-            " 'pywin32' package. Install it with:"
-            " `pip install pywin32`."
+            "Reading the Evernote auth key requires the 'keyring' package."
+            " Install it with: `pip install keyring`."
         ) from e
 
+    service, account = _keyring_service_and_account(user_id)
     try:
-        cred = win32cred.CredRead(target, win32cred.CRED_TYPE_GENERIC, 0)
-    except Exception as e:  # noqa: BLE001
+        secret = keyring.get_password(service, account)
+    except KeyringLocked as e:
         raise ProgramTerminatedError(
-            f"Could not read Windows credential '{target}': {e}."
+            "Could not access the system credential store (it is locked)."
+            " Unlock it when prompted, or re-run with the desktop session"
+            " unlocked."
+        ) from e
+    except KeyringError as e:
+        raise ProgramTerminatedError(
+            f"Could not read credential for user {user_id!r}"
+            f" (service={service!r}): {e}."
             " Is the Evernote desktop client installed and logged in for"
             " the current user?"
         ) from e
 
-    blob = cred["CredentialBlob"]
-    if not isinstance(blob, bytes):
-        blob = blob.encode("utf-16-le")
-    if not blob.startswith(_KEY_PREFIX.encode("ascii")):
+    if not secret:
         raise ProgramTerminatedError(
-            f"Windows credential '{target}' has unexpected prefix"
-            f" {blob[:len(_KEY_PREFIX)]!r}; cannot decrypt Evernote token."
-        )
-    return base64.b64decode(blob[len(_KEY_PREFIX):])
-
-
-def _get_key_macos(target: str) -> bytes:
-    """Read a generic password item from the macOS Keychain."""
-    if not shutil.which("/usr/bin/security"):
-        raise ProgramTerminatedError(
-            "/usr/bin/security not found; cannot read macOS Keychain."
-        )
-    try:
-        out = subprocess.run(
-            [
-                "/usr/bin/security",
-                "find-generic-password",
-                "-s", target.split("/", 1)[0],
-                "-wa", target,
-            ],
-            check=True,
-            capture_output=True,
-            timeout=10,
-        )
-    except subprocess.CalledProcessError as e:
-        stderr = (e.stderr or b"").decode("utf-8", "replace").strip()
-        raise ProgramTerminatedError(
-            f"Could not read macOS Keychain entry '{target}': {stderr}."
+            f"No Evernote encryption key found in the credential store for"
+            f" user {user_id!r} (service={service!r}, account={account!r})."
             " Is the Evernote desktop client installed and logged in for"
             " the current user?"
-        ) from e
-    data = out.stdout.strip()
-    if data.startswith(_KEY_PREFIX.encode("ascii")):
-        data = data[len(_KEY_PREFIX):]
-    return base64.b64decode(data)
-
-
-def _get_key_linux(target: str) -> bytes:
-    """Read a secret from libsecret via the ``secret-tool`` CLI."""
-    if not shutil.which("secret-tool"):
-        raise ProgramTerminatedError(
-            "The 'secret-tool' CLI is required to read the Evernote"
-            " key from libsecret on Linux. Install it (e.g. via"
-            " libsecret-tools) and make sure a Secret Service provider"
-            " such as GNOME Keyring or KWallet is running for the"
-            " current user."
         )
-    service = target.split("/", 1)[0]
-    account = target[len(service) + 1 :] if "/" in target else ""
-    try:
-        out = subprocess.run(
-            [
-                "secret-tool",
-                "lookup",
-                "service", service,
-                "account", account,
-            ],
-            check=True,
-            capture_output=True,
-            timeout=10,
-        )
-    except subprocess.CalledProcessError as e:
-        raise ProgramTerminatedError(
-            f"Could not read libsecret entry service={service}"
-            f" account={account}: {e}."
-        ) from e
-    data = out.stdout.strip()
-    if data.startswith(_KEY_PREFIX.encode("ascii")):
-        data = data[len(_KEY_PREFIX):]
-    return base64.b64decode(data)
 
-
-def _get_os_key(target: str) -> bytes:
+    # Evernote stores the secret as raw ASCII bytes
+    # ("enote-encr-key" + base64(key)). keytar writes that as a UTF-8/ASCII
+    # blob on Windows; keyring's WinVault backend decodes CredentialBlob as
+    # UTF-16 first, which misinterprets the ASCII payload. Re-encoding with
+    # utf-16-le restores the original bytes. On macOS the secret is already
+    # a proper UTF-8 string.
     if sys.platform.startswith("win"):
-        return _get_key_windows(target)
-    if sys.platform == "darwin":
-        return _get_key_macos(target)
-    return _get_key_linux(target)
+        raw = secret.encode("utf-16-le")
+    else:
+        raw = secret.encode("utf-8")
+
+    prefix = _KEY_PREFIX.encode("ascii")
+    if not raw.startswith(prefix):
+        raise ProgramTerminatedError(
+            f"Credential for user {user_id!r} has unexpected prefix"
+            f" {raw[: len(prefix)]!r}; cannot decrypt Evernote token."
+        )
+    return base64.b64decode(raw[len(prefix) :])
 
 
 # ---------------------------------------------------------------------------
@@ -259,13 +219,13 @@ def _get_os_key(target: str) -> bytes:
 def _decrypt_secure_blob(blob_path: Path, key: bytes) -> dict:
     """Decrypt ``authtoken_user_*`` and return the parsed user-store dict."""
     try:
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-        from cryptography.hazmat.backends import default_backend
+        from Crypto.Cipher import AES
+        from Crypto.Util.Padding import unpad
     except ImportError as e:  # pragma: no cover
         raise ProgramTerminatedError(
             "Decrypting the Evernote secure-storage blob requires the"
-            " 'cryptography' package. Install it with:"
-            " `pip install cryptography`."
+            " 'pycryptodome' package. Install it with:"
+            " `pip install pycryptodome`."
         ) from e
 
     if len(key) != 32:
@@ -279,15 +239,13 @@ def _decrypt_secure_blob(blob_path: Path, key: bytes) -> dict:
     # the JSON "encrypted" field.
     ciphertext = blob["encrypted"].encode("latin-1")
 
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
-    dec = cipher.decryptor()
-    padded = dec.update(ciphertext) + dec.finalize()
-    pad = padded[-1]
-    if not (0 < pad <= 16) or any(b != pad for b in padded[-pad:]):
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    try:
+        plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
+    except ValueError as e:
         raise ProgramTerminatedError(
             f"Invalid PKCS7 padding in {blob_path.name}; key may be wrong."
-        )
-    plaintext = padded[: len(padded) - pad]
+        ) from e
 
     # Plaintext is a base64-encoded JSON blob describing the user store.
     userstore_b64 = plaintext.decode("utf-8")
@@ -321,17 +279,14 @@ def extract_token(
 
     users = list_desktop_users(config_dir)
     if not users:
-        raise ProgramTerminatedError(
-            "No logged-in Evernote desktop users were found."
-        )
+        raise ProgramTerminatedError("No logged-in Evernote desktop users were found.")
 
     if user_id is not None:
         chosen = next((u for u in users if u.user_id == user_id), None)
         if chosen is None:
             avail = ", ".join(u.user_id for u in users)
             raise ProgramTerminatedError(
-                f"Requested desktop user {user_id!r} not found;"
-                f" available: {avail}."
+                f"Requested desktop user {user_id!r} not found; available: {avail}."
             )
     elif len(users) == 1:
         chosen = users[0]
@@ -346,7 +301,7 @@ def extract_token(
             f" {chosen.storage_path}."
         )
 
-    key = _get_os_key(f"Evernote/AuthToken:User:{chosen.user_id}")
+    key = _get_os_key(chosen.user_id)
     data = _decrypt_secure_blob(chosen.storage_path, key)
 
     chosen.s_token = str(data.get("t", "") or "")
