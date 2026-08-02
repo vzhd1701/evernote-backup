@@ -227,7 +227,7 @@ def _parse_sync_event_data(sync_data: list[dict]) -> SyncChunkV2:
         try:
             instance = item["instance"]
             instance_type = EvernoteSyncInstanceType(instance["type"])
-        except (ValueError, KeyError):
+        except (ValueError, KeyError, TypeError):
             logger.debug("Sync data inconsistency - unknown instance type")
             logger.debug(item)
             continue
@@ -238,7 +238,7 @@ def _parse_sync_event_data(sync_data: list[dict]) -> SyncChunkV2:
         try:
             guid = instance["ref"]["id"]
             entity_type = EvernoteEntityType(instance["ref"]["type"])
-        except (ValueError, KeyError):
+        except (ValueError, KeyError, TypeError):
             logger.debug("Sync data inconsistency - unknown entity type")
             logger.debug(item)
             continue
@@ -246,7 +246,7 @@ def _parse_sync_event_data(sync_data: list[dict]) -> SyncChunkV2:
         try:
             parent_id = instance["parentEntity"]["id"]
             parent_type = EvernoteEntityType(instance["parentEntity"]["type"])
-        except (ValueError, KeyError):
+        except (ValueError, KeyError, TypeError):
             logger.debug("Sync data inconsistency - entity without parent")
             logger.debug(item)
             continue
