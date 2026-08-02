@@ -11,6 +11,7 @@ from evernote.edam.error.ttypes import (
 from evernote.edam.userstore.constants import EDAM_VERSION_MAJOR, EDAM_VERSION_MINOR
 from requests_sse import EventSource, MessageEvent
 
+from evernote_backup.config_defaults import EVERNOTE_API_SYNC_DOWNLOAD_URL
 from evernote_backup.evernote_client_api_http import (
     NoteStoreClientRetryable,
     UserStoreClientRetryable,
@@ -136,7 +137,7 @@ class EvernoteClient(EvernoteClientBase):
         entity_filter = [EvernoteEntityType.TASK, EvernoteEntityType.REMINDER]
         entity_filter_arg = json.dumps(entity_filter, separators=(",", ":"))
 
-        url = f"https://api.evernote.com/sync/v1/download?lastConnection={last_connection}&connectionId={connection_id}&entityFilter={entity_filter_arg}"
+        url = f"{EVERNOTE_API_SYNC_DOWNLOAD_URL}?lastConnection={last_connection}&connectionId={connection_id}&entityFilter={entity_filter_arg}"
 
         with EventSource(url, timeout=30, headers=headers) as event_source:
             yield from event_source
