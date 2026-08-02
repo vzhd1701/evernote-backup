@@ -76,7 +76,7 @@ def test_manage_blacklist_add_guid_without_hyphens(cli_invoker, fake_storage):
 
 
 @pytest.mark.usefixtures("fake_init_db")
-def test_manage_blacklist_add_duplicate(cli_invoker, fake_storage):
+def test_manage_blacklist_add_duplicate_note(cli_invoker, fake_storage):
     fake_storage.config.set_blacklist_notes([NOTE_1])
 
     result = cli_invoker(
@@ -89,6 +89,22 @@ def test_manage_blacklist_add_duplicate(cli_invoker, fake_storage):
     assert result.exit_code == 0
     assert f"Note [{NOTE_1}] is already blacklisted." in result.output
     assert fake_storage.config.get_blacklist_notes() == [NOTE_1]
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_manage_blacklist_add_duplicate_notebook(cli_invoker, fake_storage):
+    fake_storage.config.set_blacklist_notebooks([NOTEBOOK_1])
+
+    result = cli_invoker(
+        "manage",
+        "blacklist",
+        "--add-notebook-id",
+        NOTEBOOK_1,
+    )
+
+    assert result.exit_code == 0
+    assert f"Notebook [{NOTEBOOK_1}] is already blacklisted." in result.output
+    assert fake_storage.config.get_blacklist_notebooks() == [NOTEBOOK_1]
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -177,15 +193,33 @@ def test_manage_blacklist_reset_notes_then_add(cli_invoker, fake_storage):
 
 
 @pytest.mark.usefixtures("fake_init_db")
-def test_manage_blacklist_list_partial(cli_invoker, fake_storage):
+def test_manage_blacklist_list_notes_only(cli_invoker, fake_storage):
     fake_storage.config.set_blacklist_notes([NOTE_1])
 
     result = cli_invoker("manage", "blacklist")
 
     assert result.exit_code == 0
+    assert "Blacklisted notes:" in result.output
     assert f"- {NOTE_1}" in result.output
     assert "Blacklisted notebooks:" in result.output
-    assert "- (none)" in result.output
+    assert result.output.index("Blacklisted notebooks:") < result.output.index(
+        "- (none)"
+    )
+
+
+@pytest.mark.usefixtures("fake_init_db")
+def test_manage_blacklist_list_notebooks_only(cli_invoker, fake_storage):
+    fake_storage.config.set_blacklist_notebooks([NOTEBOOK_1])
+
+    result = cli_invoker("manage", "blacklist")
+
+    assert result.exit_code == 0
+    assert "Blacklisted notes:" in result.output
+    assert result.output.index("Blacklisted notes:") < result.output.index("- (none)")
+    assert result.output.index("- (none)") < result.output.index(
+        "Blacklisted notebooks:"
+    )
+    assert f"- {NOTEBOOK_1}" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db")
