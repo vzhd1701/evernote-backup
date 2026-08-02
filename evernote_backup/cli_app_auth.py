@@ -8,10 +8,10 @@ from evernote_backup.cli_app_auth_oauth import (
     evernote_login_oauth_desktop,
 )
 from evernote_backup.cli_app_auth_password import evernote_login_password
-from evernote_backup.cli_app_util import ProgramTerminatedError, is_output_to_terminal
+from evernote_backup.cli_app_util import is_output_to_terminal
+from evernote_backup.errors import ProgramTerminatedError, EvernoteAuthError
 from evernote_backup.evernote_client import EvernoteClient
 from evernote_backup.evernote_client_sync import EvernoteClientSync
-from evernote_backup.evernote_client_util import EvernoteAuthError
 from evernote_backup.evernote_client_util_ssl import get_cafile_path
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.errors import ProgramTerminatedError
 from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.note_storage import SqliteStorage
 from evernote_backup.desktop_session import DesktopSession

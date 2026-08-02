@@ -5,11 +5,8 @@ from typing import Optional
 
 import click
 
-from evernote_backup.cli_app_util import (
-    ProgramTerminatedError,
-)
 from evernote_backup.desktop_session import extract_token
-from evernote_backup.errors import OAuthDeclinedError
+from evernote_backup.errors import OAuthDeclinedError, ProgramTerminatedError
 from evernote_backup.evernote_client_oauth import (
     EvernoteOAuthCallbackHandler,
     EvernoteOAuthClient,

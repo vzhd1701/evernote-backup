@@ -10,24 +10,13 @@ from typing import Optional, TextIO
 import click
 
 from evernote_backup.config import API_DATA_YINXIANG
+from evernote_backup.errors import ProgramTerminatedError
 
 # Evernote EDAM Guid: 36-char UUID string, e.g. 01234567-89ab-cdef-0123-456789abcdef
 _GUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
     re.IGNORECASE,
 )
-
-
-class ProgramTerminatedError(Exception):
-    """Terminate program with an error"""
-
-
-class DatabaseEmptyError(Exception):
-    """Raise when database is empty"""
-
-
-class DatabaseCorruptError(Exception):
-    """Raise when database is corrupt"""
 
 
 def parse_guid(value: str) -> str:

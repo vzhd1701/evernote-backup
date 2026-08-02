@@ -7,7 +7,7 @@ from evernote.edam.error.ttypes import EDAMUserException
 
 from evernote_backup import cli_app_auth, cli_app_util
 from evernote_backup.cli_app_click_util import NaturalOrderGroup
-from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.errors import ProgramTerminatedError
 from evernote_backup.log_util import get_time_txt
 from evernote_backup.token_util import EvernoteToken
 

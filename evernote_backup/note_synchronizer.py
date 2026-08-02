@@ -10,6 +10,11 @@ from evernote.edam.notestore.ttypes import SyncChunk
 from evernote.edam.type.ttypes import LinkedNotebook, Note
 
 from evernote_backup.cli_app_util import chunks, get_progress_output
+from evernote_backup.errors import (
+    WrongAuthUserError,
+    WorkerStopException,
+    NoteDownloadException,
+)
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import NotebookAuth
 from evernote_backup.evernote_types import SyncChunkV2
@@ -19,22 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 THREAD_CHUNK_SIZE = 1000
-
-
-class WrongAuthUserError(Exception):
-    """Raise when remote auth user is not the same as the one registered in database"""
-
-    def __init__(self, local_user: str, remote_user: str) -> None:
-        self.local_user = local_user
-        self.remote_user = remote_user
-
-
-class WorkerStopException(Exception):
-    """Raise when workers are stopped"""
-
-
-class NoteDownloadException(Exception):
-    """Raise when downloading note fails"""
 
 
 def get_note_size(note: Note) -> int:

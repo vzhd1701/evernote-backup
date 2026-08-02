@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
-from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.errors import ProgramTerminatedError
 
 logger = logging.getLogger(__name__)
 

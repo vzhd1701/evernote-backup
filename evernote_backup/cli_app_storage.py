@@ -1,9 +1,8 @@
 import logging
 from pathlib import Path
 
-from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.errors import ProgramTerminatedError, DatabaseResyncRequiredError
 from evernote_backup.note_storage import (
-    DatabaseResyncRequiredError,
     SqliteStorage,
     initialize_db,
 )

@@ -15,7 +15,8 @@ from evernote_backup.evernote_client_api_http import (
     NoteStoreClientRetryable,
     UserStoreClientRetryable,
 )
-from evernote_backup.evernote_client_util import EvernoteAuthError, raise_auth_error
+from evernote_backup.evernote_client_util import raise_auth_error
+from evernote_backup.errors import EvernoteAuthError
 from evernote_backup.evernote_types import EvernoteEntityType
 from evernote_backup.token_util import EvernoteToken
 

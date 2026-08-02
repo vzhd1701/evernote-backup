@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.errors import ProgramTerminatedError
 from evernote_backup.desktop_session import (
     _decrypt_secure_blob,
     _default_config_dir,

@@ -19,7 +19,7 @@ from evernote_backup.cli_app_click_util import (
     DescribedChoice,
     DescribedChoiceCommand,
 )
-from evernote_backup.cli_app_util import ProgramTerminatedError
+from evernote_backup.errors import ProgramTerminatedError
 from evernote_backup.log_util import get_time_txt, init_logging, get_time_from_now_txt
 from evernote_backup.version import __version__
 

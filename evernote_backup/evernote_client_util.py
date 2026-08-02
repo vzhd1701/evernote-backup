@@ -6,14 +6,12 @@ from evernote.edam.error.ttypes import (
     EDAMUserException,
 )
 
+from evernote_backup.errors import EvernoteAuthError
+
 
 class NotebookAuth(NamedTuple):
     token: str
     shard: str
-
-
-class EvernoteAuthError(Exception):
-    """Evernote authentication error"""
 
 
 def raise_auth_error(exception: Union[EDAMSystemException, EDAMUserException]) -> None:

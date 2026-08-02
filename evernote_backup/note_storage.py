@@ -9,6 +9,7 @@ from typing import NamedTuple, Optional, Union
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
 from evernote_backup.config import CURRENT_DB_VERSION
+from evernote_backup.errors import DatabaseResyncRequiredError
 from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.log_util import log_format_note, log_format_notebook
 
@@ -66,10 +67,6 @@ DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
                     CREATE INDEX IF NOT EXISTS idx_reminders
                      ON reminders(task_guid);
 """
-
-
-class DatabaseResyncRequiredError(Exception):
-    """Raise when database update requires resync"""
 
 
 def initialize_db(database_path: Path) -> None:

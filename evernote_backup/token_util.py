@@ -9,14 +9,13 @@ import requests
 from oauthlib.oauth2 import OAuth2Error
 from requests_oauthlib import OAuth2Session
 
-from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.config_defaults import (
     TOKEN_REFRESH_SKEW,
     EVERNOTE_TOKEN_URL,
     DESKTOP_REDIRECT_URI,
     DESKTOP_CLIENT_ID,
 )
-from evernote_backup.errors import OAuthTokenRefreshError
+from evernote_backup.errors import OAuthTokenRefreshError, ProgramTerminatedError
 
 logger = logging.getLogger(__name__)
 

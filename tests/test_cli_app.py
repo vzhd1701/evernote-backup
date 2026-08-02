@@ -7,7 +7,8 @@ from evernote.edam.error.ttypes import EDAMErrorCode, EDAMSystemException
 from thrift.Thrift import TApplicationException
 
 from evernote_backup import cli as cli_module
-from evernote_backup.cli_app_util import ProgramTerminatedError, get_progress_output
+from evernote_backup.cli_app_util import get_progress_output
+from evernote_backup.errors import ProgramTerminatedError
 
 
 @pytest.mark.parametrize(

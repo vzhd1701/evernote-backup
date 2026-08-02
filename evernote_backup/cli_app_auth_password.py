@@ -4,12 +4,11 @@ import click
 from evernote.edam.userstore.ttypes import AuthenticationResult
 
 from evernote_backup.cli_app_util import (
-    ProgramTerminatedError,
     get_api_data,
     is_output_to_terminal,
 )
+from evernote_backup.errors import ProgramTerminatedError, EvernoteAuthError
 from evernote_backup.evernote_client_auth import EvernoteClientAuth
-from evernote_backup.evernote_client_util import EvernoteAuthError
 
 
 def get_auth_client(

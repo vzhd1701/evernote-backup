@@ -16,18 +16,20 @@ from evernote_backup.cli_app_storage import (
     raise_on_old_database_version,
 )
 from evernote_backup.cli_app_util import (
-    DatabaseCorruptError,
-    DatabaseEmptyError,
-    ProgramTerminatedError,
     parse_guid,
+)
+from evernote_backup.errors import (
+    ProgramTerminatedError,
+    DatabaseEmptyError,
+    DatabaseCorruptError,
+    WrongAuthUserError,
 )
 from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.evernote_client_util_ssl import log_ssl_debug_info
 from evernote_backup.note_checker import NoteChecker
 from evernote_backup.note_exporter import NoteExporter
 from evernote_backup.note_lister import NoteLister
-from evernote_backup.note_synchronizer import NoteSynchronizer, WrongAuthUserError
-
+from evernote_backup.note_synchronizer import NoteSynchronizer
 
 logger = logging.getLogger(__name__)
 
