@@ -1,13 +1,21 @@
 import base64
 import io
 import os
+import re
 import sys
+import uuid
 from collections.abc import Iterable, Iterator, Sequence
 from typing import Optional, TextIO
 
 import click
 
 from evernote_backup.config import API_DATA_YINXIANG
+
+# Evernote EDAM Guid: 36-char UUID string, e.g. 01234567-89ab-cdef-0123-456789abcdef
+_GUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 
 class ProgramTerminatedError(Exception):
@@ -20,6 +28,19 @@ class DatabaseEmptyError(Exception):
 
 class DatabaseCorruptError(Exception):
     """Raise when database is corrupt"""
+
+
+def parse_guid(value: str) -> str:
+    """Validate and normalize an Evernote GUID to lowercase UUID form."""
+    value = value.strip()
+
+    if not _GUID_RE.fullmatch(value):
+        raise ValueError(
+            f"Invalid GUID '{value}'. Expected format:"
+            " 01234567-89ab-cdef-0123-456789abcdef"
+        )
+
+    return str(uuid.UUID(value))
 
 
 def get_api_data(custom_api_data: Optional[str]) -> tuple[str, str]:

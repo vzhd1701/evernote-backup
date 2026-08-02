@@ -232,7 +232,9 @@ class NoteSynchronizer:  # noqa: WPS214
             for l_notebook in self.note_client.linked_notebooks.values():
                 self._sync_linked_notebook(l_notebook)
 
-        notes_to_sync = self.storage.notes.get_notes_for_sync()
+        notes_to_sync = self._filter_blacklisted_notes(
+            self.storage.notes.get_notes_for_sync()
+        )
 
         if notes_to_sync:
             logger.info(f"{len(notes_to_sync)} note(s) to download...")
@@ -261,6 +263,39 @@ class NoteSynchronizer:  # noqa: WPS214
         for msg, count in report:
             if count > 0:
                 logger.info(f"{msg}: {count}")
+
+    def _filter_blacklisted_notes(
+        self, notes_to_sync: tuple[NoteForSync, ...]
+    ) -> tuple[NoteForSync, ...]:
+        blacklisted_notes = set(self.storage.config.get_blacklist_notes())
+        blacklisted_notebooks = set(self.storage.config.get_blacklist_notebooks())
+
+        if not blacklisted_notes and not blacklisted_notebooks:
+            return notes_to_sync
+
+        filtered: list[NoteForSync] = []
+        skipped = 0
+
+        for note in notes_to_sync:
+            if note.guid in blacklisted_notes:
+                logger.debug(f"Skipping blacklisted note '{note.title}' [{note.guid}]")
+                skipped += 1
+                continue
+
+            if note.notebook_guid and note.notebook_guid in blacklisted_notebooks:
+                logger.debug(
+                    f"Skipping note '{note.title}' [{note.guid}]"
+                    f" from blacklisted notebook [{note.notebook_guid}]"
+                )
+                skipped += 1
+                continue
+
+            filtered.append(note)
+
+        if skipped:
+            logger.info(f"Skipped {skipped} blacklisted note(s).")
+
+        return tuple(filtered)
 
     def _authorize_linked_notebooks_for_notes(
         self, notes_to_sync: tuple[NoteForSync, ...]

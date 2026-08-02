@@ -19,6 +19,7 @@ from evernote_backup.cli_app_util import (
     DatabaseCorruptError,
     DatabaseEmptyError,
     ProgramTerminatedError,
+    parse_guid,
 )
 from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.evernote_client_util_ssl import log_ssl_debug_info
@@ -317,3 +318,115 @@ def manage_list(
     checker = NoteLister(storage, notebook, is_list_all)
 
     checker.list_notebooks()
+
+
+def manage_blacklist(
+    database: Path,
+    add_note_id: tuple[str, ...],
+    del_note_id: tuple[str, ...],
+    add_notebook_id: tuple[str, ...],
+    del_notebook_id: tuple[str, ...],
+    reset_notes: bool,
+    reset_notebooks: bool,
+) -> None:
+    storage = get_storage(database)
+
+    raise_on_old_database_version(storage)
+
+    has_changes = any(
+        (
+            add_note_id,
+            del_note_id,
+            add_notebook_id,
+            del_notebook_id,
+            reset_notes,
+            reset_notebooks,
+        )
+    )
+
+    if not has_changes:
+        _list_blacklist(storage)
+        return
+
+    # Validate all GUIDs before applying any changes.
+    del_notes = _parse_guids(del_note_id)
+    del_notebooks = _parse_guids(del_notebook_id)
+    add_notes = _parse_guids(add_note_id)
+    add_notebooks = _parse_guids(add_notebook_id)
+
+    if reset_notes:
+        storage.config.set_blacklist_notes([])
+        logger.info("Cleared blacklisted notes.")
+
+    if reset_notebooks:
+        storage.config.set_blacklist_notebooks([])
+        logger.info("Cleared blacklisted notebooks.")
+
+    notes = storage.config.get_blacklist_notes()
+    notebooks = storage.config.get_blacklist_notebooks()
+
+    for note_id in del_notes:
+        if note_id in notes:
+            notes = [n for n in notes if n != note_id]
+            logger.info(f"Removed note [{note_id}] from blacklist.")
+        else:
+            logger.warning(f"Note [{note_id}] is not blacklisted.")
+
+    for notebook_id in del_notebooks:
+        if notebook_id in notebooks:
+            notebooks = [n for n in notebooks if n != notebook_id]
+            logger.info(f"Removed notebook [{notebook_id}] from blacklist.")
+        else:
+            logger.warning(f"Notebook [{notebook_id}] is not blacklisted.")
+
+    for note_id in add_notes:
+        if note_id in notes:
+            logger.warning(f"Note [{note_id}] is already blacklisted.")
+        else:
+            notes.append(note_id)
+            logger.info(f"Added note [{note_id}] to blacklist.")
+
+    for notebook_id in add_notebooks:
+        if notebook_id in notebooks:
+            logger.warning(f"Notebook [{notebook_id}] is already blacklisted.")
+        else:
+            notebooks.append(notebook_id)
+            logger.info(f"Added notebook [{notebook_id}] to blacklist.")
+
+    storage.config.set_blacklist_notes(notes)
+    storage.config.set_blacklist_notebooks(notebooks)
+
+
+def _parse_guids(values: tuple[str, ...]) -> list[str]:
+    parsed: list[str] = []
+
+    for value in values:
+        try:
+            parsed.append(parse_guid(value))
+        except ValueError as e:
+            raise ProgramTerminatedError(str(e)) from e
+
+    return parsed
+
+
+def _list_blacklist(storage) -> None:
+    notes = storage.config.get_blacklist_notes()
+    notebooks = storage.config.get_blacklist_notebooks()
+
+    if not notes and not notebooks:
+        logger.info("Blacklist is empty.")
+        return
+
+    logger.info("Blacklisted notes:")
+    if notes:
+        for note_id in notes:
+            logger.info(f"- {note_id}")
+    else:
+        logger.info("- (none)")
+
+    logger.info("Blacklisted notebooks:")
+    if notebooks:
+        for notebook_id in notebooks:
+            logger.info(f"- {notebook_id}")
+    else:
+        logger.info("- (none)")

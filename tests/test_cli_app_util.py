@@ -71,6 +71,30 @@ def test_unscrambler():
     assert result_data == expected
 
 
+def test_parse_guid_valid():
+    assert (
+        cli_app_util.parse_guid("01234567-89AB-CDEF-0123-456789ABCDEF")
+        == "01234567-89ab-cdef-0123-456789abcdef"
+    )
+    assert (
+        cli_app_util.parse_guid("  01234567-89ab-cdef-0123-456789abcdef  ")
+        == "01234567-89ab-cdef-0123-456789abcdef"
+    )
+
+
+def test_parse_guid_invalid():
+    for bad in (
+        "not-a-guid",
+        "id1",
+        "0123456789abcdef0123456789abcdef",
+        "01234567-89ab-cdef-0123-456789abcde",
+        "01234567-89ab-cdef-0123-456789abcdefg",
+        "",
+    ):
+        with pytest.raises(ValueError, match="Invalid GUID"):
+            cli_app_util.parse_guid(bad)
+
+
 def test_natural_order_group():
     @click.group(cls=NaturalOrderGroup)
     def test_cli():

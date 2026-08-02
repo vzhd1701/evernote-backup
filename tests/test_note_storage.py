@@ -55,6 +55,27 @@ def test_config_values_missing(fake_storage):
         fake_storage.config.get_config_value("test")
 
 
+def test_config_list_values(fake_storage):
+    assert fake_storage.config.get_config_list("missing") == []
+
+    fake_storage.config.set_config_list("items", ["a", "b", "a", "  ", ""])
+    assert fake_storage.config.get_config_list("items") == ["a", "b"]
+
+    fake_storage.config.set_config_list("items", [])
+    assert fake_storage.config.get_config_list("items") == []
+
+
+def test_blacklist_config(fake_storage):
+    assert fake_storage.config.get_blacklist_notes() == []
+    assert fake_storage.config.get_blacklist_notebooks() == []
+
+    fake_storage.config.set_blacklist_notes(["n1", "n2"])
+    fake_storage.config.set_blacklist_notebooks(["nb1"])
+
+    assert fake_storage.config.get_blacklist_notes() == ["n1", "n2"]
+    assert fake_storage.config.get_blacklist_notebooks() == ["nb1"]
+
+
 def test_notebooks(fake_storage):
     test_notebooks = [
         Notebook(
@@ -501,7 +522,12 @@ def test_get_notes_for_sync(fake_storage):
     fake_storage.notes.add_notes_for_sync(test_notes)
 
     expected = tuple(
-        NoteForSync(guid=n.guid, title=n.title, linked_notebook_guid=None)
+        NoteForSync(
+            guid=n.guid,
+            title=n.title,
+            notebook_guid=n.notebookGuid,
+            linked_notebook_guid=None,
+        )
         for n in test_notes
     )
     result = fake_storage.notes.get_notes_for_sync()

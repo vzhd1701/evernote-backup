@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class NoteForSync(NamedTuple):
     guid: str
     title: str
+    notebook_guid: Optional[str]
     linked_notebook_guid: Optional[str]
 
 
@@ -416,7 +417,8 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
     def get_notes_for_sync(self) -> tuple[NoteForSync, ...]:
         with self.db as con:
             cur = con.execute(
-                "select notes.guid, title, notebooks_linked.guid as l_notebook"
+                "select notes.guid, title, notes.notebook_guid,"
+                " notebooks_linked.guid as l_notebook"
                 " from notes"
                 " left join notebooks_linked"
                 " using (notebook_guid)"
@@ -427,6 +429,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                 NoteForSync(
                     guid=row["guid"],
                     title=row["title"],
+                    notebook_guid=row["notebook_guid"],
                     linked_notebook_guid=row["l_notebook"],
                 )
                 for row in cur.fetchall()
@@ -590,6 +593,9 @@ class RemindersStorage(SqliteStorage):  # noqa: WPS214
 
 
 class ConfigStorage(SqliteStorage):
+    BLACKLIST_NOTES = "blacklist_notes"
+    BLACKLIST_NOTEBOOKS = "blacklist_notebooks"
+
     def set_config_value(self, name: str, config_value: str) -> None:
         with self.db as con:
             con.execute(
@@ -606,3 +612,30 @@ class ConfigStorage(SqliteStorage):
                 raise KeyError(f"Config ID {name} not found in database!")
 
             return str(res[0])
+
+    def get_config_list(self, name: str) -> list[str]:
+        try:
+            value = self.get_config_value(name)
+        except KeyError:
+            return []
+
+        if not value:
+            return []
+
+        return [item for item in value.split(",") if item]
+
+    def set_config_list(self, name: str, values: Iterable[str]) -> None:
+        unique = list(dict.fromkeys(v.strip() for v in values if v and v.strip()))
+        self.set_config_value(name, ",".join(unique))
+
+    def get_blacklist_notes(self) -> list[str]:
+        return self.get_config_list(self.BLACKLIST_NOTES)
+
+    def get_blacklist_notebooks(self) -> list[str]:
+        return self.get_config_list(self.BLACKLIST_NOTEBOOKS)
+
+    def set_blacklist_notes(self, values: Iterable[str]) -> None:
+        self.set_config_list(self.BLACKLIST_NOTES, values)
+
+    def set_blacklist_notebooks(self, values: Iterable[str]) -> None:
+        self.set_config_list(self.BLACKLIST_NOTEBOOKS, values)

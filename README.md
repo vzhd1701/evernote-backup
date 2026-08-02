@@ -164,6 +164,32 @@ $ evernote-backup reauth
 
 (or `reauth --oauth-method import` to reuse a logged-in Desktop Client session, see Step 1 for explanation) and then run `sync` again.
 
+### Skipping broken notes (blacklist)
+
+Sometimes Evernote still lists a note or notebook during sync, but the note body cannot be downloaded (`Failed to download note`). You can permanently skip those GUIDs so sync no longer retries them on every run.
+
+GUIDs must be full Evernote UUIDs, for example `01234567-89ab-cdef-0123-456789abcdef` (case-insensitive).
+
+```console
+# List current blacklist
+$ evernote-backup manage blacklist
+
+# Skip a broken note
+$ evernote-backup manage blacklist --add-note-id 01234567-89ab-cdef-0123-456789abcdef
+
+# Skip all notes from a broken notebook
+$ evernote-backup manage blacklist --add-notebook-id 11234567-89ab-cdef-0123-456789abcdef
+
+# Remove from blacklist (will be retried on next sync)
+$ evernote-backup manage blacklist --del-note-id 01234567-89ab-cdef-0123-456789abcdef
+
+# Clear all blacklisted notes or notebooks
+$ evernote-backup manage blacklist --reset-notes
+$ evernote-backup manage blacklist --reset-notebooks
+```
+
+Each `--add-*` / `--del-*` option can be repeated to pass multiple GUIDs. Notes stay scheduled in the database; only the download step is skipped. Removing a GUID from the blacklist lets the next `sync` try downloading it again.
+
 ### SSL Errors
 
 If you get any SSL errors, please run `evernote-backup -v manage ping` to check your connection to Evernote server and get full information about the SSL environment.

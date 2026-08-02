@@ -548,5 +548,65 @@ def manage_list(
     )
 
 
+@manage.command("blacklist")
+@opt_database
+@click.option(
+    "--add-note-id",
+    multiple=True,
+    help="Add note GUID(s) to blacklist. (Can be used multiple times)",
+)
+@click.option(
+    "--del-note-id",
+    multiple=True,
+    help="Remove note GUID(s) from blacklist. (Can be used multiple times)",
+)
+@click.option(
+    "--add-notebook-id",
+    multiple=True,
+    help="Add notebook GUID(s) to blacklist. (Can be used multiple times)",
+)
+@click.option(
+    "--del-notebook-id",
+    multiple=True,
+    help="Remove notebook GUID(s) from blacklist. (Can be used multiple times)",
+)
+@click.option(
+    "--reset-notes",
+    is_flag=True,
+    help="Clear all blacklisted notes.",
+)
+@click.option(
+    "--reset-notebooks",
+    is_flag=True,
+    help="Clear all blacklisted notebooks.",
+)
+@handle_errors
+def manage_blacklist(
+    database: Path,
+    add_note_id: tuple[str, ...],
+    del_note_id: tuple[str, ...],
+    add_notebook_id: tuple[str, ...],
+    del_notebook_id: tuple[str, ...],
+    reset_notes: bool,
+    reset_notebooks: bool,
+) -> None:
+    """Manage blacklist of notes and notebooks to skip during sync
+
+    \b
+    Broken notes may still appear in sync listings but fail to download
+    ("Failed to download note"). Add their GUIDs here to permanently skip them.
+    """
+
+    cli_app.manage_blacklist(
+        database=database,
+        add_note_id=add_note_id,
+        del_note_id=del_note_id,
+        add_notebook_id=add_notebook_id,
+        del_notebook_id=del_notebook_id,
+        reset_notes=reset_notes,
+        reset_notebooks=reset_notebooks,
+    )
+
+
 def main() -> None:
     cli()
