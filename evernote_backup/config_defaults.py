@@ -19,6 +19,9 @@ EVERNOTE_TOKEN_URL = f"{EVERNOTE_OAUTH_BASE}/auth/token"
 EVERNOTE_AUTHORIZE_URL = f"{EVERNOTE_OAUTH_BASE}/auth/authorize"
 EVERNOTE_DISCOVERY_URL = f"{EVERNOTE_OAUTH_BASE}/.well-known/oauth-authorization-server"
 
+EVERNOTE_API_BASE = "https://api.evernote.com"
+EVERNOTE_API_USERS_ME_URL = f"{EVERNOTE_API_BASE}/v1/users/me"
+
 DESKTOP_CLIENT_ID = "3FE74DA6-ABC8-4E20-9940-28D589D4E808"
 DESKTOP_REDIRECT_URI = "evernote://www.evernote.com/auth/redirect"
 

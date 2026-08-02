@@ -12,6 +12,7 @@ from requests_oauthlib import OAuth2Session
 from evernote_backup.config_defaults import (
     TOKEN_REFRESH_SKEW,
     EVERNOTE_TOKEN_URL,
+    EVERNOTE_API_USERS_ME_URL,
     DESKTOP_REDIRECT_URI,
     DESKTOP_CLIENT_ID,
 )
@@ -172,6 +173,16 @@ class OAuth2TokenBundle:
         return datetime.fromtimestamp(exp, tz=timezone.utc)
 
     @property
+    def auth_time(self) -> datetime:
+        """When the login session was initiated (authTime claim on refresh token)."""
+        auth_time = int(decode_jwt(self.refresh_token)["authTime"])
+        return datetime.fromtimestamp(auth_time, tz=timezone.utc)
+
+    @property
+    def auth_time_human(self) -> str:
+        return _format_datetime_with_difference(self.auth_time)
+
+    @property
     def needs_refresh(self) -> bool:
         now = datetime.now(timezone.utc)
         return (
@@ -213,6 +224,9 @@ def resolve_auth_token(auth_token: str) -> ResolvedAuth:
     - legacy monolith token (S=...)
     - bare OAuth2 refresh JWT
     - stored OAuth2 token bundle JSON (from /auth/token)
+
+    When a JWT access token is available, verifies it against the Evernote
+    users/me API and logs the authenticated user details.
     """
     raw = auth_token.strip()
 
@@ -223,6 +237,7 @@ def resolve_auth_token(auth_token: str) -> ResolvedAuth:
         if _is_jwt_token(raw):
             logger.info("Refreshing OAuth2 access token from refresh token...")
             bundle = refresh_oauth_token(raw)
+            verify_and_log_oauth_session(bundle)
             return ResolvedAuth(
                 monolith_token=bundle.monolith_token,
                 jwt_token=bundle.access_token,
@@ -265,9 +280,11 @@ def _resolve_oauth_bundle(bundle: OAuth2TokenBundle) -> ResolvedAuth:
     is_updated = False
 
     if bundle.needs_refresh:
-        logger.info("OAuth2 token expires soon, refreshing...")
+        logger.info("OAuth2 access token is expired or about to expire, refreshing...")
         bundle = refresh_oauth_token(bundle.refresh_token)
         is_updated = True
+
+    verify_and_log_oauth_session(bundle)
 
     return ResolvedAuth(
         monolith_token=bundle.monolith_token,
@@ -275,6 +292,50 @@ def _resolve_oauth_bundle(bundle: OAuth2TokenBundle) -> ResolvedAuth:
         auth_for_storage=bundle.to_json(),
         updated=is_updated,
     )
+
+
+def verify_and_log_oauth_session(bundle: OAuth2TokenBundle) -> dict[str, Any]:
+    """Verify JWT access token via users/me and log user/session details."""
+    user = fetch_oauth_current_user(bundle)
+
+    user_id = user.get("id", "unknown")
+    username = user.get("name") or user.get("username") or "unknown"
+    email = user.get("email") or "unknown"
+
+    logger.info(
+        f"Verified OAuth2 JWT for user ID {user_id}, username {username}, email {email}"
+    )
+    logger.info(f"Login session active since {bundle.auth_time_human}")
+
+    return user
+
+
+def fetch_oauth_current_user(bundle: OAuth2TokenBundle) -> dict[str, Any]:
+    client_id = get_client_id_from_refresh_token(bundle.refresh_token)
+
+    session = OAuth2Session(
+        client_id=client_id,
+        token={
+            "access_token": bundle.access_token,
+            "token_type": bundle.token_type or "Bearer",
+        },
+    )
+
+    try:
+        response = session.get(EVERNOTE_API_USERS_ME_URL, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError, OAuth2Error) as e:
+        raise ProgramTerminatedError(
+            f"Failed to verify OAuth2 access token: {e}"
+        ) from e
+
+    if not isinstance(data, dict):
+        raise ProgramTerminatedError(
+            "Failed to verify OAuth2 access token: unexpected response format"
+        )
+
+    return data
 
 
 def refresh_oauth_token(refresh_token: str) -> OAuth2TokenBundle:

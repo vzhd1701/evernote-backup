@@ -25,7 +25,7 @@ def get_sync_client(
     max_chunk_results: int,
     jwt_token: Optional[str] = None,
 ) -> EvernoteClientSync:
-    logger.info(f"Authorizing auth token, {backend} backend...")
+    logger.info(f"Authorizing monolith token, {backend} backend...")
 
     cafile = get_cafile_path(use_system_ssl_ca)
 

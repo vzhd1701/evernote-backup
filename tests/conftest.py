@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 
 import jwt
 import pytest
+import requests
 from click.testing import CliRunner
 from evernote.edam.error.ttypes import (
     EDAMErrorCode,
@@ -462,11 +463,14 @@ class TokenBundleMock(MagicMock):
         self.client_id = "3FE74DA6-ABC8-4E20-9940-28D589D4E808"
         self.user_id = 111222333
         self.user_email = "test@example.com"
+        self.user_name = "testuser"
         self.user_shard = "s100"
         self.jwt_key = "12345"
         self.issued_at = int(time.time())
+        self.auth_time = self.issued_at - 3600
         self.expires_at = self.issued_at + 3600
         self.refresh_expires_at = self.issued_at + 31557600
+        self.fake_users_me_error = False
 
     @property
     def token_bundle_raw(self):
@@ -495,6 +499,7 @@ class TokenBundleMock(MagicMock):
             "versionId": "222bbb",
             "exp": self.refresh_expires_at,
             "iat": self.issued_at,
+            "authTime": self.auth_time,
             "iss": "https://accounts.evernote.com",
             "jti": "333ccc",
         }
@@ -505,6 +510,19 @@ class TokenBundleMock(MagicMock):
             "id_token": jwt.encode(id_token, self.jwt_key),
             "refresh_token": jwt.encode(refresh_token, self.jwt_key),
             "token_type": "Bearer",
+        }
+
+    @property
+    def users_me(self):
+        return {
+            "id": self.user_id,
+            "username": self.user_name,
+            "email": self.user_email,
+            "name": self.user_name,
+            "isEmailVerified": True,
+            "serviceLevel": "BASIC",
+            "serviceLevelV2": "FREE",
+            "shardId": 100,
         }
 
     @property
@@ -535,6 +553,16 @@ def mock_oauth_client(mocker):
 
         return oauth_mock.token_bundle_raw
 
+    def fake_get(self, url, **kwargs):
+        if oauth_mock.fake_users_me_error:
+            raise requests.RequestException("users/me failed")
+
+        response = MagicMock()
+        response.status_code = 200
+        response.raise_for_status = MagicMock()
+        response.json.return_value = oauth_mock.users_me
+        return response
+
     oauth_mock = TokenBundleMock()
 
     mocker.patch.object(
@@ -547,6 +575,13 @@ def mock_oauth_client(mocker):
         evernote_backup.evernote_client_oauth.OAuth2Session,
         "refresh_token",
         fake_refresh_token,
+    )
+
+    # Same class object as token_util.OAuth2Session — patches users/me GET.
+    mocker.patch.object(
+        evernote_backup.evernote_client_oauth.OAuth2Session,
+        "get",
+        fake_get,
     )
 
     mocker.patch(
