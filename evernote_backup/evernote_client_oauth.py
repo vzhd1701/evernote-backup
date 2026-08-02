@@ -1,6 +1,7 @@
-import re
+import sys
 import threading
 import time
+from collections.abc import Collection
 from enum import IntEnum
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Optional
@@ -78,8 +79,22 @@ class EvernoteOAuthCallbackHandler:
         )
 
     def wait_for_token(self) -> str:
-        """Complete OAuth code exchange and return token bundle JSON for storage."""
+        """Complete OAuth code exchange and return token bundle JSON for storage.
+
+        Accepts either the local HTTP redirect callback or a callback URL pasted
+        on stdin (for headless / remote OAuth where the browser cannot reach
+        the local listener).
+        """
         bundle = self.client.get_access_token(self._wait_for_callback())
+        return bundle.to_json()
+
+    def exchange_token(self, callback_url: str) -> str:
+        """Exchange a pasted MCP callback URL for token bundle JSON."""
+        bundle = self.client.get_access_token(
+            normalize_oauth_callback_url(
+                callback_url, allowed_schemes=("http", "https")
+            )
+        )
         return bundle.to_json()
 
     def _wait_for_callback(self) -> str:
@@ -93,14 +108,35 @@ class EvernoteOAuthCallbackHandler:
         thread = threading.Thread(target=callback_server.run)
         thread.start()
 
+        pasted: list[str] = []
+        stop_paste = threading.Event()
+
+        def read_pasted_url() -> None:
+            try:
+                line = sys.stdin.readline()
+            except Exception:
+                return
+
+            if line and not stop_paste.is_set():
+                pasted.append(line)
+
+        paste_thread = threading.Thread(target=read_pasted_url, daemon=True)
+        paste_thread.start()
+
         try:  # noqa: WPS501
-            while not callback_server.callback_response:
+            while not callback_server.callback_response and not pasted:
                 time.sleep(0.1)
         finally:
+            stop_paste.set()
             callback_server.shutdown()
             thread.join()
 
-        return callback_server.callback_response
+        if callback_server.callback_response:
+            return callback_server.callback_response
+
+        return normalize_oauth_callback_url(
+            pasted[0], allowed_schemes=("http", "https")
+        )
 
 
 class EvernoteOAuthDesktopHandler:
@@ -118,7 +154,7 @@ class EvernoteOAuthDesktopHandler:
     def exchange_token(self, redirect_url: str) -> str:
         """Exchange pasted evernote:// redirect URL for token bundle JSON."""
         bundle = self.client.get_access_token(
-            normalize_desktop_redirect_url(redirect_url)
+            normalize_oauth_callback_url(redirect_url, allowed_schemes=("evernote",))
         )
         return bundle.to_json()
 
@@ -170,27 +206,71 @@ class EvernoteOAuthClient(EvernoteClientBase):
         return OAuth2TokenBundle.from_dict(token)
 
 
-def normalize_desktop_redirect_url(raw: str) -> str:
+def normalize_oauth_callback_url(
+    raw: str,
+    allowed_schemes: Collection[str],
+) -> str:
+    """Normalize a pasted OAuth callback URL to /path?query form (no scheme/host).
+
+    ``allowed_schemes`` restricts accepted URL schemes, e.g. ``("evernote",)`` for
+    desktop OAuth or ``("http", "https")`` for MCP callback paste.
+    """
     url = raw.strip().strip('"').strip("'")
+
+    if not url:
+        raise OAuthDeclinedError("Empty callback URL")
+
+    allowed = {scheme.lower() for scheme in allowed_schemes}
+    preview = f"{raw[:120]}{'...' if len(raw) > 120 else ''}"
+    schemes_txt = " or ".join(f"{scheme}://" for scheme in sorted(allowed))
+    allows_http = "http" in allowed or "https" in allowed
+
+    def bad_scheme_error() -> OAuthDeclinedError:
+        return OAuthDeclinedError(
+            f"Expected an {schemes_txt} redirect URL (got: {preview})"
+        )
 
     try:
         parsed = urlparse(url)
     except ValueError as e:
-        raise OAuthDeclinedError(f"Malformed redirect URL: {e}")
+        raise OAuthDeclinedError(f"Malformed redirect URL: {e}") from e
 
-    if parsed.scheme != "evernote":
-        raise OAuthDeclinedError(
-            "Expected an evernote:// redirect URL"
-            f" (got: {raw[:120]}{'...' if len(raw) > 120 else ''})"
-        )
+    scheme = (parsed.scheme or "").lower()
 
-    if "code=" not in parsed.query:
+    # urlparse treats "localhost:10500/path" as scheme="localhost".
+    if (
+        scheme
+        and scheme not in allowed
+        and allows_http
+        and "://" not in url.split("?", 1)[0]
+    ):
+        try:
+            parsed = urlparse(f"http://{url}")
+        except ValueError as e:
+            raise OAuthDeclinedError(f"Malformed redirect URL: {e}") from e
+        scheme = (parsed.scheme or "").lower()
+
+    if not scheme:
+        # Path-only form is only accepted for HTTP-style callbacks (MCP paste).
+        if not (allows_http and url.startswith("/")):
+            raise bad_scheme_error()
+        path = parsed.path or ""
+        query = parsed.query or ""
+    elif scheme not in allowed:
+        raise bad_scheme_error()
+    else:
+        path = parsed.path or ""
+        query = parsed.query or ""
+
+    if "code=" not in query:
         raise OAuthDeclinedError(
             "Redirect URL is missing the authorization code parameter"
         )
 
-    result = parsed._replace(scheme="", netloc="").geturl()
-    return result
+    if not path.startswith("/"):
+        path = f"/{path}" if path else "/"
+
+    return f"{path}?{query}" if query else path
 
 
 def register_mcp_client(redirect_uri: str) -> dict[str, Any]:

@@ -89,7 +89,7 @@ If you log in to **Evernote**, OAuth is used. You can select the login method wi
 
 - **`import`** — Imports an OAuth session from an existing Evernote Desktop Client installation. This lets you run the Desktop Client in parallel with `evernote-backup`. It works as long as the Desktop Client stays logged in; if you log out there, the refresh token is invalidated. Supported on Windows and macOS.
 
-- **`mcp`** — Uses the Evernote MCP interface API. Available only on paid Evernote plans. Untested in production.
+- **`mcp`** — Uses the Evernote MCP interface API. Available only on paid Evernote plans. **Untested**. Starts a local callback listener; for headless or remote sessions, paste the full `http://.../oauth_callback?code=...` URL from the redirect into the terminal.
 
 Example:
 

@@ -11,8 +11,12 @@ from evernote_backup.evernote_client_oauth import (
     EvernoteOAuthCallbackHandler,
     EvernoteOAuthClient,
     HTTPCode,
+    normalize_oauth_callback_url,
     register_mcp_client,
 )
+
+MCP_SCHEMES = ("http", "https")
+DESKTOP_SCHEMES = ("evernote",)
 
 FAKE_OAUTH_PORT = 10500
 FAKE_OAUTH_HOST = "localhost"
@@ -103,6 +107,46 @@ def test_get_auth_token_declined_bad_response(
         oauth_handler.wait_for_token()
 
 
+def test_get_auth_token_via_paste(
+    mock_oauth_client, mock_evernote_oauth_client, mocker
+):
+    mock_server = mocker.patch(
+        "evernote_backup.evernote_client_oauth.StoppableHTTPServer"
+    )
+    mock_server.return_value.callback_response = ""
+    mock_server.return_value.run.side_effect = lambda: None
+
+    pasted_url = (
+        f"http://{FAKE_OAUTH_HOST}:{FAKE_OAUTH_PORT}"
+        f"{mock_oauth_client.fake_callback_response}\n"
+    )
+    mocker.patch("sys.stdin.readline", return_value=pasted_url)
+
+    oauth_handler = EvernoteOAuthCallbackHandler(
+        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
+    )
+    oauth_handler.get_oauth_url()
+
+    test_token = oauth_handler.wait_for_token()
+
+    assert test_token == mock_oauth_client.token_bundle.to_json()
+
+
+def test_exchange_token_via_paste(mock_oauth_client, mock_evernote_oauth_client):
+    oauth_handler = EvernoteOAuthCallbackHandler(
+        mock_evernote_oauth_client, FAKE_OAUTH_PORT, FAKE_OAUTH_HOST
+    )
+    oauth_handler.get_oauth_url()
+
+    pasted_url = (
+        f"http://{FAKE_OAUTH_HOST}:{FAKE_OAUTH_PORT}"
+        f"{mock_oauth_client.fake_callback_response}"
+    )
+    test_token = oauth_handler.exchange_token(pasted_url)
+
+    assert test_token == mock_oauth_client.token_bundle.to_json()
+
+
 def test_get_auth_token_interrupted(
     mock_oauth_client,
     mock_evernote_oauth_client,
@@ -143,6 +187,201 @@ def test_callback_handler(mocker):
 
     assert mock_instance.server.callback_response == mock_instance.path
     mock_instance.send_response.assert_called_once_with(HTTPCode.OK)
+
+
+@pytest.mark.parametrize(
+    ("raw", "allowed", "expected"),
+    [
+        (
+            "http://localhost:10500/oauth_callback?code=abc&state=xyz",
+            MCP_SCHEMES,
+            "/oauth_callback?code=abc&state=xyz",
+        ),
+        (
+            "https://localhost:10500/oauth_callback?code=abc&state=xyz",
+            MCP_SCHEMES,
+            "/oauth_callback?code=abc&state=xyz",
+        ),
+        (
+            "HTTP://localhost:10500/oauth_callback?code=abc",
+            MCP_SCHEMES,
+            "/oauth_callback?code=abc",
+        ),
+        (
+            "/oauth_callback?code=abc&state=xyz",
+            MCP_SCHEMES,
+            "/oauth_callback?code=abc&state=xyz",
+        ),
+        (
+            "localhost:10500/oauth_callback?code=abc&state=xyz",
+            MCP_SCHEMES,
+            "/oauth_callback?code=abc&state=xyz",
+        ),
+        (
+            '  "http://localhost:10500/oauth_callback?code=abc&state=xyz"  ',
+            MCP_SCHEMES,
+            "/oauth_callback?code=abc&state=xyz",
+        ),
+        (
+            "  'https://localhost/oauth_callback?code=abc'  ",
+            MCP_SCHEMES,
+            "/oauth_callback?code=abc",
+        ),
+        (
+            "http://localhost?code=abc",
+            MCP_SCHEMES,
+            "/?code=abc",
+        ),
+        (
+            "evernote://www.evernote.com/auth/redirect?code=test&state=test",
+            DESKTOP_SCHEMES,
+            "/auth/redirect?code=test&state=test",
+        ),
+        (
+            "EVERNOTE://www.evernote.com/auth/redirect?code=test",
+            DESKTOP_SCHEMES,
+            "/auth/redirect?code=test",
+        ),
+        (
+            "evernote://www.evernote.com/auth/redirect?code=test",
+            ("Evernote",),
+            "/auth/redirect?code=test",
+        ),
+    ],
+)
+def test_normalize_oauth_callback_url_valid(raw, allowed, expected):
+    assert normalize_oauth_callback_url(raw, allowed) == expected
+
+
+def test_normalize_oauth_callback_url_empty():
+    with pytest.raises(OAuthDeclinedError, match="Empty callback URL"):
+        normalize_oauth_callback_url("   ", MCP_SCHEMES)
+
+
+@pytest.mark.parametrize(
+    ("raw", "allowed", "match"),
+    [
+        (
+            "http://localhost:10500/oauth_callback?state=xyz",
+            MCP_SCHEMES,
+            "authorization code",
+        ),
+        (
+            "/oauth_callback?state=xyz",
+            MCP_SCHEMES,
+            "authorization code",
+        ),
+        (
+            "localhost:10500/oauth_callback?state=xyz",
+            MCP_SCHEMES,
+            "authorization code",
+        ),
+        (
+            "evernote://www.evernote.com/auth/redirect?state=test",
+            DESKTOP_SCHEMES,
+            "authorization code",
+        ),
+        (
+            "not-a-url",
+            MCP_SCHEMES,
+            "Expected an http",
+        ),
+        (
+            "ftp://example.com/oauth_callback?code=abc",
+            MCP_SCHEMES,
+            "Expected an http",
+        ),
+        (
+            "http://localhost:10500/oauth_callback?code=abc",
+            DESKTOP_SCHEMES,
+            "Expected an evernote://",
+        ),
+        (
+            "/auth/redirect?code=test&state=test",
+            DESKTOP_SCHEMES,
+            "Expected an evernote://",
+        ),
+        (
+            "localhost:10500/oauth_callback?code=abc",
+            DESKTOP_SCHEMES,
+            "Expected an evernote://",
+        ),
+        (
+            "evernote://www.evernote.com/auth/redirect?code=test",
+            MCP_SCHEMES,
+            "Expected an http",
+        ),
+    ],
+)
+def test_normalize_oauth_callback_url_invalid(raw, allowed, match):
+    with pytest.raises(OAuthDeclinedError, match=match):
+        normalize_oauth_callback_url(raw, allowed)
+
+
+def test_normalize_oauth_callback_url_long_preview_truncated():
+    long_tail = "x" * 200
+    raw = f"ftp://example.com/oauth_callback?code=abc&junk={long_tail}"
+
+    with pytest.raises(OAuthDeclinedError, match=r"got: .+\.\.\.") as exc_info:
+        normalize_oauth_callback_url(raw, MCP_SCHEMES)
+
+    message = str(exc_info.value)
+    assert "..." in message
+    assert long_tail not in message
+
+
+def test_normalize_oauth_callback_url_malformed_urlparse(mocker):
+    mocker.patch(
+        "evernote_backup.evernote_client_oauth.urlparse",
+        side_effect=ValueError("bad url"),
+    )
+
+    with pytest.raises(OAuthDeclinedError, match="Malformed redirect URL: bad url"):
+        normalize_oauth_callback_url(
+            "http://localhost/oauth_callback?code=abc", MCP_SCHEMES
+        )
+
+
+def test_normalize_oauth_callback_url_malformed_host_without_scheme(mocker):
+    real_urlparse = __import__("urllib.parse", fromlist=["urlparse"]).urlparse
+
+    def fake_urlparse(value):
+        if value.startswith("http://"):
+            raise ValueError("bad host form")
+        return real_urlparse(value)
+
+    mocker.patch(
+        "evernote_backup.evernote_client_oauth.urlparse",
+        side_effect=fake_urlparse,
+    )
+
+    with pytest.raises(
+        OAuthDeclinedError, match="Malformed redirect URL: bad host form"
+    ):
+        normalize_oauth_callback_url(
+            "localhost:10500/oauth_callback?code=abc", MCP_SCHEMES
+        )
+
+
+def test_normalize_oauth_callback_url_adds_leading_slash(mocker):
+    from urllib.parse import ParseResult
+
+    mocker.patch(
+        "evernote_backup.evernote_client_oauth.urlparse",
+        return_value=ParseResult(
+            scheme="http",
+            netloc="localhost",
+            path="oauth_callback",
+            params="",
+            query="code=abc&state=xyz",
+            fragment="",
+        ),
+    )
+
+    assert (
+        normalize_oauth_callback_url("http://ignored", MCP_SCHEMES)
+        == "/oauth_callback?code=abc&state=xyz"
+    )
 
 
 def test_register_mcp_client_success(requests_mock):

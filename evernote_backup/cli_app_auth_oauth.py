@@ -55,11 +55,17 @@ def evernote_login_oauth_mcp(
     oauth_handler = EvernoteOAuthCallbackHandler(oauth_client, oauth_port, oauth_host)
 
     oauth_url = oauth_handler.get_oauth_url()
+    callback_base = f"http://{oauth_host}:{oauth_port}/oauth_callback"
 
     click.echo(
         "Opening authorization page (MCP OAuth)...\n"
         "If it didn't open automatically, please copy this URL into your browser:\n"
-        f"{oauth_url}"
+        f"{oauth_url}\n"
+        "\n"
+        f"Waiting for OAuth callback on {callback_base} ...\n"
+        "For headless or remote sessions (when the browser cannot reach this host),\n"
+        "copy the full callback URL from the browser address bar after authorizing\n"
+        f"(it should start with {callback_base}?code=...) and paste it here, then press Enter.\n"
     )
     click.launch(oauth_url)
 
