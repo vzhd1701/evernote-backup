@@ -152,12 +152,12 @@ jobs:
     needs: [ build_binaries ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - name: Extract release changelog
-        run: |
-          sed "0,/## \[/d;/## \[/Q" CHANGELOG.md > release_changelog
-          echo -n "**Full Changelog**: " >> release_changelog
-          sed -n 's/## \[.*\](\(.*\)) (.*/\1/p' CHANGELOG.md | head -1 >> release_changelog
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Extract release notes
+        id: extract-release-notes
+        uses: ffurrer2/extract-release-notes@v3
 
       - name: Get tag version
         run: |
@@ -209,7 +209,7 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          bodyFile: release_changelog
+          body: ${{ steps.extract-release-notes.outputs.release_notes }}
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ env.TAG_VERSION }}

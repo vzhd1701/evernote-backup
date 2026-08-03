@@ -1,231 +1,276 @@
-## [1.13.1](https://github.com/vzhd1701/evernote-backup/compare/1.13.0...1.13.1) (2025-04-23)
+# Changelog
 
-### Bug Fixes
+All notable changes to this project will be documented in this file.
 
-- skip parsing unused token parameters ([1f199b3](https://github.com/vzhd1701/evernote-backup/commit/1f199b388545b8dc08f3dd2701b2d61de4b294f0))
+The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.13.0](https://github.com/vzhd1701/evernote-backup/compare/1.12.0...1.13.0) (2025-04-19)
+## [Unreleased]
 
-### Features
+## [1.13.1] - 2025-04-23
 
-- add --add-metadata option to export mode for embedding metadata into exported notes ([a77f9f2](https://github.com/vzhd1701/evernote-backup/commit/a77f9f21211d56418cb97ee0ce580badecef81eb))
-- add --notebook option to export mode for exporting specific notebook(s) ([fdfd7dd](https://github.com/vzhd1701/evernote-backup/commit/fdfd7ddbb4f2a08abe1fee634a46d96773d8cb37))
-- add --tag option to export mode for exporting notes with specific tag(s) ([69d4695](https://github.com/vzhd1701/evernote-backup/commit/69d46953f1b308dec836bf9ae7769ccd0558584d))
-- add manage check command for db integrity check ([835433b](https://github.com/vzhd1701/evernote-backup/commit/835433b943a831839c61a68df04f2c378a7d9daf))
-- add manage list command for listing db content ([d05803c](https://github.com/vzhd1701/evernote-backup/commit/d05803c048d0b4f6f960c9f6fb5a4c7357a2df88))
+### Fixed
 
-### Bug Fixes
+- Skip parsing unused token parameters ([1f199b3](https://github.com/vzhd1701/evernote-backup/commit/1f199b388545b8dc08f3dd2701b2d61de4b294f0))
 
-- avoid crash on any error during note download ([14636b7](https://github.com/vzhd1701/evernote-backup/commit/14636b781c1d6c0425cd7101f532aefc851f3470))
+## [1.13.0] - 2025-04-19
 
-## [1.12.0](https://github.com/vzhd1701/evernote-backup/compare/1.11.0...1.12.0) (2025-04-17)
+### Added
 
-### Features
+- Add `--add-metadata` option to export mode for embedding metadata into exported notes ([a77f9f2](https://github.com/vzhd1701/evernote-backup/commit/a77f9f21211d56418cb97ee0ce580badecef81eb))
+- Add `--notebook` option to export mode for exporting specific notebook(s) ([fdfd7dd](https://github.com/vzhd1701/evernote-backup/commit/fdfd7ddbb4f2a08abe1fee634a46d96773d8cb37))
+- Add `--tag` option to export mode for exporting notes with specific tag(s) ([69d4695](https://github.com/vzhd1701/evernote-backup/commit/69d46953f1b308dec836bf9ae7769ccd0558584d))
+- Add `manage check` command for db integrity check ([835433b](https://github.com/vzhd1701/evernote-backup/commit/835433b943a831839c61a68df04f2c378a7d9daf))
+- Add `manage list` command for listing db content ([d05803c](https://github.com/vzhd1701/evernote-backup/commit/d05803c048d0b4f6f960c9f6fb5a4c7357a2df88))
 
-- add --api-data option to init-db and reauth for custom API data ([4edd04e](https://github.com/vzhd1701/evernote-backup/commit/4edd04ea707c6401b6fb857ce980c6623ce08f1e)), closes [#129](https://github.com/vzhd1701/evernote-backup/issues/129)
-- add options to debug SSL errors ([c28bd70](https://github.com/vzhd1701/evernote-backup/commit/c28bd700222b458623d22de9d8041e4ff4dcf0a0))
+### Fixed
 
-### Bug Fixes
+- Avoid crash on any error during note download ([14636b7](https://github.com/vzhd1701/evernote-backup/commit/14636b781c1d6c0425cd7101f532aefc851f3470))
 
-- avoid crash on bad string data from server ([70392e6](https://github.com/vzhd1701/evernote-backup/commit/70392e607a0943497cb44ddbdabfe4a6f4dbe328))
-- use use_system_ssl_ca flag to init client on manage ping ([e9f8667](https://github.com/vzhd1701/evernote-backup/commit/e9f866726c1a3166579ee811a06161666a0aa52b))
+## [1.12.0] - 2025-04-17
 
-## [1.11.0](https://github.com/vzhd1701/evernote-backup/compare/1.10.0...1.11.0) (2025-04-15)
+### Added
 
-### Features
+- Add `--api-data` option to `init-db` and `reauth` for custom API data ([4edd04e](https://github.com/vzhd1701/evernote-backup/commit/4edd04ea707c6401b6fb857ce980c6623ce08f1e)), closes [#129](https://github.com/vzhd1701/evernote-backup/issues/129)
+- Add options to debug SSL errors ([c28bd70](https://github.com/vzhd1701/evernote-backup/commit/c28bd700222b458623d22de9d8041e4ff4dcf0a0))
 
-- add support for tasks & reminders ([f1ece7a](https://github.com/vzhd1701/evernote-backup/commit/f1ece7afd5e2c58b1260a2e9d2582382d3dada11))
+### Fixed
 
-### Bug Fixes
+- Avoid crash on bad string data from server ([70392e6](https://github.com/vzhd1701/evernote-backup/commit/70392e607a0943497cb44ddbdabfe4a6f4dbe328))
+- Use `use_system_ssl_ca` flag to init client on `manage ping` ([e9f8667](https://github.com/vzhd1701/evernote-backup/commit/e9f866726c1a3166579ee811a06161666a0aa52b))
 
-- add hotfix for THttpClient until new thrift version gets released ([386eb24](https://github.com/vzhd1701/evernote-backup/commit/386eb24a944f009dbb4975b929cb25604e5cdd8e)), closes [#130](https://github.com/vzhd1701/evernote-backup/issues/130)
-- give warning on corrupt notes without removing notes ([467ee96](https://github.com/vzhd1701/evernote-backup/commit/467ee968bea48db9f6f1730e9fcb450734e113c1))
-- mark notes for redownload if they are corrupted in DB ([fb7eedd](https://github.com/vzhd1701/evernote-backup/commit/fb7eeddad0804ca61bc3d55485f163c35fce3df2))
-- print log level in console output if it's other than INFO ([aabc5cd](https://github.com/vzhd1701/evernote-backup/commit/aabc5cdf4cd092c43a6743a025d7a7096edf6f36))
-- restore china backend login ([4d93d9b](https://github.com/vzhd1701/evernote-backup/commit/4d93d9b7375bfbe4483942afc285abc84a2f9fbb))
+## [1.11.0] - 2025-04-15
 
-## [1.10.0](https://github.com/vzhd1701/evernote-backup/compare/1.9.4...1.10.0) (2025-04-07)
+### Added
 
-### Features
+- Add support for tasks & reminders ([f1ece7a](https://github.com/vzhd1701/evernote-backup/commit/f1ece7afd5e2c58b1260a2e9d2582382d3dada11))
 
-- add --add-guid option in export mode to include GUID meta for each note ([c4cb1eb](https://github.com/vzhd1701/evernote-backup/commit/c4cb1ebb128924573839a10b586d24ecf124c698)), closes [#66](https://github.com/vzhd1701/evernote-backup/issues/66)
-- add --log option for setting log file ([64eb952](https://github.com/vzhd1701/evernote-backup/commit/64eb9521d1f7cde0b6dab17b817f8a0e4f8e0455))
+### Fixed
 
-### Bug Fixes
+- Add hotfix for `THttpClient` until new thrift version gets released ([386eb24](https://github.com/vzhd1701/evernote-backup/commit/386eb24a944f009dbb4975b929cb25604e5cdd8e)), closes [#130](https://github.com/vzhd1701/evernote-backup/issues/130)
+- Give warning on corrupt notes without removing notes ([467ee96](https://github.com/vzhd1701/evernote-backup/commit/467ee968bea48db9f6f1730e9fcb450734e113c1))
+- Mark notes for redownload if they are corrupted in DB ([fb7eedd](https://github.com/vzhd1701/evernote-backup/commit/fb7eeddad0804ca61bc3d55485f163c35fce3df2))
+- Print log level in console output if it's other than INFO ([aabc5cd](https://github.com/vzhd1701/evernote-backup/commit/aabc5cdf4cd092c43a6743a025d7a7096edf6f36))
+- Restore China backend login ([4d93d9b](https://github.com/vzhd1701/evernote-backup/commit/4d93d9b7375bfbe4483942afc285abc84a2f9fbb))
 
-- format reminder-time on export ([eceea64](https://github.com/vzhd1701/evernote-backup/commit/eceea645e444b777d948481b77f4cc076e930518)), closes [#86](https://github.com/vzhd1701/evernote-backup/issues/86)
-- skip download for notes that return server side error ([d0fcd23](https://github.com/vzhd1701/evernote-backup/commit/d0fcd23e573442e2a56279e3b2cf1174a0dd84c1))
+## [1.10.0] - 2025-04-07
 
-## [1.9.4](https://github.com/vzhd1701/evernote-backup/compare/v1.9.3...1.9.4) (2025-04-06)
+### Added
 
-### Bug Fixes
+- Add `--add-guid` option in export mode to include GUID meta for each note ([c4cb1eb](https://github.com/vzhd1701/evernote-backup/commit/c4cb1ebb128924573839a10b586d24ecf124c698)), closes [#66](https://github.com/vzhd1701/evernote-backup/issues/66)
+- Add `--log` option for setting log file ([64eb952](https://github.com/vzhd1701/evernote-backup/commit/64eb9521d1f7cde0b6dab17b817f8a0e4f8e0455))
 
-- drop evernote sandbox backend ([d4b99c7](https://github.com/vzhd1701/evernote-backup/commit/d4b99c76d82800dbcdd75f87b6614f94352faeb9))
-- update yinxiang API key ([1d43fa4](https://github.com/vzhd1701/evernote-backup/commit/1d43fa47d1a78d86f7d759a3a9ab8be4b1161137))
-- use oauth login for evernote and password login for yinxiang ([4930005](https://github.com/vzhd1701/evernote-backup/commit/4930005a3cf25fe30eed0e1173a6e2321f4289ce))
+### Fixed
 
-## [1.9.3](https://github.com/vzhd1701/evernote-backup/compare/1.9.3...v1.9.3) (2023-10-18)
+- Format reminder-time on export ([eceea64](https://github.com/vzhd1701/evernote-backup/commit/eceea645e444b777d948481b77f4cc076e930518)), closes [#86](https://github.com/vzhd1701/evernote-backup/issues/86)
+- Skip download for notes that return server side error ([d0fcd23](https://github.com/vzhd1701/evernote-backup/commit/d0fcd23e573442e2a56279e3b2cf1174a0dd84c1))
 
-### Bug Fixes
+## [1.9.4] - 2025-04-06
 
-- add support for negative timestamps (close [#38](https://github.com/vzhd1701/evernote-backup/issues/38)) ([#48](https://github.com/vzhd1701/evernote-backup/issues/48)) ([244440d](https://github.com/vzhd1701/evernote-backup/commit/244440d6dfec8873159c77d741c5b01cecc2cc20))
-- change notebooks export log message to avoid confusion ([0a5840d](https://github.com/vzhd1701/evernote-backup/commit/0a5840d980c0d8b554b67fdf3e1a56d184d1ba79)), closes [#52](https://github.com/vzhd1701/evernote-backup/issues/52)
+### Fixed
 
-## [1.9.2](https://github.com/vzhd1701/evernote-backup/compare/1.9.1...1.9.2) (2022-08-23)
+- Drop Evernote sandbox backend ([d4b99c7](https://github.com/vzhd1701/evernote-backup/commit/d4b99c76d82800dbcdd75f87b6614f94352faeb9))
+- Update Yinxiang API key ([1d43fa4](https://github.com/vzhd1701/evernote-backup/commit/1d43fa47d1a78d86f7d759a3a9ab8be4b1161137))
+- Use OAuth login for Evernote and password login for Yinxiang ([4930005](https://github.com/vzhd1701/evernote-backup/commit/4930005a3cf25fe30eed0e1173a6e2321f4289ce))
 
-### Bug Fixes
+## [1.9.3] - 2023-10-18
 
-- fix crash on repeated export with long filenames ([692a93a](https://github.com/vzhd1701/evernote-backup/commit/692a93ab168d7bfa2bd72dccf8856999b367be52)), closes [#26](https://github.com/vzhd1701/evernote-backup/issues/26)
+### Fixed
 
-## [1.9.1](https://github.com/vzhd1701/evernote-backup/compare/1.9.0...1.9.1) (2022-08-20)
+- Add support for negative timestamps (close [#38](https://github.com/vzhd1701/evernote-backup/issues/38)) ([#48](https://github.com/vzhd1701/evernote-backup/issues/48)) ([244440d](https://github.com/vzhd1701/evernote-backup/commit/244440d6dfec8873159c77d741c5b01cecc2cc20))
+- Change notebooks export log message to avoid confusion ([0a5840d](https://github.com/vzhd1701/evernote-backup/commit/0a5840d980c0d8b554b67fdf3e1a56d184d1ba79)), closes [#52](https://github.com/vzhd1701/evernote-backup/issues/52)
 
-### Bug Fixes
+## [1.9.2] - 2022-08-23
 
-- limit export filename length to 255 bytes ([33cfe1b](https://github.com/vzhd1701/evernote-backup/commit/33cfe1b95f6aceec01972c56edf78940f42093a8)), closes [#15](https://github.com/vzhd1701/evernote-backup/issues/15)
+### Fixed
 
-## [1.9.0](https://github.com/vzhd1701/evernote-backup/compare/1.8.1...1.9.0) (2022-05-17)
+- Fix crash on repeated export with long filenames ([692a93a](https://github.com/vzhd1701/evernote-backup/commit/692a93ab168d7bfa2bd72dccf8856999b367be52)), closes [#26](https://github.com/vzhd1701/evernote-backup/issues/26)
 
-### Features
+## [1.9.1] - 2022-08-20
 
-- add --overwrite flag to export mode ([5a88b76](https://github.com/vzhd1701/evernote-backup/commit/5a88b76f9d6e92cd66549cb65e4715473a0dd3c3)), closes [#19](https://github.com/vzhd1701/evernote-backup/issues/19)
+### Fixed
 
-## [1.8.1](https://github.com/vzhd1701/evernote-backup/compare/1.8.0...1.8.1) (2022-05-10)
+- Limit export filename length to 255 bytes ([33cfe1b](https://github.com/vzhd1701/evernote-backup/commit/33cfe1b95f6aceec01972c56edf78940f42093a8)), closes [#15](https://github.com/vzhd1701/evernote-backup/issues/15)
 
-### Bug Fixes
+## [1.9.0] - 2022-05-17
 
-- hide current item name on progress to avoid glitches ([19925b4](https://github.com/vzhd1701/evernote-backup/commit/19925b46bebe3d914c3e0fd723ff517e58cd0443)), closes [#18](https://github.com/vzhd1701/evernote-backup/issues/18)
+### Added
 
-## [1.8.0](https://github.com/vzhd1701/evernote-backup/compare/1.7.1...1.8.0) (2022-04-22)
+- Add `--overwrite` flag to export mode ([5a88b76](https://github.com/vzhd1701/evernote-backup/commit/5a88b76f9d6e92cd66549cb65e4715473a0dd3c3)), closes [#19](https://github.com/vzhd1701/evernote-backup/issues/19)
 
-### Features
+## [1.8.1] - 2022-05-10
 
-- add --oauth-host option ([0b6b8a6](https://github.com/vzhd1701/evernote-backup/commit/0b6b8a60a29a07af0a35c00c8bcec7b65c9c0868))
+### Fixed
 
-## [1.7.1](https://github.com/vzhd1701/evernote-backup/compare/1.7.0...1.7.1) (2022-02-14)
+- Hide current item name on progress to avoid glitches ([19925b4](https://github.com/vzhd1701/evernote-backup/commit/19925b46bebe3d914c3e0fd723ff517e58cd0443)), closes [#18](https://github.com/vzhd1701/evernote-backup/issues/18)
 
-### Bug Fixes
+## [1.8.0] - 2022-04-22
 
-- add index to speed up download with >10k notes DB ([2dbb599](https://github.com/vzhd1701/evernote-backup/commit/2dbb599ad251f19b21684c3f7f30d156b78639e3)), closes [#14](https://github.com/vzhd1701/evernote-backup/issues/14)
+### Added
 
-## [1.7.0](https://github.com/vzhd1701/evernote-backup/compare/1.6.8...1.7.0) (2022-01-31)
+- Add `--oauth-host` option ([0b6b8a6](https://github.com/vzhd1701/evernote-backup/commit/0b6b8a60a29a07af0a35c00c8bcec7b65c9c0868))
 
-### Features
+## [1.7.1] - 2022-02-14
 
-- add --no-export-date option ([030ddfc](https://github.com/vzhd1701/evernote-backup/commit/030ddfca9b06767afed2183cc86bd69625ad4caa))
+### Fixed
 
-## [1.6.8](https://github.com/vzhd1701/evernote-backup/compare/1.6.7...1.6.8) (2022-01-02)
+- Add index to speed up download with >10k notes DB ([2dbb599](https://github.com/vzhd1701/evernote-backup/commit/2dbb599ad251f19b21684c3f7f30d156b78639e3)), closes [#14](https://github.com/vzhd1701/evernote-backup/issues/14)
 
-### Bug Fixes
+## [1.7.0] - 2022-01-31
 
-- prevent memory leak on export ([19e9430](https://github.com/vzhd1701/evernote-backup/commit/19e94303bf6927df9b627e15f5f3367399bd5981))
+### Added
 
-## [1.6.7](https://github.com/vzhd1701/evernote-backup/compare/1.6.6...1.6.7) (2021-12-31)
+- Add `--no-export-date` option ([030ddfc](https://github.com/vzhd1701/evernote-backup/commit/030ddfca9b06767afed2183cc86bd69625ad4caa))
 
-### Bug Fixes
+## [1.6.8] - 2022-01-02
 
-- add support for long filenames on export ([8bea1e6](https://github.com/vzhd1701/evernote-backup/commit/8bea1e614ce82455fed64f610c35996317830669))
+### Fixed
 
-## [1.6.6](https://github.com/vzhd1701/evernote-backup/compare/1.6.5...1.6.6) (2021-10-15)
+- Prevent memory leak on export ([19e9430](https://github.com/vzhd1701/evernote-backup/commit/19e94303bf6927df9b627e15f5f3367399bd5981))
 
-### Bug Fixes
+## [1.6.7] - 2021-12-31
 
-- add support for notes from the distant future ([d352455](https://github.com/vzhd1701/evernote-backup/commit/d352455c9220fdb7911894456d67ea93caf8760f)), closes [#4](https://github.com/vzhd1701/evernote-backup/issues/4)
+### Fixed
 
-## [1.6.5](https://github.com/vzhd1701/evernote-backup/compare/1.6.4...1.6.5) (2021-09-09)
+- Add support for long filenames on export ([8bea1e6](https://github.com/vzhd1701/evernote-backup/commit/8bea1e614ce82455fed64f610c35996317830669))
 
-### Bug Fixes
+## [1.6.6] - 2021-10-15
 
-- add download retry on bad data from server ([7baf061](https://github.com/vzhd1701/evernote-backup/commit/7baf061054ceba27a9d9992943b9967505fea004))
+### Fixed
 
-## [1.6.4](https://github.com/vzhd1701/evernote-backup/compare/1.6.3...1.6.4) (2021-08-30)
+- Add support for notes from the distant future ([d352455](https://github.com/vzhd1701/evernote-backup/commit/d352455c9220fdb7911894456d67ea93caf8760f)), closes [#4](https://github.com/vzhd1701/evernote-backup/issues/4)
 
-### Bug Fixes
+## [1.6.5] - 2021-09-09
 
-- add support for shared notebooks with tags ([0e4e17c](https://github.com/vzhd1701/evernote-backup/commit/0e4e17c8a381bb7cb3db71940e0bb7047cfdbdd0))
+### Fixed
 
-## [1.6.3](https://github.com/vzhd1701/evernote-backup/compare/1.6.2...1.6.3) (2021-08-28)
+- Add download retry on bad data from server ([7baf061](https://github.com/vzhd1701/evernote-backup/commit/7baf061054ceba27a9d9992943b9967505fea004))
 
-### Bug Fixes
+## [1.6.4] - 2021-08-30
 
-- add memory limit when downloading notes ([aa4df00](https://github.com/vzhd1701/evernote-backup/commit/aa4df0079b7d3d5d564e74a924c20e7f4b725609))
-- add more log messages ([b2fdf11](https://github.com/vzhd1701/evernote-backup/commit/b2fdf119f1b1fce9c32a9948cb97aecd0f2c841a))
-- add more log messages ([59c13e1](https://github.com/vzhd1701/evernote-backup/commit/59c13e1e3b292fc554bdc533f5661679b0b81fd4))
-- improve handling exceptions when downloading notes ([8c45166](https://github.com/vzhd1701/evernote-backup/commit/8c451668acb8c9918295feec27dc5f79d74b571e))
+### Fixed
 
-## [1.6.2](https://github.com/vzhd1701/evernote-backup/compare/1.6.1...1.6.2) (2021-08-24)
+- Add support for shared notebooks with tags ([0e4e17c](https://github.com/vzhd1701/evernote-backup/commit/0e4e17c8a381bb7cb3db71940e0bb7047cfdbdd0))
 
-### Bug Fixes
+## [1.6.3] - 2021-08-28
 
-- fix support for linked notebooks ([4f4f928](https://github.com/vzhd1701/evernote-backup/commit/4f4f9286639745a5a4aa2410302d28a981c6bac5))
+### Fixed
 
-## [1.6.1](https://github.com/vzhd1701/evernote-backup/compare/1.6.0...1.6.1) (2021-08-23)
+- Add memory limit when downloading notes ([aa4df00](https://github.com/vzhd1701/evernote-backup/commit/aa4df0079b7d3d5d564e74a924c20e7f4b725609))
+- Add more log messages ([b2fdf11](https://github.com/vzhd1701/evernote-backup/commit/b2fdf119f1b1fce9c32a9948cb97aecd0f2c841a))
+- Add more log messages ([59c13e1](https://github.com/vzhd1701/evernote-backup/commit/59c13e1e3b292fc554bdc533f5661679b0b81fd4))
+- Improve handling exceptions when downloading notes ([8c45166](https://github.com/vzhd1701/evernote-backup/commit/8c451668acb8c9918295feec27dc5f79d74b571e))
 
-### Bug Fixes
+## [1.6.2] - 2021-08-24
 
-- add support for linked notebooks ([3bf3ef8](https://github.com/vzhd1701/evernote-backup/commit/3bf3ef8279fb36b9872791a775ddb352b49e51ea))
+### Fixed
 
-## [1.6.0](https://github.com/vzhd1701/evernote-backup/compare/1.5.1...1.6.0) (2021-08-09)
+- Fix support for linked notebooks ([4f4f928](https://github.com/vzhd1701/evernote-backup/commit/4f4f9286639745a5a4aa2410302d28a981c6bac5))
 
-### Features
+## [1.6.1] - 2021-08-23
 
-- add --verbose output option ([45051c3](https://github.com/vzhd1701/evernote-backup/commit/45051c34cb2b350939ae7aa563355c1649bd0dc9))
-- add debug logging on sync & export ([b1b2dff](https://github.com/vzhd1701/evernote-backup/commit/b1b2dffcf9ebb5594a3491e641ebc3b285c73102))
+### Fixed
 
-### Bug Fixes
+- Add support for linked notebooks ([3bf3ef8](https://github.com/vzhd1701/evernote-backup/commit/3bf3ef8279fb36b9872791a775ddb352b49e51ea))
 
-- typos ([e7bd437](https://github.com/vzhd1701/evernote-backup/commit/e7bd4379c6827be0d91c17a4cb49f78d4259a774))
+## [1.6.0] - 2021-08-09
 
-## [1.5.1](https://github.com/vzhd1701/evernote-backup/compare/1.5.0...1.5.1) (2021-06-09)
+### Added
 
-### Bug Fixes
+- Add `--verbose` output option ([45051c3](https://github.com/vzhd1701/evernote-backup/commit/45051c34cb2b350939ae7aa563355c1649bd0dc9))
+- Add debug logging on sync & export ([b1b2dff](https://github.com/vzhd1701/evernote-backup/commit/b1b2dffcf9ebb5594a3491e641ebc3b285c73102))
 
-- improve performance on big sync, e.g. >1k notes ([03fc4c4](https://github.com/vzhd1701/evernote-backup/commit/03fc4c4e94dd37bb50d139a211cd182d2b9ee0e6))
+### Fixed
 
-## [1.5.0](https://github.com/vzhd1701/evernote-backup/compare/1.4.1...1.5.0) (2021-06-07)
+- Typos ([e7bd437](https://github.com/vzhd1701/evernote-backup/commit/e7bd4379c6827be0d91c17a4cb49f78d4259a774))
 
-### Features
+## [1.5.1] - 2021-06-09
 
-- convert hardcoded config variables into cli options ([fecf49a](https://github.com/vzhd1701/evernote-backup/commit/fecf49aa150f3375b4a3b94b5a6ec72b2ff6a038))
+### Fixed
 
-## [1.4.1](https://github.com/vzhd1701/evernote-backup/compare/1.4.0...1.4.1) (2021-05-08)
+- Improve performance on big sync, e.g. >1k notes ([03fc4c4](https://github.com/vzhd1701/evernote-backup/commit/03fc4c4e94dd37bb50d139a211cd182d2b9ee0e6))
 
-### Bug Fixes
+## [1.5.0] - 2021-06-07
 
-- make init-db return early if database exists ([631b948](https://github.com/vzhd1701/evernote-backup/commit/631b948aa1d9a9160fd39cab407b5136dfdee992))
+### Changed
 
-## [1.4.0](https://github.com/vzhd1701/evernote-backup/compare/1.3.1...1.4.0) (2021-05-01)
+- Convert hardcoded config variables into CLI options ([fecf49a](https://github.com/vzhd1701/evernote-backup/commit/fecf49aa150f3375b4a3b94b5a6ec72b2ff6a038))
 
-### Features
+## [1.4.1] - 2021-05-08
 
-- add Docker support ([47747f1](https://github.com/vzhd1701/evernote-backup/commit/47747f1aae9b53df63dccebfed55b1f89a42d404))
+### Fixed
 
-## [1.3.1](https://github.com/vzhd1701/evernote-backup/compare/1.3.0...1.3.1) (2021-04-30)
+- Make `init-db` return early if database exists ([631b948](https://github.com/vzhd1701/evernote-backup/commit/631b948aa1d9a9160fd39cab407b5136dfdee992))
 
-### Bug Fixes
+## [1.4.0] - 2021-05-01
 
-- improve logger compatability ([047211d](https://github.com/vzhd1701/evernote-backup/commit/047211d7c33e138e1711316c7adaf446c856bd49))
+### Added
 
-## [1.3.0](https://github.com/vzhd1701/evernote-backup/compare/1.2.0...1.3.0) (2021-04-29)
+- Add Docker support ([47747f1](https://github.com/vzhd1701/evernote-backup/commit/47747f1aae9b53df63dccebfed55b1f89a42d404))
 
-### Features
+## [1.3.1] - 2021-04-30
 
-- make exported notes sorted ([9135822](https://github.com/vzhd1701/evernote-backup/commit/91358220daa5cfc3c19b6e9e92bc6094f5d075b5))
+### Fixed
 
-## [1.2.0](https://github.com/vzhd1701/evernote-backup/compare/1.1.0...1.2.0) (2021-04-28)
+- Improve logger compatibility ([047211d](https://github.com/vzhd1701/evernote-backup/commit/047211d7c33e138e1711316c7adaf446c856bd49))
 
-### Features
+## [1.3.0] - 2021-04-29
 
-- add database update routine ([79fc694](https://github.com/vzhd1701/evernote-backup/commit/79fc694854c764808ec0bb48a10c2ca1df223e89))
-- change notes storage mechanism ([43ff41e](https://github.com/vzhd1701/evernote-backup/commit/43ff41ebcf9077b686dcc719025632b52535bcd4))
+### Changed
 
-## [1.1.0](https://github.com/vzhd1701/evernote-backup/compare/1.0.0...1.1.0) (2021-04-27)
+- Make exported notes sorted ([9135822](https://github.com/vzhd1701/evernote-backup/commit/91358220daa5cfc3c19b6e9e92bc6094f5d075b5))
 
-### Features
+## [1.2.0] - 2021-04-28
 
-- add OAuth login option ([c70d577](https://github.com/vzhd1701/evernote-backup/commit/c70d57775d480a97d7a8d990525ea906881f94a8))
+### Added
 
-## [1.0.0](https://github.com/vzhd1701/evernote-backup/compare/758dd898e95e2fe09cbdf80da2ee46c728f6369b...1.0.0) (2021-04-24)
+- Add database update routine ([79fc694](https://github.com/vzhd1701/evernote-backup/commit/79fc694854c764808ec0bb48a10c2ca1df223e89))
 
-### Features
+### Changed
 
-- initialize repository ([758dd89](https://github.com/vzhd1701/evernote-backup/commit/758dd898e95e2fe09cbdf80da2ee46c728f6369b))
+- Change notes storage mechanism ([43ff41e](https://github.com/vzhd1701/evernote-backup/commit/43ff41ebcf9077b686dcc719025632b52535bcd4))
+
+## [1.1.0] - 2021-04-27
+
+### Added
+
+- Add OAuth login option ([c70d577](https://github.com/vzhd1701/evernote-backup/commit/c70d57775d480a97d7a8d990525ea906881f94a8))
+
+## [1.0.0] - 2021-04-24
+
+### Added
+
+- Initialize repository ([758dd89](https://github.com/vzhd1701/evernote-backup/commit/758dd898e95e2fe09cbdf80da2ee46c728f6369b))
+
+[Unreleased]: https://github.com/vzhd1701/evernote-backup/compare/1.13.1...HEAD
+[1.13.1]: https://github.com/vzhd1701/evernote-backup/compare/1.13.0...1.13.1
+[1.13.0]: https://github.com/vzhd1701/evernote-backup/compare/1.12.0...1.13.0
+[1.12.0]: https://github.com/vzhd1701/evernote-backup/compare/1.11.0...1.12.0
+[1.11.0]: https://github.com/vzhd1701/evernote-backup/compare/1.10.0...1.11.0
+[1.10.0]: https://github.com/vzhd1701/evernote-backup/compare/1.9.4...1.10.0
+[1.9.4]: https://github.com/vzhd1701/evernote-backup/compare/1.9.3...1.9.4
+[1.9.3]: https://github.com/vzhd1701/evernote-backup/compare/1.9.2...1.9.3
+[1.9.2]: https://github.com/vzhd1701/evernote-backup/compare/1.9.1...1.9.2
+[1.9.1]: https://github.com/vzhd1701/evernote-backup/compare/1.9.0...1.9.1
+[1.9.0]: https://github.com/vzhd1701/evernote-backup/compare/1.8.1...1.9.0
+[1.8.1]: https://github.com/vzhd1701/evernote-backup/compare/1.8.0...1.8.1
+[1.8.0]: https://github.com/vzhd1701/evernote-backup/compare/1.7.1...1.8.0
+[1.7.1]: https://github.com/vzhd1701/evernote-backup/compare/1.7.0...1.7.1
+[1.7.0]: https://github.com/vzhd1701/evernote-backup/compare/1.6.8...1.7.0
+[1.6.8]: https://github.com/vzhd1701/evernote-backup/compare/1.6.7...1.6.8
+[1.6.7]: https://github.com/vzhd1701/evernote-backup/compare/1.6.6...1.6.7
+[1.6.6]: https://github.com/vzhd1701/evernote-backup/compare/1.6.5...1.6.6
+[1.6.5]: https://github.com/vzhd1701/evernote-backup/compare/1.6.4...1.6.5
+[1.6.4]: https://github.com/vzhd1701/evernote-backup/compare/1.6.3...1.6.4
+[1.6.3]: https://github.com/vzhd1701/evernote-backup/compare/1.6.2...1.6.3
+[1.6.2]: https://github.com/vzhd1701/evernote-backup/compare/1.6.1...1.6.2
+[1.6.1]: https://github.com/vzhd1701/evernote-backup/compare/1.6.0...1.6.1
+[1.6.0]: https://github.com/vzhd1701/evernote-backup/compare/1.5.1...1.6.0
+[1.5.1]: https://github.com/vzhd1701/evernote-backup/compare/1.5.0...1.5.1
+[1.5.0]: https://github.com/vzhd1701/evernote-backup/compare/1.4.1...1.5.0
+[1.4.1]: https://github.com/vzhd1701/evernote-backup/compare/1.4.0...1.4.1
+[1.4.0]: https://github.com/vzhd1701/evernote-backup/compare/1.3.1...1.4.0
+[1.3.1]: https://github.com/vzhd1701/evernote-backup/compare/1.3.0...1.3.1
+[1.3.0]: https://github.com/vzhd1701/evernote-backup/compare/1.2.0...1.3.0
+[1.2.0]: https://github.com/vzhd1701/evernote-backup/compare/1.1.0...1.2.0
+[1.1.0]: https://github.com/vzhd1701/evernote-backup/compare/1.0.0...1.1.0
+[1.0.0]: https://github.com/vzhd1701/evernote-backup/releases/tag/1.0.0
