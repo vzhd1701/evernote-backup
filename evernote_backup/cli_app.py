@@ -177,7 +177,7 @@ def sync(
 
     # Tasks/reminders use the new sync API and require an OAuth2 JWT access token.
     include_tasks = auth_resolved.jwt_token is not None
-    if not include_tasks:
+    if backend == "evernote" and not include_tasks:
         logger.warning(
             "Tasks and reminders will not be synced because this database has no"
             " OAuth2 credentials. Run 'evernote-backup reauth' to enable tasks and reminders sync."
