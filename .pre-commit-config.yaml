@@ -23,20 +23,20 @@ repos:
         name: ruff
         stages: [ pre-commit ]
         language: system
-        entry: uv run ruff format
+        entry: uv run --frozen ruff format
         types: [ python ]
 
-      - id: mdformat
-        name: mdformat
+      - id: rumdl
+        name: rumdl
         stages: [ pre-commit ]
         language: system
-        entry: uv run mdformat --number
+        entry: uv run --frozen rumdl fmt
         types: [ markdown ]
 
       - id: pytest
         name: pytest
         stages: [ pre-commit ]
         language: system
-        entry: uv run pytest
+        entry: uv run --frozen pytest
         types: [ python ]
         pass_filenames: false

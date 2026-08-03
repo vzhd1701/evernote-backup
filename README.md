@@ -211,7 +211,7 @@ If you have a question about the program or have difficulty using it, you are we
 - [How to export Notebooks in new Evernote client](https://help.evernote.com/hc/en-us/articles/360053159414-Export-notebooks)
 - [Backing up and restoring Evernote data (Reference article) (requires registration)](https://discussion.evernote.com/forums/topic/86152-backing-up-and-restoring-evernote-data-reference-article/?tab=comments#comment-367110)
 - [Migrating Your Notes from Evernote to Obsidian](https://www.dmuth.org/migrating-from-evernote-to-obisidian/)
-- https://github.com/davidedc/A-thousand-notes
+- <https://github.com/davidedc/A-thousand-notes>
 
 ## Similar projects
 

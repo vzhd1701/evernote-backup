@@ -42,6 +42,6 @@ module.exports = {
   packageFiles: packageFiles,
   bumpFiles: bumpFiles,
   scripts: {
-    postchangelog: "uv run mdformat CHANGELOG.md"
+    postchangelog: "uv run --frozen rumdl fmt CHANGELOG.md"
   }
 }

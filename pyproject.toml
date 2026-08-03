@@ -70,8 +70,8 @@ test = [
 ]
 dev = [
     "pre-commit>=4.2.0,<5",
-    "mdformat==1.0.0",
     "ruff==0.11.5",
+    "rumdl>=0.2.49",
 ]
 
 [tool.ruff.format]
@@ -180,3 +180,6 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = "evernote_backup.cli"
 disable_error_code = ["misc"]
+
+[tool.rumdl]
+disable = ["MD013", "MD014"]
