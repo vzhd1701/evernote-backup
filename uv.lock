@@ -280,6 +280,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "keepachangelog" },
     { name = "pre-commit" },
     { name = "ruff" },
     { name = "rumdl" },
@@ -307,8 +308,9 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "keepachangelog", specifier = "==2.0.0" },
     { name = "pre-commit", specifier = ">=4.2.0,<5" },
-    { name = "ruff", specifier = "==0.11.5" },
+    { name = "ruff", specifier = ">=0.11.5" },
     { name = "rumdl", specifier = ">=0.2.49" },
 ]
 test = [
@@ -424,6 +426,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/6c/1f/c23395957d41ccf27c4e535c3d334c4051e5395b3752057ba4cbaec35c56/jaraco_functools-4.6.0.tar.gz", hash = "sha256:880c577ec9720b3a052d5bc611fb9f2269b3d87902ef42440df443b88e443280", size = 20837, upload-time = "2026-07-14T01:28:02.544Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/02/36/ecc85bc96c273dc8a11273ed4782272975e6338d4a3e9228621175edf0e3/jaraco_functools-4.6.0-py3-none-any.whl", hash = "sha256:99e3dc0060c5cbe8fcd1cdb36258e2a65ca40f1566b2033b12abb1bb44dd3c30", size = 11677, upload-time = "2026-07-14T01:28:01.59Z" },
+]
+
+[[package]]
+name = "keepachangelog"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/2e/951923e56c149b6772dbffee0dcac00738405d7d7a0fdd30537047cf6727/keepachangelog-2.0.0.tar.gz", hash = "sha256:6839f0646690ae514aca6dedbc7b8aa652c56db3be43081a1940c55c1c807709", size = 24488, upload-time = "2024-06-14T12:56:28.442Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/06/b4f06ca7afb5d9e942c642980c308ffcfa1fa0e8b0a3ddbec78483ef1614/keepachangelog-2.0.0-py3-none-any.whl", hash = "sha256:0b2259fd73b55f2b99e61035ff83f3d86d0f2764841a7e2de86e31e675e42fee", size = 13349, upload-time = "2024-06-14T12:56:26.884Z" },
 ]
 
 [[package]]

@@ -70,8 +70,9 @@ test = [
     "requests-mock>=1.12.1",
 ]
 dev = [
+    "keepachangelog==2.0.0",
     "pre-commit>=4.2.0,<5",
-    "ruff==0.11.5",
+    "ruff>=0.11.5",
     "rumdl>=0.2.49",
 ]
 
