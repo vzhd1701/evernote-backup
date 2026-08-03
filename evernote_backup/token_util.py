@@ -299,7 +299,7 @@ def verify_and_log_oauth_session(bundle: OAuth2TokenBundle) -> dict[str, Any]:
     user = fetch_oauth_current_user(bundle)
 
     user_id = user.get("id", "unknown")
-    username = user.get("name") or user.get("username") or "unknown"
+    username = user.get("username") or "unknown"
     email = user.get("email") or "unknown"
 
     logger.info(
