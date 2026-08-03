@@ -53,6 +53,7 @@ license-files = ["LICENSE"]
 [project.urls]
 repository = "https://github.com/vzhd1701/evernote-backup"
 changelog = "https://github.com/vzhd1701/evernote-backup/blob/master/CHANGELOG.md"
+issues = "https://github.com/vzhd1701/evernote-backup/issues"
 
 [project.scripts]
 evernote-backup = "evernote_backup.cli:main"
