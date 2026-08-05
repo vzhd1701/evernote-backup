@@ -152,11 +152,9 @@ $ evernote-backup export output_dir/
 
 After first initialization, you can schedule `evernote-backup sync` command to keep your local database always up-to-date. However, `evernote-backup export` will always re-export all notebooks to the specified output directory.
 
-### Tasks
+### Tasks, reminders, single-note shares
 
-Tasks and reminders are synced automatically when your database was initialized (or re-authenticated) with OAuth credentials that include a JWT access token.
-
-If during `sync` you see a warning that tasks and reminders will not be synced, your database has a legacy auth token. Run:
+If during `sync` you see a warning that tasks, reminders and single-note shares will not be synced, your database has a legacy auth token. To fix it, run:
 
 ```console
 $ evernote-backup reauth
