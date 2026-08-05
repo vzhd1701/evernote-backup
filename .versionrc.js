@@ -50,6 +50,7 @@ const postbumpScript = `bash -c ${JSON.stringify(postbumpCommands)}`;
 module.exports = {
   tagPrefix: "",
   header: "",
+  commitAll: true,
   sign: true,
   packageFiles: packageFiles,
   bumpFiles: bumpFiles,
