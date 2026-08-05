@@ -6,9 +6,16 @@ import pytest
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Tag
 from requests_sse import MessageEvent
 
-from evernote_backup.evernote_client_sync import EvernoteClientSync
+from evernote_backup.evernote_client_sync import (
+    EvernoteClientSync,
+    _parse_sync_event_data,
+)
 from evernote_backup.evernote_client_util import NoteStoreAccess
-from evernote_backup.evernote_types import EvernoteEntityType
+from evernote_backup.evernote_types import (
+    EvernoteEntityType,
+    EvernoteSyncInstanceType,
+    EvernoteSyncOperationType,
+)
 
 FAKE_TOKEN = "S=s100:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
 
@@ -277,7 +284,7 @@ def test_iter_sync_chunks_v2_yields_parsed_chunks(sync_client, mock_evernote_cli
 def test_iter_sync_chunks_v2_skips_bad_json_and_unknown_events(
     sync_client, mock_evernote_client, mocker, caplog
 ):
-    """Exercise event-loop branches: bad JSON, empty sync, unknown type, close."""
+    """Exercise event-loop branches: empty data, bad JSON, empty sync, unknown, close."""
     events = [
         MessageEvent(
             last_event_id="1",
@@ -285,6 +292,8 @@ def test_iter_sync_chunks_v2_skips_bad_json_and_unknown_events(
             type="connection",
             data='{"connectionId":"c1"}',
         ),
+        MessageEvent(last_event_id="1", origin="o", type="sync", data=""),
+        MessageEvent(last_event_id="1", origin="o", type="sync", data=None),
         MessageEvent(last_event_id="1", origin="o", type="sync", data="not-json"),
         MessageEvent(last_event_id="1", origin="o", type="sync", data="[]"),
         MessageEvent(last_event_id="1", origin="o", type="weird", data="{}"),
@@ -315,5 +324,168 @@ def test_iter_sync_chunks_v2_skips_bad_json_and_unknown_events(
         )
 
     assert chunks == []
+    assert "Empty sync chunk data" in caplog.text
     assert "Failed to decode sync chunk data" in caplog.text
     assert "Unknown sync event type" in caplog.text
+
+
+def _entity_item(
+    *,
+    guid: str,
+    entity_type: EvernoteEntityType,
+    parent_id: str,
+    parent_type: EvernoteEntityType,
+    operation: EvernoteSyncOperationType = EvernoteSyncOperationType.UPDATE,
+    updated: int = 10,
+    **extra,
+):
+    instance = {
+        "ref": {"id": guid, "type": entity_type},
+        "type": EvernoteSyncInstanceType.ENTITY,
+        "parentEntity": {"id": parent_id, "type": parent_type},
+        "updated": updated,
+        **extra,
+    }
+    return {"instance": instance, "operation": operation, "updated": updated}
+
+
+def test_parse_task_and_reminder_create():
+    data = [
+        _entity_item(
+            guid="task1",
+            entity_type=EvernoteEntityType.TASK,
+            parent_id="note1",
+            parent_type=EvernoteEntityType.NOTE,
+            label="Buy milk",
+            updated=50,
+        ),
+        _entity_item(
+            guid="rem1",
+            entity_type=EvernoteEntityType.REMINDER,
+            parent_id="task1",
+            parent_type=EvernoteEntityType.TASK,
+            reminderDate=123,
+            updated=60,
+        ),
+    ]
+
+    chunk = _parse_sync_event_data(data, current_user_id=1)
+
+    assert chunk.last_timestamp == 60
+    assert len(chunk.tasks) == 1
+    assert chunk.tasks[0].taskId == "task1"
+    assert chunk.tasks[0].label == "Buy milk"
+    assert len(chunk.reminders) == 1
+    assert chunk.reminders[0].reminderId == "rem1"
+    assert chunk.reminders[0].sourceId == "task1"
+
+
+def test_parse_task_and_reminder_expunge():
+    data = [
+        _entity_item(
+            guid="task1",
+            entity_type=EvernoteEntityType.TASK,
+            parent_id="note1",
+            parent_type=EvernoteEntityType.NOTE,
+            label="Keep me",
+            operation=EvernoteSyncOperationType.CREATE,
+            updated=10,
+        ),
+        _entity_item(
+            guid="rem1",
+            entity_type=EvernoteEntityType.REMINDER,
+            parent_id="task1",
+            parent_type=EvernoteEntityType.TASK,
+            operation=EvernoteSyncOperationType.CREATE,
+            updated=20,
+        ),
+        _entity_item(
+            guid="task1",
+            entity_type=EvernoteEntityType.TASK,
+            parent_id="note1",
+            parent_type=EvernoteEntityType.NOTE,
+            operation=EvernoteSyncOperationType.EXPUNGE,
+            updated=30,
+        ),
+        _entity_item(
+            guid="rem1",
+            entity_type=EvernoteEntityType.REMINDER,
+            parent_id="task1",
+            parent_type=EvernoteEntityType.TASK,
+            operation=EvernoteSyncOperationType.DELETE,
+            updated=40,
+        ),
+    ]
+
+    chunk = _parse_sync_event_data(data, current_user_id=1)
+
+    assert chunk.tasks == []
+    assert chunk.reminders == []
+    assert chunk.expunged_tasks == ["task1"]
+    assert chunk.expunged_reminders == ["rem1"]
+
+
+def test_parse_skips_unknown_operation_and_notify():
+    data = [
+        {"operation": 999, "updated": 1, "instance": {}},
+        _entity_item(
+            guid="task1",
+            entity_type=EvernoteEntityType.TASK,
+            parent_id="note1",
+            parent_type=EvernoteEntityType.NOTE,
+            operation=EvernoteSyncOperationType.NOTIFY,
+            updated=2,
+        ),
+    ]
+
+    chunk = _parse_sync_event_data(data, current_user_id=1)
+
+    assert chunk.tasks == []
+    assert chunk.last_timestamp == 2
+
+
+def test_parse_task_outside_note_and_reminder_outside_task_skipped():
+    data = [
+        _entity_item(
+            guid="task1",
+            entity_type=EvernoteEntityType.TASK,
+            parent_id="nb1",
+            parent_type=EvernoteEntityType.NOTEBOOK,
+            updated=1,
+        ),
+        _entity_item(
+            guid="rem1",
+            entity_type=EvernoteEntityType.REMINDER,
+            parent_id="note1",
+            parent_type=EvernoteEntityType.NOTE,
+            updated=2,
+        ),
+    ]
+
+    chunk = _parse_sync_event_data(data, current_user_id=1)
+
+    assert chunk.tasks == []
+    assert chunk.reminders == []
+
+
+def test_auth_linked_notebook_falls_back_to_user_shard(
+    sync_client, mock_evernote_client
+):
+    """When LinkedNotebook.shardId is missing, use the client user shard."""
+    mock_evernote_client.fake_linked_notebooks = [
+        LinkedNotebook(
+            guid="lnb-noshard",
+            shardId=None,
+            sharedNotebookGlobalId="gid",
+            shareName="Private",
+        )
+    ]
+    mock_evernote_client.fake_linked_notebook_auth_token = "shared-token"
+    sync_client._linked_notebooks = None
+    sync_client.shard = "s100"
+
+    auth = sync_client.auth_linked_notebook("lnb-noshard", "nb-guid")
+
+    assert auth.token == "shared-token"
+    assert auth.shard == "s100"
+    assert auth.access is NoteStoreAccess.LINKED_NOTEBOOK
