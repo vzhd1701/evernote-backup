@@ -1,9 +1,7 @@
-from collections.abc import Sequence
 import json
 import platform
 import uuid
-from collections.abc import Iterator
-from typing import Optional
+from collections.abc import Iterator, Sequence
 
 from evernote.edam.error.ttypes import (
     EDAMSystemException,
@@ -13,12 +11,12 @@ from evernote.edam.userstore.constants import EDAM_VERSION_MAJOR, EDAM_VERSION_M
 from requests_sse import EventSource, MessageEvent
 
 from evernote_backup.config_defaults import EVERNOTE_API_SYNC_DOWNLOAD_URL
+from evernote_backup.errors import EvernoteAuthError
 from evernote_backup.evernote_client_api_http import (
     NoteStoreClientRetryable,
     UserStoreClientRetryable,
 )
 from evernote_backup.evernote_client_util import raise_auth_error
-from evernote_backup.errors import EvernoteAuthError
 from evernote_backup.evernote_types import EvernoteEntityType
 from evernote_backup.token_util import EvernoteToken
 
@@ -53,15 +51,15 @@ class EvernoteClient(EvernoteClientBase):
     def __init__(
         self,
         backend: str,
-        token: Optional[str] = None,
+        token: str | None = None,
         network_error_retry_count: int = 5,
-        cafile: Optional[str] = None,
-        jwt_token: Optional[str] = None,
+        cafile: str | None = None,
+        jwt_token: str | None = None,
     ) -> None:
         super().__init__(backend=backend)
 
-        self.token: Optional[EvernoteToken] = None
-        self.shard: Optional[str] = None
+        self.token: EvernoteToken | None = None
+        self.shard: str | None = None
 
         if token:
             self.token = EvernoteToken.from_string(token)
@@ -70,9 +68,9 @@ class EvernoteClient(EvernoteClientBase):
         self.network_error_retry_count = network_error_retry_count
         self.cafile = cafile
 
-        self._user: Optional[str] = None
+        self._user: str | None = None
         # OAuth2 access_token for new API (tasks). Provided by caller after refresh.
-        self._token_jwt: Optional[str] = jwt_token
+        self._token_jwt: str | None = jwt_token
 
     def check_version(self) -> bool:
         return self.user_store.checkVersion(
@@ -117,7 +115,7 @@ class EvernoteClient(EvernoteClientBase):
 
     def get_note_store(
         self,
-        shard: Optional[str] = None,
+        shard: str | None = None,
     ) -> "NoteStoreClientRetryable":
         token = str(self.token) if self.token else ""
         shard = shard if shard else self.shard

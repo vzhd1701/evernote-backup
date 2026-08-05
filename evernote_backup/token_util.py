@@ -2,7 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 import jwt
 import requests
@@ -10,11 +10,11 @@ from oauthlib.oauth2 import OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from evernote_backup.config_defaults import (
-    TOKEN_REFRESH_SKEW,
-    EVERNOTE_TOKEN_URL,
-    EVERNOTE_API_USERS_ME_URL,
-    DESKTOP_REDIRECT_URI,
     DESKTOP_CLIENT_ID,
+    DESKTOP_REDIRECT_URI,
+    EVERNOTE_API_USERS_ME_URL,
+    EVERNOTE_TOKEN_URL,
+    TOKEN_REFRESH_SKEW,
 )
 from evernote_backup.errors import OAuthTokenRefreshError, ProgramTerminatedError
 
@@ -72,7 +72,7 @@ def _format_datetime_with_difference(dt: datetime) -> str:
         time_diff = f"{minutes} minute{'s' if minutes > 1 else ''}"
     else:
         seconds = round(total_seconds)
-        time_diff = f"{seconds} second{'s' if seconds != 1 else ''}"  # noqa: WPS504
+        time_diff = f"{seconds} second{'s' if seconds != 1 else ''}"
 
     return f"{formatted_date} ({time_diff} {time_direction})"
 
@@ -200,7 +200,7 @@ class OAuth2TokenBundle:
 @dataclass
 class ResolvedAuth:
     monolith_token: str
-    jwt_token: Optional[str]
+    jwt_token: str | None
     auth_for_storage: str
     updated: bool
 

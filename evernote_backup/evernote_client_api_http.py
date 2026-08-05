@@ -1,7 +1,8 @@
 import functools
 import time
+from collections.abc import Callable
 from http.client import HTTPException
-from typing import Any, Callable, Optional, cast
+from typing import Any, cast
 
 from six.moves import http_client
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
@@ -60,9 +61,9 @@ class BinaryHttpThriftClient:
     def __init__(
         self,
         url: str,
-        user_agent: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
-        cafile: Optional[str] = None,
+        user_agent: str | None = None,
+        headers: dict[str, str] | None = None,
+        cafile: str | None = None,
     ):
         self.url = url
         self.cafile = cafile
@@ -99,9 +100,9 @@ class UserStoreClient(TokenizedUserStoreClient):
         self,
         auth_token: str,
         store_url: str,
-        user_agent: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
-        cafile: Optional[str] = None,
+        user_agent: str | None = None,
+        headers: dict[str, str] | None = None,
+        cafile: str | None = None,
     ):
         self._base_client = BinaryHttpThriftClient(
             url=store_url,
@@ -117,9 +118,9 @@ class NoteStoreClient(TokenizedNoteStoreClient):
         self,
         auth_token: str,
         store_url: str,
-        user_agent: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
-        cafile: Optional[str] = None,
+        user_agent: str | None = None,
+        headers: dict[str, str] | None = None,
+        cafile: str | None = None,
     ):
         self._base_client = BinaryHttpThriftClient(
             url=store_url,
@@ -188,9 +189,9 @@ class UserStoreClientRetryable(RetryableMixin, UserStoreClient):
         # UserStoreClient params
         auth_token: str,
         store_url: str,
-        user_agent: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
-        cafile: Optional[str] = None,
+        user_agent: str | None = None,
+        headers: dict[str, str] | None = None,
+        cafile: str | None = None,
         # RetryableMixin params
         retry_max: int = DEFAULT_RETRY_MAX,
         retry_delay: float = DEFAULT_RETRY_DELAY,
@@ -217,9 +218,9 @@ class NoteStoreClientRetryable(RetryableMixin, NoteStoreClient):
         # NoteStoreClient params
         auth_token: str,
         store_url: str,
-        user_agent: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
-        cafile: Optional[str] = None,
+        user_agent: str | None = None,
+        headers: dict[str, str] | None = None,
+        cafile: str | None = None,
         # RetryableMixin params
         retry_max: int = DEFAULT_RETRY_MAX,
         retry_delay: float = DEFAULT_RETRY_DELAY,

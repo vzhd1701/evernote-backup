@@ -532,6 +532,7 @@ def test_get_notes_for_sync(fake_storage):
             title=n.title,
             notebook_guid=n.notebookGuid,
             linked_notebook_guid=None,
+            shard_id=None,
         )
         for n in test_notes
     )

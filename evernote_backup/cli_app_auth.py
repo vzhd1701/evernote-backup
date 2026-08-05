@@ -1,15 +1,14 @@
 import logging
 from pathlib import Path
-from typing import Optional
 
 from evernote_backup.cli_app_auth_oauth import (
+    evernote_login_oauth_desktop,
     evernote_login_oauth_import,
     evernote_login_oauth_mcp,
-    evernote_login_oauth_desktop,
 )
 from evernote_backup.cli_app_auth_password import evernote_login_password
 from evernote_backup.cli_app_util import is_output_to_terminal
-from evernote_backup.errors import ProgramTerminatedError, EvernoteAuthError
+from evernote_backup.errors import EvernoteAuthError, ProgramTerminatedError
 from evernote_backup.evernote_client import EvernoteClient
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util_ssl import get_cafile_path
@@ -23,7 +22,7 @@ def get_sync_client(
     network_error_retry_count: int,
     use_system_ssl_ca: bool,
     max_chunk_results: int,
-    jwt_token: Optional[str] = None,
+    jwt_token: str | None = None,
 ) -> EvernoteClientSync:
     logger.info(f"Authorizing monolith token, {backend} backend...")
 
@@ -50,17 +49,17 @@ def get_sync_client(
 
 
 def get_auth_token(
-    auth_user: Optional[str],
-    auth_password: Optional[str],
+    auth_user: str | None,
+    auth_password: str | None,
     auth_oauth_port: int,
     auth_oauth_host: str,
     backend: str,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-    custom_api_data: Optional[str],
+    custom_api_data: str | None,
     oauth_method: str = "desktop",
-    oauth_en_user: Optional[str] = None,
-    oauth_en_config_dir: Optional[Path] = None,
+    oauth_en_user: str | None = None,
+    oauth_en_config_dir: Path | None = None,
 ) -> str:
     logger.info("Logging in to Evernote...")
 

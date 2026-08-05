@@ -2,10 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from evernote_backup.errors import ProgramTerminatedError
 from evernote_backup.config import CURRENT_DB_VERSION
-from evernote_backup.note_storage import SqliteStorage
 from evernote_backup.desktop_session import DesktopSession
+from evernote_backup.errors import ProgramTerminatedError
+from evernote_backup.note_storage import SqliteStorage
 from evernote_backup.token_util import OAuth2TokenBundle
 
 

@@ -3,14 +3,14 @@ import ssl
 import tempfile
 from pathlib import Path
 from pprint import pformat
-from typing import Optional, cast
+from typing import cast
 
 from requests.utils import DEFAULT_CA_BUNDLE_PATH, extract_zipped_paths
 
 logger = logging.getLogger(__name__)
 
 
-def get_cafile_path(use_system_ssl_ca: bool) -> Optional[str]:
+def get_cafile_path(use_system_ssl_ca: bool) -> str | None:
     if use_system_ssl_ca:
         return None
 

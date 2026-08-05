@@ -1,15 +1,11 @@
 """Unit tests for EvernoteClient / EvernoteClientBase."""
 
-from unittest.mock import MagicMock
-
 import pytest
-from evernote.edam.error.ttypes import EDAMErrorCode, EDAMUserException
 from requests_sse import MessageEvent
 
 from evernote_backup.errors import EvernoteAuthError
 from evernote_backup.evernote_client import EvernoteClient, EvernoteClientBase
 from evernote_backup.evernote_types import EvernoteEntityType
-
 
 FAKE_TOKEN = "S=s100:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
 

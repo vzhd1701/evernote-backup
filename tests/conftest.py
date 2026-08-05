@@ -18,7 +18,6 @@ from evernote.edam.error.ttypes import (
 )
 from evernote.edam.userstore.ttypes import AuthenticationParameters
 from oauthlib.oauth2 import OAuth2Error
-from requests_oauthlib.oauth1_session import TokenRequestDenied
 from requests_sse import MessageEvent
 
 import evernote_backup

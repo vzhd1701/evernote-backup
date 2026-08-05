@@ -5,7 +5,7 @@ import re
 import sys
 import uuid
 from collections.abc import Iterable, Iterator, Sequence
-from typing import Optional, TextIO
+from typing import TextIO
 
 import click
 
@@ -32,7 +32,7 @@ def parse_guid(value: str) -> str:
     return str(uuid.UUID(value))
 
 
-def get_api_data(custom_api_data: Optional[str]) -> tuple[str, str]:
+def get_api_data(custom_api_data: str | None) -> tuple[str, str]:
     if not custom_api_data:
         return unscramble(API_DATA_YINXIANG)
 
@@ -59,7 +59,7 @@ def unscramble(scrambled_data: bytes) -> tuple[str, str]:
     return key, secret
 
 
-def get_progress_output() -> Optional[TextIO]:
+def get_progress_output() -> TextIO | None:
     is_verbose_mode = click.get_current_context().find_root().params["verbose"]
 
     if not is_console_interactive() or is_verbose_mode:
@@ -85,4 +85,4 @@ def is_inside_docker() -> bool:
 def chunks(lst: Sequence, n: int) -> Iterator[Iterable]:
     """Yield successive n-sized chunks from lst."""
 
-    yield from (lst[i : i + n] for i in range(0, len(lst), n))  # noqa: WPS221
+    yield from (lst[i : i + n] for i in range(0, len(lst), n))

@@ -1,8 +1,5 @@
-from typing import Optional
-
-
 class OAuthDeclinedError(Exception):
-    def __init__(self, error: Optional[str] = None) -> None:
+    def __init__(self, error: str | None = None) -> None:
         self.error = error
         message = f"OAuth declined: {error}" if error else "OAuth declined"
         super().__init__(message)

@@ -4,7 +4,7 @@ import time
 from collections.abc import Collection
 from enum import IntEnum
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 import requests
@@ -58,7 +58,7 @@ class StoppableHTTPServer(HTTPServer):
         self.callback_response: str = ""
 
     def run(self) -> None:
-        try:  # noqa: WPS501
+        try:
             self.serve_forever()
         finally:
             self.server_close()
@@ -123,7 +123,7 @@ class EvernoteOAuthCallbackHandler:
         paste_thread = threading.Thread(target=read_pasted_url, daemon=True)
         paste_thread.start()
 
-        try:  # noqa: WPS501
+        try:
             while not callback_server.callback_response and not pasted:
                 time.sleep(0.1)
         finally:
@@ -163,7 +163,7 @@ class EvernoteOAuthClient(EvernoteClientBase):
     def __init__(self, backend: str) -> None:
         super().__init__(backend=backend)
 
-        self._session: Optional[OAuth2Session] = None
+        self._session: OAuth2Session | None = None
 
     def get_authorize_url_mcp(self, callback_url: str) -> str:
         mcp_client = register_mcp_client(callback_url)

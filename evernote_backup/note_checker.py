@@ -5,7 +5,7 @@ from click import progressbar
 from evernote_backup.cli_app_util import (
     get_progress_output,
 )
-from evernote_backup.errors import DatabaseEmptyError, DatabaseCorruptError
+from evernote_backup.errors import DatabaseCorruptError, DatabaseEmptyError
 from evernote_backup.note_storage import SqliteStorage
 
 logger = logging.getLogger(__name__)

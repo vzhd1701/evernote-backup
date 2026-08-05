@@ -1,7 +1,6 @@
 import json
 import re
 import uuid
-from typing import Optional
 
 import xmltodict
 from evernote.edam.type.ttypes import Note, Resource
@@ -110,7 +109,7 @@ class NoteFormatter:
             },
         }
 
-    def _fmt_raw(self, body: Optional[str]) -> Optional[str]:
+    def _fmt_raw(self, body: str | None) -> str | None:
         if body is None:
             return body
         content_uuid = str(uuid.uuid4())

@@ -31,7 +31,6 @@ import sqlite3
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 from evernote_backup.errors import ProgramTerminatedError
 
@@ -53,10 +52,10 @@ class DesktopSession:
     s_token: str
     shard: str
     host: str
-    jwt_access: Optional[str] = None
-    jwt_refresh: Optional[str] = None
-    client_id: Optional[str] = None
-    storage_path: Optional[Path] = None
+    jwt_access: str | None = None
+    jwt_refresh: str | None = None
+    client_id: str | None = None
+    storage_path: Path | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +91,7 @@ def _secure_storage_dir(config_dir: Path) -> Path:
     return config_dir / "secure-storage"
 
 
-def list_desktop_users(config_dir: Optional[Path] = None) -> List[DesktopSession]:
+def list_desktop_users(config_dir: Path | None = None) -> list[DesktopSession]:
     """Enumerate the users currently logged in to the Evernote desktop client.
 
     Returns one :class:`DesktopSession` per user with ``s_token`` etc. left
@@ -112,7 +111,7 @@ def list_desktop_users(config_dir: Optional[Path] = None) -> List[DesktopSession
     try:
         cur = con.cursor()
         cur.execute("SELECT Tkey, TValue FROM MultiUsers")
-        out: List[DesktopSession] = []
+        out: list[DesktopSession] = []
         for tkey, tvalue in cur.fetchall():
             try:
                 data = json.loads(tvalue)
@@ -256,8 +255,8 @@ def _decrypt_secure_blob(blob_path: Path, key: bytes) -> dict:
 
 
 def extract_token(
-    user_id: Optional[str] = None,
-    config_dir: Optional[Path] = None,
+    user_id: str | None = None,
+    config_dir: Path | None = None,
 ) -> DesktopSession:
     """Pull the ``S=...`` auth token out of the Evernote desktop client.
 

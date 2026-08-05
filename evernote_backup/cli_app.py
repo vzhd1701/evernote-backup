@@ -1,14 +1,12 @@
 import logging
 from pathlib import Path
 from ssl import SSLError
-from typing import Optional
 
 from evernote_backup.cli_app_auth import (
     get_auth_token,
     get_ping_client,
     get_sync_client,
 )
-from evernote_backup.token_util import resolve_auth_token
 from evernote_backup.cli_app_storage import (
     get_storage,
     initialize_storage,
@@ -18,37 +16,38 @@ from evernote_backup.cli_app_storage import (
 from evernote_backup.cli_app_util import (
     parse_guid,
 )
+from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.errors import (
-    ProgramTerminatedError,
-    DatabaseEmptyError,
     DatabaseCorruptError,
+    DatabaseEmptyError,
+    ProgramTerminatedError,
     WrongAuthUserError,
 )
-from evernote_backup.config import CURRENT_DB_VERSION
 from evernote_backup.evernote_client_util_ssl import log_ssl_debug_info
 from evernote_backup.note_checker import NoteChecker
 from evernote_backup.note_exporter import NoteExporter
 from evernote_backup.note_lister import NoteLister
 from evernote_backup.note_synchronizer import NoteSynchronizer
+from evernote_backup.token_util import resolve_auth_token
 
 logger = logging.getLogger(__name__)
 
 
 def init_db(
     database: Path,
-    auth_user: Optional[str],
-    auth_password: Optional[str],
+    auth_user: str | None,
+    auth_password: str | None,
     auth_oauth_port: int,
     auth_oauth_host: str,
-    auth_token: Optional[str],
+    auth_token: str | None,
     force: bool,
     backend: str,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-    custom_api_data: Optional[str],
+    custom_api_data: str | None,
     oauth_method: str = "desktop",
-    oauth_en_user: Optional[str] = None,
-    oauth_en_config_dir: Optional[Path] = None,
+    oauth_en_user: str | None = None,
+    oauth_en_config_dir: Path | None = None,
 ) -> None:
     if not force:
         raise_on_existing_database(database)
@@ -97,17 +96,17 @@ def init_db(
 
 def reauth(
     database: Path,
-    auth_user: Optional[str],
-    auth_password: Optional[str],
+    auth_user: str | None,
+    auth_password: str | None,
     auth_oauth_port: int,
     auth_oauth_host: str,
-    auth_token: Optional[str],
+    auth_token: str | None,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-    custom_api_data: Optional[str],
+    custom_api_data: str | None,
     oauth_method: str = "desktop",
-    oauth_en_user: Optional[str] = None,
-    oauth_en_config_dir: Optional[Path] = None,
+    oauth_en_user: str | None = None,
+    oauth_en_config_dir: Path | None = None,
 ) -> None:
     storage = get_storage(database)
 
@@ -161,7 +160,7 @@ def sync(
     download_cache_memory_limit: int,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-    token: Optional[str],
+    token: str | None,
 ) -> None:
     storage = get_storage(database)
 
@@ -313,7 +312,7 @@ def manage_check(
 
 def manage_list(
     database: Path,
-    notebook: Optional[str],
+    notebook: str | None,
     is_list_all: bool,
 ) -> None:
     storage = get_storage(database)

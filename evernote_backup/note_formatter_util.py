@@ -1,14 +1,13 @@
 import base64
 import sys
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 
 def fmt_utcfromtimestamp(timestamp: int) -> datetime:
     return datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
 
-def fmt_time(timestamp: Optional[int]) -> Optional[str]:
+def fmt_time(timestamp: int | None) -> str | None:
     if timestamp is None:
         return timestamp
 
@@ -34,7 +33,7 @@ def fmt_binary(binary_data: bytes) -> str:
     )
 
 
-def fmt_content(content_body: Optional[str]) -> Optional[str]:
+def fmt_content(content_body: str | None) -> str | None:
     if content_body is None:
         return content_body
 
@@ -65,7 +64,7 @@ def _get_max_timestamp() -> int:  # pragma: no cover
     try:
         return int(datetime.max.timestamp())
     except (OverflowError, ValueError, OSError):
-        is_64bits = sys.maxsize > 2**32  # noqa: WPS114
+        is_64bits = sys.maxsize > 2**32
         return int(
             datetime(
                 3000,
@@ -93,7 +92,7 @@ def _get_max_timestamp() -> int:  # pragma: no cover
 
 # https://stackoverflow.com/a/42936293/13100286
 # https://howardhinnant.github.io/date_algorithms.html#civil_from_days
-def _date_from_future(timestamp: int) -> datetime:  # noqa: WPS210
+def _date_from_future(timestamp: int) -> datetime:
     z = timestamp // 86400 + 719468
     era = (z if z >= 0 else z - 146096) // 146097
     doe = z - era * 146097

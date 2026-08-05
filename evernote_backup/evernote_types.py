@@ -1,7 +1,6 @@
 import json
 from dataclasses import asdict, dataclass, field
 from enum import IntEnum
-from typing import Optional
 
 
 # @evernote/tasks-data-model/dist/ReminderEntity.js
@@ -15,17 +14,17 @@ from typing import Optional
 @dataclass
 class Reminder:
     reminderId: str
-    sourceId: Optional[str] = None
-    sourceType: Optional[int] = None
-    noteLevelID: Optional[str] = None
-    reminderDate: Optional[int] = None
-    reminderDateUIOption: Optional[str] = None
-    timeZone: Optional[str] = None
-    dueDateOffset: Optional[int] = None
-    status: Optional[str] = None
-    ownerId: Optional[int] = None
-    created: Optional[int] = None
-    updated: Optional[int] = None
+    sourceId: str | None = None
+    sourceType: int | None = None
+    noteLevelID: str | None = None
+    reminderDate: int | None = None
+    reminderDateUIOption: str | None = None
+    timeZone: str | None = None
+    dueDateOffset: int | None = None
+    status: str | None = None
+    ownerId: int | None = None
+    created: int | None = None
+    updated: int | None = None
 
     def to_json(self) -> str:
         data = {k: v for k, v in asdict(self).items() if v is not None}
@@ -49,34 +48,34 @@ class Reminder:
 @dataclass
 class Task:
     taskId: str
-    parentId: Optional[str] = None
-    parentType: Optional[int] = None
-    noteLevelID: Optional[str] = None
-    taskGroupNoteLevelID: Optional[str] = None
-    label: Optional[str] = None
-    description: Optional[str] = None
-    dueDate: Optional[int] = None
-    dueDateUIOption: Optional[str] = None
-    timeZone: Optional[str] = None
-    status: Optional[str] = None
-    statusUpdated: Optional[int] = None
-    inNote: Optional[bool] = None
-    flag: Optional[bool] = None
-    taskFlag: Optional[int] = None
-    priority: Optional[int] = None
-    idClock: Optional[int] = None
-    sortWeight: Optional[str] = None
-    creator: Optional[int] = None
-    lastEditor: Optional[int] = None
-    ownerId: Optional[int] = None
-    created: Optional[int] = None
-    updated: Optional[int] = None
-    assigneeEmail: Optional[str] = None
-    assigneeIdentityId: Optional[int] = None
-    assigneeUserId: Optional[int] = None
-    assignedByUserId: Optional[int] = None
-    recurrence: Optional[str] = None
-    repeatAfterCompletion: Optional[bool] = None
+    parentId: str | None = None
+    parentType: int | None = None
+    noteLevelID: str | None = None
+    taskGroupNoteLevelID: str | None = None
+    label: str | None = None
+    description: str | None = None
+    dueDate: int | None = None
+    dueDateUIOption: str | None = None
+    timeZone: str | None = None
+    status: str | None = None
+    statusUpdated: int | None = None
+    inNote: bool | None = None
+    flag: bool | None = None
+    taskFlag: int | None = None
+    priority: int | None = None
+    idClock: int | None = None
+    sortWeight: str | None = None
+    creator: int | None = None
+    lastEditor: int | None = None
+    ownerId: int | None = None
+    created: int | None = None
+    updated: int | None = None
+    assigneeEmail: str | None = None
+    assigneeIdentityId: int | None = None
+    assigneeUserId: int | None = None
+    assignedByUserId: int | None = None
+    recurrence: str | None = None
+    repeatAfterCompletion: bool | None = None
     reminders: list[Reminder] = field(default_factory=list)
 
     def to_json(self) -> str:

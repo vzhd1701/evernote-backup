@@ -1,7 +1,6 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -17,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 def evernote_login_oauth_import(
-    user_id: Optional[str] = None,
-    config_dir: Optional[Path] = None,
+    user_id: str | None = None,
+    config_dir: Path | None = None,
 ) -> str:
     if sys.platform != "darwin" and not sys.platform.startswith("win"):
         raise ProgramTerminatedError(

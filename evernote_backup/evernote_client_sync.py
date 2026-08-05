@@ -1,7 +1,7 @@
 import json
 import logging
 from collections.abc import Iterator, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from evernote.edam.error.ttypes import EDAMNotFoundException
 from evernote.edam.notestore import NoteStore
@@ -11,6 +11,7 @@ from evernote.edam.type.ttypes import LinkedNotebook, Note
 from evernote_backup.evernote_client import EvernoteClient
 from evernote_backup.evernote_client_util import NotebookAuth, NoteStoreAccess
 from evernote_backup.evernote_types import (
+    EVERNOTE_DEL_OPERATIONS,
     EvernoteEntityType,
     EvernoteMembershipType,
     EvernoteSyncInstanceType,
@@ -19,21 +20,20 @@ from evernote_backup.evernote_types import (
     SharedNoteMembership,
     SyncChunkV2,
     Task,
-    EVERNOTE_DEL_OPERATIONS,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
+class EvernoteClientSync(EvernoteClient):
     def __init__(
         self,
         backend: str,
         token: str,
         network_error_retry_count: int,
         max_chunk_results: int,
-        cafile: Optional[str],
-        jwt_token: Optional[str] = None,
+        cafile: str | None,
+        jwt_token: str | None = None,
     ) -> None:
         super().__init__(
             backend=backend,
@@ -43,9 +43,9 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
             jwt_token=jwt_token,
         )
 
-        self._tags: Optional[dict] = None
+        self._tags: dict | None = None
         self._notebook_tags: dict[str, dict[str, str]] = {}
-        self._linked_notebooks: Optional[dict] = None
+        self._linked_notebooks: dict | None = None
         self.max_chunk_results = max_chunk_results
 
         self.access = NoteStoreAccess.OWN
@@ -58,7 +58,7 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
             True,
             True,
             True,
-            True,  # noqa: WPS425
+            True,
         )
 
         # getNote returns tagGuids but not names. Map guids → names for export/filter.
@@ -135,7 +135,7 @@ class EvernoteClientSync(EvernoteClient):  # noqa: WPS214
         if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
             ln_info = f"{l_notebook.shareName} [{l_notebook.guid}]"
             if is_notebook_public:
-                ln_info += " [PUBLIC]"  # noqa: WPS336
+                ln_info += " [PUBLIC]"
 
             logger.debug(f"Requesting access to linked notebook {ln_info}")
 

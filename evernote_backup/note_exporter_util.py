@@ -26,7 +26,7 @@ class SafePath:
 
     def _get(self, *paths: str, is_dir: bool, overwrite: bool) -> Path:
         if paths in self.safe_paths:
-            return self.safe_paths[paths]  # noqa: WPS529
+            return self.safe_paths[paths]
 
         if len(paths) > 1:
             # Create all parent dirs

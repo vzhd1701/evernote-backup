@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Iterable
-from typing import Optional
 
 from evernote.edam.type.ttypes import Note
 
@@ -13,7 +12,7 @@ class NoteLister:
     def __init__(
         self,
         storage: SqliteStorage,
-        notebook: Optional[str],
+        notebook: str | None,
         is_list_all: bool,
     ) -> None:
         self.storage = storage

@@ -1,9 +1,10 @@
 import functools
 import logging
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from ssl import SSLError
-from typing import Any, Callable, Optional
+from typing import Any
 
 import click
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
@@ -14,13 +15,13 @@ from evernote_backup import cli_app, config_defaults
 from evernote_backup.cli_app_click_util import (
     DIR_ONLY,
     FILE_ONLY,
-    NaturalOrderGroup,
-    group_options,
     DescribedChoice,
     DescribedChoiceCommand,
+    NaturalOrderGroup,
+    group_options,
 )
 from evernote_backup.errors import ProgramTerminatedError
-from evernote_backup.log_util import get_time_txt, init_logging, get_time_from_now_txt
+from evernote_backup.log_util import get_time_from_now_txt, get_time_txt, init_logging
 from evernote_backup.version import __version__
 
 opt_user = click.option(
@@ -249,19 +250,19 @@ def cli(quiet: bool, verbose: bool, log: Path) -> None:
 @handle_errors
 def init_db(
     database: Path,
-    user: Optional[str],
-    password: Optional[str],
+    user: str | None,
+    password: str | None,
     oauth_method: str,
     oauth_port: int,
     oauth_host: str,
-    oauth_en_user: Optional[str],
-    oauth_en_config_dir: Optional[Path],
-    token: Optional[str],
+    oauth_en_user: str | None,
+    oauth_en_config_dir: Path | None,
+    token: str | None,
     force: bool,
     backend: str,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-    api_data: Optional[str],
+    api_data: str | None,
 ) -> None:
     """Initialize storage & log in to Evernote."""
 
@@ -323,7 +324,7 @@ def sync(
     download_cache_memory_limit: int,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-    token: Optional[str],
+    token: str | None,
 ) -> None:
     """Sync local database with Evernote, downloading all notes."""
 
@@ -442,17 +443,17 @@ def export(
 @handle_errors
 def reauth(
     database: Path,
-    user: Optional[str],
-    password: Optional[str],
+    user: str | None,
+    password: str | None,
     oauth_method: str,
     oauth_port: int,
     oauth_host: str,
-    oauth_en_user: Optional[str],
-    oauth_en_config_dir: Optional[Path],
-    token: Optional[str],
+    oauth_en_user: str | None,
+    oauth_en_config_dir: Path | None,
+    token: str | None,
     network_retry_count: int,
     use_system_ssl_ca: bool,
-    api_data: Optional[str],
+    api_data: str | None,
 ) -> None:
     """Refresh login to Evernote, run when token expires."""
 
@@ -536,7 +537,7 @@ def manage_check(
 @handle_errors
 def manage_list(
     database: Path,
-    notebook: Optional[str],
+    notebook: str | None,
     is_list_all: bool,
 ) -> None:
     """List database content"""

@@ -2,7 +2,7 @@ import logging
 import threading
 from collections.abc import Iterable
 from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, as_completed, wait
-from typing import Any, Optional
+from typing import Any
 
 from click import progressbar
 from evernote.edam.error.ttypes import EDAMErrorCode, EDAMSystemException
@@ -12,9 +12,9 @@ from evernote.edam.type.ttypes import LinkedNotebook, Note
 from evernote_backup.cli_app_util import chunks, get_progress_output
 from evernote_backup.config import SHARED_WITH_ME_NOTEBOOK_GUID
 from evernote_backup.errors import (
-    WrongAuthUserError,
-    WorkerStopException,
     NoteDownloadException,
+    WorkerStopException,
+    WrongAuthUserError,
 )
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import NotebookAuth, NoteStoreAccess
@@ -81,14 +81,14 @@ class NoteClientMemoryManager:
 
 
 class NoteClientWorker:
-    def __init__(  # noqa: WPS211
+    def __init__(
         self,
         token: str,
         backend: str,
         network_error_retry_count: int,
         max_chunk_results: int,
         download_cache_memory_limit: int,
-        cafile: Optional[str],
+        cafile: str | None,
     ) -> None:
         self.stop = False
         self.token = token
@@ -102,7 +102,7 @@ class NoteClientWorker:
         self._thread_data = threading.local()
         self._note_client: EvernoteClientSync
 
-    def __call__(self, note_id: str, auth_data: Optional[NotebookAuth] = None) -> Note:
+    def __call__(self, note_id: str, auth_data: NotebookAuth | None = None) -> Note:
         self.memory_manager.wait_till_enough_memory()
 
         if self.stop:
@@ -176,7 +176,7 @@ class NoteClientWorker:
             return self._thread_data.note_clients
 
 
-class NoteSynchronizer:  # noqa: WPS214
+class NoteSynchronizer:
     def __init__(
         self,
         note_client: EvernoteClientSync,
@@ -335,7 +335,7 @@ class NoteSynchronizer:  # noqa: WPS214
                 access=NoteStoreAccess.SINGLE_NOTE_SHARE,
             )
 
-    def _auth_for_note(self, note: NoteForSync) -> Optional[NotebookAuth]:
+    def _auth_for_note(self, note: NoteForSync) -> NotebookAuth | None:
         if note.linked_notebook_guid:
             return self.linked_notebooks_auth.get(note.linked_notebook_guid)
         return self.shared_notes_auth.get(note.guid)
@@ -405,11 +405,11 @@ class NoteSynchronizer:  # noqa: WPS214
 
     def _expunge(
         self,
-        expunged_notebooks: Optional[list[str]] = None,
-        expunged_notes: Optional[list[str]] = None,
-        expunged_linked_notebooks: Optional[list[str]] = None,
-        expunged_tasks: Optional[list[str]] = None,
-        expunged_reminders: Optional[list[str]] = None,
+        expunged_notebooks: list[str] | None = None,
+        expunged_notes: list[str] | None = None,
+        expunged_linked_notebooks: list[str] | None = None,
+        expunged_tasks: list[str] | None = None,
+        expunged_reminders: list[str] | None = None,
     ) -> None:
         if expunged_notebooks:
             self.storage.notebooks.expunge_notebooks(expunged_notebooks)
@@ -517,7 +517,7 @@ class NoteSynchronizer:  # noqa: WPS214
 
                         raise f_exc
 
-                note = note_f.result(timeout=120)  # noqa: WPS432
+                note = note_f.result(timeout=120)
 
                 # Place single-note shares under the synthetic local notebook.
                 if self.storage.shared_notes.is_shared_note(note.guid):
@@ -536,7 +536,7 @@ class NoteSynchronizer:  # noqa: WPS214
             self.note_worker.stop = True
             self.note_worker.memory_manager.reset_memory()
 
-            wait(note_futures, timeout=30, return_when=FIRST_EXCEPTION)  # noqa: WPS432
+            wait(note_futures, timeout=30, return_when=FIRST_EXCEPTION)
 
             raise
 

@@ -1,10 +1,10 @@
+import datetime
 import logging
 import logging.config
 import sys
 import time
-import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from evernote.edam.type.ttypes import Note, Notebook
 
@@ -25,7 +25,7 @@ class LevelPrefixFormatter(logging.Formatter):
         return f"{record.levelname}: {formatted_message}"
 
 
-def init_logging(log_level: str, log_file: Optional[Path] = None) -> None:
+def init_logging(log_level: str, log_file: Path | None = None) -> None:
     main_logger = "evernote_backup"
 
     format_short = "%(message)s"

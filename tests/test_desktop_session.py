@@ -10,7 +10,6 @@ from pathlib import Path
 
 import pytest
 
-from evernote_backup.errors import ProgramTerminatedError
 from evernote_backup.desktop_session import (
     _decrypt_secure_blob,
     _default_config_dir,
@@ -19,6 +18,7 @@ from evernote_backup.desktop_session import (
     extract_token,
     list_desktop_users,
 )
+from evernote_backup.errors import ProgramTerminatedError
 
 pytestmark = pytest.mark.skipif(
     sys.platform not in ("win32", "darwin"),

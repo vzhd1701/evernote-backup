@@ -195,7 +195,7 @@ class NoteExporter:
                 add_metadata=self.add_metadata,
             )
 
-            for note in note_source:  # noqa: WPS440
+            for note in note_source:
                 n_info = log_format_note(note)
                 logger.debug(f"Exporting note {n_info}")
 

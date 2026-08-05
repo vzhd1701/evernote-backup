@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 from evernote.edam.error.ttypes import (
     EDAMErrorCode,
@@ -24,7 +24,7 @@ class NotebookAuth(NamedTuple):
     access: NoteStoreAccess = NoteStoreAccess.OWN
 
 
-def raise_auth_error(exception: Union[EDAMSystemException, EDAMUserException]) -> None:
+def raise_auth_error(exception: EDAMSystemException | EDAMUserException) -> None:
     messages = {
         EDAMErrorCode.BAD_DATA_FORMAT: {"authenticationToken": "Wrong token format!"},
         EDAMErrorCode.INVALID_AUTH: {

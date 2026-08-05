@@ -1,5 +1,3 @@
-from typing import Optional
-
 import click
 from evernote.edam.userstore.ttypes import AuthenticationResult
 
@@ -7,15 +5,15 @@ from evernote_backup.cli_app_util import (
     get_api_data,
     is_output_to_terminal,
 )
-from evernote_backup.errors import ProgramTerminatedError, EvernoteAuthError
+from evernote_backup.errors import EvernoteAuthError, ProgramTerminatedError
 from evernote_backup.evernote_client_auth import EvernoteClientAuth
 
 
 def get_auth_client(
     backend: str,
     network_retry_count: int,
-    cafile: Optional[str],
-    custom_api_data: Optional[str],
+    cafile: str | None,
+    custom_api_data: str | None,
 ) -> EvernoteClientAuth:
     key, secret = get_api_data(custom_api_data)
 
@@ -29,8 +27,8 @@ def get_auth_client(
 
 
 def prompt_credentials(
-    user: Optional[str],
-    password: Optional[str],
+    user: str | None,
+    password: str | None,
 ) -> tuple[str, str]:
     if not is_output_to_terminal() and not all([user, password]):
         raise ProgramTerminatedError("--user and --password are required!")
@@ -44,12 +42,12 @@ def prompt_credentials(
 
 
 def evernote_login_password(
-    auth_user: Optional[str],
-    auth_password: Optional[str],
+    auth_user: str | None,
+    auth_password: str | None,
     backend: str,
     network_retry_count: int,
-    cafile: Optional[str],
-    custom_api_data: Optional[str],
+    cafile: str | None,
+    custom_api_data: str | None,
 ) -> str:
     auth_user, auth_password = prompt_credentials(auth_user, auth_password)
 

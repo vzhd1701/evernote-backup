@@ -4,7 +4,7 @@ import pickle
 import sqlite3
 from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple
 
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 class NoteForSync(NamedTuple):
     guid: str
     title: str
-    notebook_guid: Optional[str]
-    linked_notebook_guid: Optional[str]
-    shard_id: Optional[str] = None
+    notebook_guid: str | None
+    linked_notebook_guid: str | None
+    shard_id: str | None
 
 
 DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
@@ -92,7 +92,7 @@ def initialize_db(database_path: Path) -> None:
 
 
 class SqliteStorage:
-    def __init__(self, database: Union[Path, sqlite3.Connection]) -> None:
+    def __init__(self, database: Path | sqlite3.Connection) -> None:
         if isinstance(database, sqlite3.Connection):
             self.db = database
         else:
@@ -233,7 +233,7 @@ class SqliteStorage:
             raise DatabaseResyncRequiredError
 
 
-class NoteBookStorage(SqliteStorage):  # noqa: WPS214
+class NoteBookStorage(SqliteStorage):
     def add_notebooks(self, notebooks: Iterable[Notebook]) -> None:
         if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
             for nb in notebooks:
@@ -243,7 +243,7 @@ class NoteBookStorage(SqliteStorage):  # noqa: WPS214
         with self.db as con:
             con.executemany(
                 "replace into notebooks(guid, name, stack) values (?, ?, ?)",
-                ((nb.guid, nb.name, nb.stack) for nb in notebooks),  # noqa: WPS441
+                ((nb.guid, nb.name, nb.stack) for nb in notebooks),
             )
 
     def ensure_shared_with_me_notebook(self) -> None:
@@ -350,7 +350,7 @@ class NoteBookStorage(SqliteStorage):  # noqa: WPS214
             )
 
 
-class NoteStorage(SqliteStorage):  # noqa: WPS214
+class NoteStorage(SqliteStorage):
     def add_notes_for_sync(self, notes: Iterable[Note]) -> None:
         if logger.getEffectiveLevel() == logging.DEBUG:  # pragma: no cover
             for note in notes:
@@ -425,7 +425,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                 if raw_note:
                     yield raw_note
 
-    def check_notes(self, mark_corrupt: bool) -> Iterator[Optional[Note]]:
+    def check_notes(self, mark_corrupt: bool) -> Iterator[Note | None]:
         with self.db as con:
             cur = con.execute(
                 "select title, guid, raw_note from notes where raw_note is not NULL",
@@ -482,7 +482,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
     def expunge_notes_by_notebook(
         self,
         notebook_guid: str,
-        exclude_guids: Optional[Iterable[str]] = None,
+        exclude_guids: Iterable[str] | None = None,
     ) -> list[str]:
         """Delete notes in a notebook. Returns guids that were deleted.
 
@@ -512,7 +512,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
             cur = con.execute("select 1 from notes where guid=?", (guid,))
             return cur.fetchone() is not None
 
-    def get_note_notebook_guid(self, note_guid: str) -> Optional[str]:
+    def get_note_notebook_guid(self, note_guid: str) -> str | None:
         with self.db as con:
             cur = con.execute(
                 "select notebook_guid from notes where guid=?",
@@ -537,7 +537,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
         self,
         from_notebook_guid: str,
         to_notebook_guid: str,
-        only_guids: Optional[Iterable[str]] = None,
+        only_guids: Iterable[str] | None = None,
     ) -> list[str]:
         """Move notes from one notebook to another. Returns moved guids.
 
@@ -603,7 +603,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
         note_title: str,
         note_guid: str,
         raw_note: bytes,
-    ) -> Optional[Note]:
+    ) -> Note | None:
         try:
             return pickle.loads(lzma.decompress(raw_note))
         except Exception:
@@ -627,7 +627,7 @@ class SharedNotesStorage(SqliteStorage):
         self,
         note_guid: str,
         shard_id: str,
-        owner_id: Optional[int] = None,
+        owner_id: int | None = None,
     ) -> None:
         logger.debug(f"Adding/updating shared note [{note_guid}] shard [{shard_id}]")
 
@@ -657,7 +657,7 @@ class SharedNotesStorage(SqliteStorage):
             cur = con.execute("select guid from shared_notes")
             return {row[0] for row in cur.fetchall()}
 
-    def get_shard_id(self, note_guid: str) -> Optional[str]:
+    def get_shard_id(self, note_guid: str) -> str | None:
         with self.db as con:
             cur = con.execute(
                 "select shard_id from shared_notes where guid=?",
@@ -667,7 +667,7 @@ class SharedNotesStorage(SqliteStorage):
             return row[0] if row else None
 
 
-class TasksStorage(SqliteStorage):  # noqa: WPS214
+class TasksStorage(SqliteStorage):
     def add_tasks(self, tasks: Iterable[Task]) -> None:
         for task in tasks:
             self.add_task(task)
@@ -700,7 +700,7 @@ class TasksStorage(SqliteStorage):  # noqa: WPS214
         with self.db as con:
             con.executemany("delete from tasks where guid=?", ((g,) for g in guids))
 
-    def _get_raw_task(self, task_guid: str, raw_task: bytes) -> Optional[Task]:
+    def _get_raw_task(self, task_guid: str, raw_task: bytes) -> Task | None:
         try:
             return Task.from_json(lzma.decompress(raw_task).decode("utf-8"))
         except Exception:
@@ -712,7 +712,7 @@ class TasksStorage(SqliteStorage):  # noqa: WPS214
         return None
 
 
-class RemindersStorage(SqliteStorage):  # noqa: WPS214
+class RemindersStorage(SqliteStorage):
     def add_reminders(self, reminders: Iterable[Reminder]) -> None:
         for reminder in reminders:
             self.add_reminder(reminder)
@@ -748,7 +748,7 @@ class RemindersStorage(SqliteStorage):  # noqa: WPS214
         with self.db as con:
             con.executemany("delete from reminders where guid=?", ((g,) for g in guids))
 
-    def _get_raw_reminder(self, guid: str, raw_reminder: bytes) -> Optional[Reminder]:
+    def _get_raw_reminder(self, guid: str, raw_reminder: bytes) -> Reminder | None:
         try:
             return Reminder.from_json(lzma.decompress(raw_reminder).decode("utf-8"))
         except Exception:

@@ -6,7 +6,6 @@ from evernote.edam.type.ttypes import Note
 from evernote_backup.token_util import EvernoteToken
 from tests.conftest import FakeEvernoteNoteStore, FakeEvernoteValues
 
-
 HOME_TOKEN = "S=s100:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
 # Same user token; NoteStore constructed for a different shard
 FOREIGN_SHARD = "s532"

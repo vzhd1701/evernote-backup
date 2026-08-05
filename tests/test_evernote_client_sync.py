@@ -1,18 +1,14 @@
 """Unit tests for EvernoteClientSync."""
 
-import json
 import logging
-from unittest.mock import MagicMock
 
 import pytest
-from evernote.edam.error.ttypes import EDAMNotFoundException
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Tag
 from requests_sse import MessageEvent
 
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import NoteStoreAccess
 from evernote_backup.evernote_types import EvernoteEntityType
-
 
 FAKE_TOKEN = "S=s100:U=ff:E=fff:C=ff:P=1:A=test:V=2:H=ff"
 

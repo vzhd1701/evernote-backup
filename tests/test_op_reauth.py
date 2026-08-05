@@ -1,7 +1,7 @@
 import pytest
 
-from evernote_backup.token_util import OAuth2TokenBundle
 from evernote_backup.desktop_session import DesktopSession
+from evernote_backup.token_util import OAuth2TokenBundle
 
 
 @pytest.fixture
