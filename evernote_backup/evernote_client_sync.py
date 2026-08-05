@@ -9,7 +9,7 @@ from evernote.edam.notestore.ttypes import SyncChunk
 from evernote.edam.type.ttypes import LinkedNotebook, Note
 
 from evernote_backup.evernote_client import EvernoteClient
-from evernote_backup.evernote_client_util import NotebookAuth, NoteStoreAccess
+from evernote_backup.evernote_client_util import NotebookAuth, NoteStoreAccess, require
 from evernote_backup.evernote_types import (
     EVERNOTE_DEL_OPERATIONS,
     EvernoteEntityType,
@@ -65,7 +65,7 @@ class EvernoteClientSync(EvernoteClient):
         # SINGLE_NOTE_SHARE: no usable tag API on the foreign shard (permission denied).
         if note.tagGuids and self.access is not NoteStoreAccess.SINGLE_NOTE_SHARE:
             if self.access is NoteStoreAccess.LINKED_NOTEBOOK:
-                nb_tags = self.list_notebook_tags(note.notebookGuid)
+                nb_tags = self.list_notebook_tags(require(note.notebookGuid))
                 note.tagNames = [nb_tags[t] for t in note.tagGuids]
             else:
                 note.tagNames = [self.tags[t] for t in note.tagGuids]
@@ -91,13 +91,14 @@ class EvernoteClientSync(EvernoteClient):
 
             yield chunk
 
-            after_usn = chunk.chunkHighUSN
+            after_usn = require(chunk.chunkHighUSN)
             if chunk.chunkHighUSN == chunk.updateCount:
                 return
 
     def iter_linked_notebook_sync_chunks(
         self, l_notebook: LinkedNotebook, after_usn: int
     ) -> Iterator[SyncChunk]:
+        # shardId may be omitted; get_note_store falls back to the user shard.
         ln_note_store = self.get_note_store(l_notebook.shardId)
         is_full_sync = False
 
@@ -120,7 +121,7 @@ class EvernoteClientSync(EvernoteClient):
 
             yield chunk
 
-            after_usn = chunk.chunkHighUSN
+            after_usn = require(chunk.chunkHighUSN)
             if chunk.chunkHighUSN == chunk.updateCount:
                 return
 
@@ -144,13 +145,15 @@ class EvernoteClientSync(EvernoteClient):
         if is_notebook_public:
             auth_token = str(self.token)
         else:
-            auth_token = ln_note_store.authenticateToSharedNotebook(
-                notebook_guid
-            ).authenticationToken
+            auth_token = require(
+                ln_note_store.authenticateToSharedNotebook(
+                    notebook_guid
+                ).authenticationToken
+            )
 
         return NotebookAuth(
             token=auth_token,
-            shard=l_notebook.shardId,
+            shard=require(l_notebook.shardId or self.shard),
             access=NoteStoreAccess.LINKED_NOTEBOOK,
         )
 
@@ -158,26 +161,28 @@ class EvernoteClientSync(EvernoteClient):
     def linked_notebooks(self) -> dict[str, LinkedNotebook]:
         if self._linked_notebooks is None:
             self._linked_notebooks = {
-                ln.guid: ln for ln in self.note_store.listLinkedNotebooks()
+                require(ln.guid): ln for ln in self.note_store.listLinkedNotebooks()
             }
         return self._linked_notebooks
 
     @property
     def tags(self) -> dict[str, str]:
         if self._tags is None:
-            self._tags = {t.guid: t.name for t in self.note_store.listTags()}
+            self._tags = {
+                require(t.guid): require(t.name) for t in self.note_store.listTags()
+            }
         return self._tags
 
     def list_notebook_tags(self, notebook_guid: str) -> dict[str, str]:
         if notebook_guid not in self._notebook_tags:
             self._notebook_tags[notebook_guid] = {
-                t.guid: t.name
+                require(t.guid): require(t.name)
                 for t in self.note_store.listTagsByNotebook(notebook_guid)
             }
         return self._notebook_tags[notebook_guid]
 
     def get_remote_usn(self) -> int:
-        return int(self.note_store.getSyncState().updateCount)
+        return require(self.note_store.getSyncState().updateCount)
 
     def iter_sync_chunks_v2(
         self,
@@ -187,6 +192,10 @@ class EvernoteClientSync(EvernoteClient):
         for event in self.iter_sync_events(
             last_connection, entity_filter=entity_filter
         ):
+            if not event.data:
+                logger.warning("Empty sync chunk data")
+                continue
+
             try:
                 data = json.loads(event.data)
             except ValueError:

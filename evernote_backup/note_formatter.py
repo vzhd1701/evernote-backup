@@ -5,6 +5,7 @@ import uuid
 import xmltodict
 from evernote.edam.type.ttypes import Note, Resource
 
+from evernote_backup.evernote_client_util import require
 from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.note_formatter_util import fmt_binary, fmt_content, fmt_time
 
@@ -86,26 +87,29 @@ class NoteFormatter:
         return str(note_template)
 
     def _fmt_resource(self, resource: Resource) -> dict:
+        data = require(resource.data)
+        body = require(data.body)
+        attributes = require(resource.attributes)
         return {
             "data": {
                 "@encoding": "base64",
-                "#text": self._fmt_raw(fmt_binary(resource.data.body)),
+                "#text": self._fmt_raw(fmt_binary(body)),
             },
             "mime": resource.mime,
             "width": resource.width,
             "height": resource.height,
             "duration": resource.duration,
             "resource-attributes": {
-                "source-url": resource.attributes.sourceURL,
-                "timestamp": fmt_time(resource.attributes.timestamp),
-                "latitude": resource.attributes.latitude,
-                "longitude": resource.attributes.longitude,
-                "altitude": resource.attributes.altitude,
-                "camera-make": resource.attributes.cameraMake,
-                "camera-model": resource.attributes.cameraModel,
-                "reco-type": resource.attributes.recoType,
-                "file-name": resource.attributes.fileName,
-                "attachment": resource.attributes.attachment,
+                "source-url": attributes.sourceURL,
+                "timestamp": fmt_time(attributes.timestamp),
+                "latitude": attributes.latitude,
+                "longitude": attributes.longitude,
+                "altitude": attributes.altitude,
+                "camera-make": attributes.cameraMake,
+                "camera-model": attributes.cameraModel,
+                "reco-type": attributes.recoType,
+                "file-name": attributes.fileName,
+                "attachment": attributes.attachment,
             },
         }
 

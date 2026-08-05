@@ -47,12 +47,12 @@ class CallbackHandler(BaseHTTPRequestHandler):
             b"<body>You can close this tab now...</body></html>"
         )
 
-    def log_message(self, *args, **kwargs) -> None:  # type: ignore
+    def log_message(self, *args, **kwargs) -> None:
         """Silencing server log"""
 
 
 class StoppableHTTPServer(HTTPServer):
-    def __init__(self, *args, **kwargs) -> None:  # type: ignore
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self.callback_response: str = ""

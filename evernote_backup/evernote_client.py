@@ -16,7 +16,7 @@ from evernote_backup.evernote_client_api_http import (
     NoteStoreClientRetryable,
     UserStoreClientRetryable,
 )
-from evernote_backup.evernote_client_util import raise_auth_error
+from evernote_backup.evernote_client_util import raise_auth_error, require
 from evernote_backup.evernote_types import EvernoteEntityType
 from evernote_backup.token_util import EvernoteToken
 
@@ -104,7 +104,7 @@ class EvernoteClient(EvernoteClientBase):
     @property
     def user(self) -> str:
         if self._user is None:
-            self._user = self.user_store.getUser().username
+            self._user = require(self.user_store.getUser().username)
         return self._user
 
     @property

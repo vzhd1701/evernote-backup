@@ -1,10 +1,10 @@
 import functools
+import http.client as http_client
 import time
 from collections.abc import Callable
 from http.client import HTTPException
 from typing import Any, cast
 
-from six.moves import http_client
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 from thrift.transport.THttpClient import THttpClient
 
@@ -12,6 +12,7 @@ from evernote_backup.evernote_client_api_tokenized import (
     TokenizedNoteStoreClient,
     TokenizedUserStoreClient,
 )
+from evernote_backup.evernote_client_util import require
 
 DEFAULT_RETRY_MAX = 3
 DEFAULT_RETRY_DELAY = 0.5
@@ -36,24 +37,29 @@ class THttpClientHotfix(THttpClient):
     """
 
     def open(self) -> None:  # pragma: no cover
+        # Name-mangled attrs from thrift THttpClient; not visible to type checkers.
+        timeout = getattr(self, "_THttpClient__timeout")
         if self.scheme == "http":
-            self._THttpClient__http = http_client.HTTPConnection(
+            http = http_client.HTTPConnection(
                 self.host,
                 self.port,
-                timeout=self._THttpClient__timeout,
+                timeout=timeout,
             )
         elif self.scheme == "https":
-            self._THttpClient__http = http_client.HTTPSConnection(
+            http = http_client.HTTPSConnection(
                 self.host,
                 self.port,
-                timeout=self._THttpClient__timeout,
+                timeout=timeout,
                 context=self.context,
             )
+        else:
+            return
+        self._THttpClient__http = http
         if self.using_proxy():
-            self._THttpClient__http.set_tunnel(
-                self.realhost,
+            http.set_tunnel(
+                require(self.realhost),
                 self.realport,
-                {"Proxy-Authorization": self.proxy_auth},
+                {"Proxy-Authorization": require(self.proxy_auth)},
             )
 
 

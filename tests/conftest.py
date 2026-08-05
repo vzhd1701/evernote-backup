@@ -31,7 +31,8 @@ class FakeEvernoteValues:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fake_user = None
+        # Default username so getUser() works with require(); override per-test as needed.
+        self.fake_user = "fake_user"
 
         self.fake_tags = []
         self.fake_notebooks = []

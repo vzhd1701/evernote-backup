@@ -143,6 +143,9 @@ ignore = [
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
+[tool.ty.src]
+exclude = ["tests"]
+
 [tool.coverage.report]
 show_missing = true
 exclude_lines = [

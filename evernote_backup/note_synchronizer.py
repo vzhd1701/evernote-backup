@@ -17,7 +17,12 @@ from evernote_backup.errors import (
     WrongAuthUserError,
 )
 from evernote_backup.evernote_client_sync import EvernoteClientSync
-from evernote_backup.evernote_client_util import NotebookAuth, NoteStoreAccess
+from evernote_backup.evernote_client_util import (
+    NotebookAuth,
+    NoteStoreAccess,
+    require,
+    thrift_attrs,
+)
 from evernote_backup.evernote_types import EvernoteEntityType, SyncChunkV2
 from evernote_backup.note_storage import NoteForSync, SqliteStorage
 
@@ -28,9 +33,11 @@ THREAD_CHUNK_SIZE = 1000
 
 
 def get_note_size(note: Note) -> int:
-    size = note.contentLength
+    size = note.contentLength or 0
 
-    size += sum(r.data.size for r in note.resources or [])
+    for resource in note.resources or []:
+        data = require(resource.data)
+        size += require(data.size)
 
     return int(size)
 
@@ -146,11 +153,13 @@ class NoteClientWorker:
             try:
                 return self._note_client.get_note(note_id)
             except EDAMSystemException as e:
-                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                exc = thrift_attrs(e)
+                if exc.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
                     raise
 
                 raise NoteDownloadException(
-                    f"Remote server returned system error ({e.errorCode.name} - {e.message})"
+                    f"Remote server returned system error"
+                    f" ({exc.errorCode.name} - {exc.message})"
                     f" while downloading note [{note_id}]"
                 )
             except Exception:
@@ -314,7 +323,9 @@ class NoteSynchronizer:
 
             for ln_guid in linked_notebooks:
                 nb = self.storage.notebooks.get_notebook_by_linked_guid(ln_guid)
-                auth_token = self.note_client.auth_linked_notebook(ln_guid, nb.guid)
+                auth_token = self.note_client.auth_linked_notebook(
+                    ln_guid, require(nb.guid)
+                )
 
                 self.linked_notebooks_auth[ln_guid] = auth_token
 
@@ -364,13 +375,15 @@ class NoteSynchronizer:
             for chunk in self.note_client.iter_sync_chunks(current_usn):
                 self._process_chunk(chunk)
 
-                self.storage.config.set_config_value("USN", str(chunk.chunkHighUSN))
+                chunk_usn = require(chunk.chunkHighUSN)
+                self.storage.config.set_config_value("USN", str(chunk_usn))
 
-                chunks_bar.update(chunk.chunkHighUSN - last_usn)
-                last_usn = chunk.chunkHighUSN
+                chunks_bar.update(chunk_usn - last_usn)
+                last_usn = chunk_usn
 
     def _sync_linked_notebook(self, l_notebook: LinkedNotebook) -> None:
-        current_usn = self.storage.notebooks.get_linked_notebook_usn(l_notebook.guid)
+        ln_guid = require(l_notebook.guid)
+        current_usn = self.storage.notebooks.get_linked_notebook_usn(ln_guid)
 
         l_notebook_chunks = self.note_client.iter_linked_notebook_sync_chunks(
             l_notebook, current_usn
@@ -385,7 +398,7 @@ class NoteSynchronizer:
             self._process_chunk(chunk)
 
             self.storage.notebooks.set_linked_notebook_usn(
-                l_notebook.guid, chunk.chunkHighUSN
+                ln_guid, require(chunk.chunkHighUSN)
             )
 
     def _process_chunk(self, chunk: SyncChunk) -> None:
@@ -448,21 +461,22 @@ class NoteSynchronizer:
             return
 
         # Keep notes that are still available via a single-note share.
+        notebook_guid = require(notebook.guid)
         shared_guids = self.storage.shared_notes.get_shared_note_guids()
         deleted = self.storage.notes.expunge_notes_by_notebook(
-            notebook.guid,
+            notebook_guid,
             exclude_guids=shared_guids,
         )
         self._count_expunged_notes += len(deleted)
 
         # Re-home surviving shared notes under the synthetic notebook.
         self.storage.notes.rehome_notes_from_notebook(
-            notebook.guid,
+            notebook_guid,
             SHARED_WITH_ME_NOTEBOOK_GUID,
             only_guids=shared_guids,
         )
 
-        self.storage.notebooks.expunge_notebooks((notebook.guid,))
+        self.storage.notebooks.expunge_notebooks((notebook_guid,))
 
     def _download_scheduled_notes(self, notes_to_sync: tuple[NoteForSync, ...]) -> None:
         logger.info(f"Downloading {len(notes_to_sync)} note(s)...")

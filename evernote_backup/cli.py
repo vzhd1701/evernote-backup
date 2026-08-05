@@ -21,6 +21,7 @@ from evernote_backup.cli_app_click_util import (
     group_options,
 )
 from evernote_backup.errors import ProgramTerminatedError
+from evernote_backup.evernote_client_util import require, thrift_attrs
 from evernote_backup.log_util import get_time_from_now_txt, get_time_txt, init_logging
 from evernote_backup.version import __version__
 
@@ -165,9 +166,11 @@ def handle_errors(f: Callable) -> Callable:
                 "To debug this problem, run 'evernote-backup -v manage ping'"
             )
         except EDAMSystemException as e:
-            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                time_at = get_time_from_now_txt(e.rateLimitDuration)
-                time_left = get_time_txt(e.rateLimitDuration)
+            exc = thrift_attrs(e)
+            if exc.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                duration = require(exc.rateLimitDuration)
+                time_at = get_time_from_now_txt(duration)
+                time_left = get_time_txt(duration)
                 logger.critical(
                     f"Rate limit reached. Restart program at {time_at} (in {time_left})."
                 )
@@ -187,7 +190,7 @@ def handle_errors(f: Callable) -> Callable:
 
 
 @click.group(cls=NaturalOrderGroup)
-@optgroup.group("Verbosity", cls=MutuallyExclusiveOptionGroup)  # type: ignore
+@optgroup.group("Verbosity", cls=MutuallyExclusiveOptionGroup)
 @optgroup.option(
     "--quiet",
     "-q",

@@ -8,6 +8,7 @@ from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.cli_app_util import get_progress_output
 from evernote_backup.errors import DatabaseEmptyError
+from evernote_backup.evernote_client_util import require
 from evernote_backup.evernote_types import Task
 from evernote_backup.log_util import log_format_note, log_format_notebook
 from evernote_backup.note_exporter_util import SafePath
@@ -93,7 +94,10 @@ class NoteExporter:
                     nb_info = log_format_notebook(nb)
                     logger.debug(f"Exporting notebook {nb_info}")
 
-                if self.storage.notebooks.get_notebook_notes_count(nb.guid) == 0:
+                if (
+                    self.storage.notebooks.get_notebook_notes_count(require(nb.guid))
+                    == 0
+                ):
                     logger.debug("Notebook is empty, skip")
                     continue
 
@@ -107,17 +111,19 @@ class NoteExporter:
 
     def _export_notes(self, notebook: Notebook) -> None:
         parent_dir = [notebook.stack] if notebook.stack else []
+        notebook_guid = require(notebook.guid)
+        notebook_name = require(notebook.name)
 
-        notes_source = self.storage.notes.iter_notes(notebook.guid)
+        notes_source = self.storage.notes.iter_notes(notebook_guid)
 
         if self.filter_tags:
             notes_source = filter(self._filter_tags, notes_source)
 
         if self.single_notes:
-            parent_dir.append(notebook.name)
-            self._output_single_notes(parent_dir, notebook.name, notes_source)
+            parent_dir.append(notebook_name)
+            self._output_single_notes(parent_dir, notebook_name, notes_source)
         else:
-            self._output_notebook(parent_dir, notebook.name, notes_source)
+            self._output_notebook(parent_dir, notebook_name, notes_source)
 
     def _export_trash(self) -> None:
         notes_source = self.storage.notes.iter_notes_trash()
@@ -145,7 +151,8 @@ class NoteExporter:
         notes_source: Iterable[Note],
     ) -> None:
         for note in notes_source:
-            note_path = self.safe_paths.get_file(*parent_dir, f"{note.title}.enex")
+            title = require(note.title)
+            note_path = self.safe_paths.get_file(*parent_dir, f"{title}.enex")
 
             self._write_export_file(note_path, notebook_name, [note])
 
@@ -199,7 +206,7 @@ class NoteExporter:
                 n_info = log_format_note(note)
                 logger.debug(f"Exporting note {n_info}")
 
-                note_tasks = self._get_note_tasks(note.guid)
+                note_tasks = self._get_note_tasks(require(note.guid))
 
                 f.write(
                     note_formatter.format_note(

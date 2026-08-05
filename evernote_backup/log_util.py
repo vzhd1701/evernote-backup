@@ -39,31 +39,24 @@ def init_logging(log_level: str, log_file: Path | None = None) -> None:
     else:
         console_formatter = {"format": format_long}
 
-    config: dict[str, Any] = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "console": console_formatter,
-            "file": {"format": format_long},
-        },
-        "handlers": {
-            "console": {
-                "class": "logging.StreamHandler",
-                "level": log_level,
-                "formatter": "console",
-            }
-        },
-        "loggers": {
-            main_logger: {
-                "level": log_level,
-                "handlers": ["console"],
-                "propagate": IS_TESTING,
-            }
-        },
+    handlers: dict[str, Any] = {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": log_level,
+            "formatter": "console",
+        }
+    }
+    logger_handlers: list[str] = ["console"]
+    loggers: dict[str, Any] = {
+        main_logger: {
+            "level": log_level,
+            "handlers": logger_handlers,
+            "propagate": IS_TESTING,
+        }
     }
 
     if log_file:
-        config["handlers"]["file"] = {
+        handlers["file"] = {
             "class": "logging.FileHandler",
             "level": log_level,
             "formatter": "file",
@@ -71,7 +64,18 @@ def init_logging(log_level: str, log_file: Path | None = None) -> None:
             "encoding": "utf-8",
             "delay": True,
         }
-        config["loggers"][main_logger]["handlers"].append("file")
+        logger_handlers.append("file")
+
+    config: dict[str, Any] = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "console": console_formatter,
+            "file": {"format": format_long},
+        },
+        "handlers": handlers,
+        "loggers": loggers,
+    }
 
     logging.config.dictConfig(config)
 

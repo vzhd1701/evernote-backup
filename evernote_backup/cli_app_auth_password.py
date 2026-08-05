@@ -7,6 +7,7 @@ from evernote_backup.cli_app_util import (
 )
 from evernote_backup.errors import EvernoteAuthError, ProgramTerminatedError
 from evernote_backup.evernote_client_auth import EvernoteClientAuth
+from evernote_backup.evernote_client_util import require
 
 
 def get_auth_client(
@@ -66,11 +67,12 @@ def evernote_login_password(
     if auth_res.secondFactorRequired:
         auth_res = handle_two_factor_auth(
             auth_client,
-            auth_res.authenticationToken,
-            auth_res.secondFactorDeliveryHint,
+            require(auth_res.authenticationToken),
+            # Hint is display-only; server may omit it.
+            auth_res.secondFactorDeliveryHint or "",
         )
 
-    return str(auth_res.authenticationToken)
+    return require(auth_res.authenticationToken)
 
 
 def handle_two_factor_auth(
