@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+
+- Add OAuth2 support, by default mimicking as desktop client ([8b09514](https://github.com/vzhd1701/evernote-backup/commit/8b095142da5c40b1a09173851e73d640c30a8185))
+- Add blacklist for skipping broken notes during sync ([2a8000a](https://github.com/vzhd1701/evernote-backup/commit/2a8000a32f21d9e125ba138ddf6affbdde01bab2))
+- Add `--oauth-method import` option to import session from desktop client ([#166](https://github.com/vzhd1701/evernote-backup/issues/166)) ([079f96c](https://github.com/vzhd1701/evernote-backup/commit/079f96c199807ccb4ecacf5a8632c9093aaa1148)) * let user manually paste callback URL during MCP OAuth ([b74e407](https://github.com/vzhd1701/evernote-backup/commit/b74e407c14104a5da44f80db4f3fea45ebfad023))
+- Add `--oauth-method mcp` option to start session using MCP API ([aae882d](https://github.com/vzhd1701/evernote-backup/commit/aae882d3c2b70f74df54f388d25c368028a38b74))
+
+### Fixed
+
+- Improve rate limit logging in cli.py ([#159](https://github.com/vzhd1701/evernote-backup/issues/159)) ([6964405](https://github.com/vzhd1701/evernote-backup/commit/696440595a136428d27b9a7aa47d44f1333e783c))
+- Include single-note shares during sync ([2f7717a](https://github.com/vzhd1701/evernote-backup/commit/2f7717a3f52745a88777ec06ce0aa2b2c9c4af34))
+
+### Removed
+
+- Drop `--include-tasks` option, it's now enabled by default for all new sessions ([5e7beef](https://github.com/vzhd1701/evernote-backup/commit/5e7beef0be6a12e7ef31a53933ad1e369c39a346))
+
 ## [1.13.1] - 2025-04-23
 
 ### Fixed
