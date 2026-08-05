@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "evernote-backup"
-version = "1.13.1"
+version = "1.14.0"
 description = "Backup & export all Evernote notes and notebooks."
 authors = [{ name = "vzhd1701", email = "vzhd1701@gmail.com" }]
 requires-python = ">=3.10"

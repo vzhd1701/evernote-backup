@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-08-05
+
 ### Added
 
 - Add OAuth2 support, by default mimicking as desktop client ([8b09514](https://github.com/vzhd1701/evernote-backup/commit/8b095142da5c40b1a09173851e73d640c30a8185))
@@ -257,7 +259,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 - Initialize repository ([758dd89](https://github.com/vzhd1701/evernote-backup/commit/758dd898e95e2fe09cbdf80da2ee46c728f6369b))
 
-[Unreleased]: https://github.com/vzhd1701/evernote-backup/compare/1.13.1...HEAD
+[Unreleased]: https://github.com/vzhd1701/evernote-backup/compare/1.14.0...HEAD
+[1.14.0]: https://github.com/vzhd1701/evernote-backup/compare/1.13.1...1.14.0
 [1.13.1]: https://github.com/vzhd1701/evernote-backup/compare/1.13.0...1.13.1
 [1.13.0]: https://github.com/vzhd1701/evernote-backup/compare/1.12.0...1.13.0
 [1.12.0]: https://github.com/vzhd1701/evernote-backup/compare/1.11.0...1.12.0
