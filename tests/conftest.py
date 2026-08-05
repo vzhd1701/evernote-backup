@@ -202,10 +202,16 @@ class FakeEvernoteNoteStore:
         withResourcesRecognition,
         withResourcesAlternateData,
     ):
-        # If client shard is different, means we are trying to get note from linked nb
+        # Foreign shard: linked-notebook notes or single-note shares
         token_shard = EvernoteToken.from_string(self.auth_token).shard
         if token_shard != self.shard:
-            return next(n for n in self.fake_values.fake_l_notes if n.guid == guid)
+            for n in self.fake_values.fake_l_notes:
+                if n.guid == guid:
+                    return n
+            for n in self.fake_values.fake_notes:
+                if n.guid == guid:
+                    return n
+            raise StopIteration(f"Note {guid} not found on shard {self.shard}")
 
         return next(n for n in self.fake_values.fake_notes if n.guid == guid)
 

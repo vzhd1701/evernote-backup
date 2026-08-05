@@ -14,8 +14,18 @@ from evernote.edam.type.ttypes import (
 )
 
 from evernote_backup import note_synchronizer
+from evernote_backup.config import SHARED_WITH_ME_NOTEBOOK_GUID
 from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.token_util import OAuth2TokenBundle
+
+
+def _user_notebooks(storage):
+    """Notebooks excluding the synthetic Shared with me folder."""
+    return [
+        nb
+        for nb in storage.notebooks.iter_notebooks()
+        if nb.guid != SHARED_WITH_ME_NOTEBOOK_GUID
+    ]
 
 
 @pytest.mark.usefixtures("fake_init_db")
@@ -31,7 +41,7 @@ def test_sync_add_notebook(cli_invoker, mock_evernote_client, fake_storage):
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
 
     assert result.exit_code == 0
     assert result_notebooks == test_notebooks
@@ -168,7 +178,7 @@ def test_sync_add_linked_notebook(cli_invoker, mock_evernote_client, fake_storag
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
     result_l_notebooks_usn = fake_storage.notebooks.get_linked_notebook_usn("id3")
 
     assert result.exit_code == 0
@@ -193,7 +203,7 @@ def test_sync_add_linked_notebook_nothing_to_sync(
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
     result_l_notebooks_usn = fake_storage.notebooks.get_linked_notebook_usn("id3")
 
     assert result.exit_code == 0
@@ -231,7 +241,7 @@ def test_sync_add_linked_notebook_stack(
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
 
     assert result.exit_code == 0
     assert result_notebooks == expected_notebooks
@@ -267,7 +277,7 @@ def test_sync_add_linked_notebook_note(cli_invoker, mock_evernote_client, fake_s
 
     result = cli_invoker("-v", "sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
     assert result.exit_code == 0
@@ -307,7 +317,7 @@ def test_sync_add_linked_notebook_note_public(
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
     assert result.exit_code == 0
@@ -402,7 +412,7 @@ def test_sync_expunge_linked_notebook_note(
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
     assert result.exit_code == 0
@@ -418,7 +428,7 @@ def test_sync_expunge_linked_notebook_note(
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
     assert result.exit_code == 0
@@ -458,7 +468,7 @@ def test_sync_add_linked_notebook_note_error_no_access(
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
     result_notes = list(fake_storage.notes.iter_notes("nbid1"))
 
     assert result.exit_code == 0
@@ -505,7 +515,7 @@ def test_sync_expunge_notebooks(cli_invoker, mock_evernote_client, fake_storage)
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
 
     assert result.exit_code == 0
     assert len(result_notebooks) == 1
@@ -570,7 +580,7 @@ def test_sync_nothing_to_sync(cli_invoker, mock_evernote_client, fake_storage):
 
     result = cli_invoker("sync", "--database", "fake_db")
 
-    result_notebooks = list(fake_storage.notebooks.iter_notebooks())
+    result_notebooks = _user_notebooks(fake_storage)
 
     assert result.exit_code == 0
     assert not result_notebooks
@@ -1291,7 +1301,9 @@ def test_sync_legacy_token_skips_tasks_with_warning(
     result = cli_invoker("sync", "--database", "fake_db")
 
     assert result.exit_code == 0
-    assert "Tasks and reminders will not be synced" in result.output
+    assert (
+        "Tasks, reminders, and single-note shares will not be synced" in result.output
+    )
     assert "reauth" in result.output
     assert "Syncing tasks..." not in result.output
 

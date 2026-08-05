@@ -10,14 +10,15 @@ from evernote.edam.notestore.ttypes import SyncChunk
 from evernote.edam.type.ttypes import LinkedNotebook, Note
 
 from evernote_backup.cli_app_util import chunks, get_progress_output
+from evernote_backup.config import SHARED_WITH_ME_NOTEBOOK_GUID
 from evernote_backup.errors import (
     WrongAuthUserError,
     WorkerStopException,
     NoteDownloadException,
 )
 from evernote_backup.evernote_client_sync import EvernoteClientSync
-from evernote_backup.evernote_client_util import NotebookAuth
-from evernote_backup.evernote_types import SyncChunkV2
+from evernote_backup.evernote_client_util import NotebookAuth, NoteStoreAccess
+from evernote_backup.evernote_types import EvernoteEntityType, SyncChunkV2
 from evernote_backup.note_storage import NoteForSync, SqliteStorage
 
 logger = logging.getLogger(__name__)
@@ -108,9 +109,11 @@ class NoteClientWorker:
             raise WorkerStopException
 
         if auth_data is None:
-            auth_data = NotebookAuth(token=self.token, shard="")
+            auth_data = NotebookAuth(
+                token=self.token, shard="", access=NoteStoreAccess.OWN
+            )
 
-        client_id = auth_data.shard + auth_data.token
+        client_id = f"{auth_data.shard}:{auth_data.token}:{auth_data.access.value}"
 
         try:
             self._note_client = self.clients[client_id]
@@ -125,7 +128,7 @@ class NoteClientWorker:
 
             if auth_data.shard:
                 self._note_client.shard = auth_data.shard
-                self._note_client.shared_mode = True
+            self._note_client.access = auth_data.access
 
             self.clients[client_id] = self._note_client
 
@@ -180,23 +183,25 @@ class NoteSynchronizer:  # noqa: WPS214
         note_storage: SqliteStorage,
         max_download_workers: int,
         download_cache_memory_limit: int,
-        include_tasks: bool,
+        is_v2_api_enabled: bool,
     ) -> None:
         self._count_updated_notebooks = 0
         self._count_updated_notes = 0
         self._count_updated_tasks = 0
         self._count_updated_reminders = 0
+        self._count_updated_shared_notes = 0
 
         self._count_expunged_notebooks = 0
         self._count_expunged_linked_notebooks = 0
         self._count_expunged_notes = 0
         self._count_expunged_tasks = 0
         self._count_expunged_reminders = 0
+        self._count_expunged_shared_notes = 0
 
         self.note_client = note_client
         self.storage = note_storage
         self.max_download_workers = max_download_workers
-        self.include_tasks = include_tasks
+        self.is_v2_api_enabled = is_v2_api_enabled
 
         self.note_worker = NoteClientWorker(
             token=str(self.note_client.token),
@@ -207,6 +212,7 @@ class NoteSynchronizer:  # noqa: WPS214
             download_cache_memory_limit=download_cache_memory_limit,
         )
         self.linked_notebooks_auth: dict[str, NotebookAuth] = {}
+        self.shared_notes_auth: dict[str, NotebookAuth] = {}
 
     def sync(self) -> None:
         self._raise_on_wrong_user()
@@ -221,6 +227,11 @@ class NoteSynchronizer:  # noqa: WPS214
             for l_notebook in self.note_client.linked_notebooks.values():
                 self._sync_linked_notebook(l_notebook)
 
+        # Single-note shares (v2) must run before downloads so new shares are queued.
+        if self.is_v2_api_enabled:
+            logger.info("Syncing shared notes...")
+            self._sync_chunks_v2_shared_notes()
+
         notes_to_sync = self._filter_blacklisted_notes(
             self.storage.notes.get_notes_for_sync()
         )
@@ -229,22 +240,25 @@ class NoteSynchronizer:  # noqa: WPS214
             logger.info(f"{len(notes_to_sync)} note(s) to download...")
 
             self._authorize_linked_notebooks_for_notes(notes_to_sync)
+            self._prepare_shared_notes_auth(notes_to_sync)
             self._download_scheduled_notes(notes_to_sync)
 
             self._count_updated_notes = len(notes_to_sync)
 
-        if self.include_tasks:
+        if self.is_v2_api_enabled:
             logger.info("Syncing tasks...")
-            self._sync_chunks_v2()
+            self._sync_chunks_v2_tasks()
 
         report = [
             ("Updated or added notebooks", self._count_updated_notebooks),
             ("Updated or added notes", self._count_updated_notes),
+            ("Updated or added shared notes", self._count_updated_shared_notes),
             ("Updated or added tasks", self._count_updated_tasks),
             ("Updated or added reminders", self._count_updated_reminders),
             ("Expunged notebooks", self._count_expunged_notebooks),
             ("Expunged linked notebooks", self._count_expunged_linked_notebooks),
             ("Expunged notes", self._count_expunged_notes),
+            ("Expunged shared notes", self._count_expunged_shared_notes),
             ("Expunged tasks", self._count_expunged_tasks),
             ("Expunged reminders", self._count_expunged_reminders),
         ]
@@ -303,6 +317,28 @@ class NoteSynchronizer:  # noqa: WPS214
                 auth_token = self.note_client.auth_linked_notebook(ln_guid, nb.guid)
 
                 self.linked_notebooks_auth[ln_guid] = auth_token
+
+    def _prepare_shared_notes_auth(
+        self, notes_to_sync: tuple[NoteForSync, ...]
+    ) -> None:
+        """Build shard-scoped auth for single-note shares (same user token)."""
+        user_token = str(self.note_client.token)
+
+        for note in notes_to_sync:
+            if note.linked_notebook_guid:
+                continue
+            if not note.shard_id:
+                continue
+            self.shared_notes_auth[note.guid] = NotebookAuth(
+                token=user_token,
+                shard=note.shard_id,
+                access=NoteStoreAccess.SINGLE_NOTE_SHARE,
+            )
+
+    def _auth_for_note(self, note: NoteForSync) -> Optional[NotebookAuth]:
+        if note.linked_notebook_guid:
+            return self.linked_notebooks_auth.get(note.linked_notebook_guid)
+        return self.shared_notes_auth.get(note.guid)
 
     def _raise_on_wrong_user(self) -> None:
         remote_user = self.note_client.user
@@ -411,8 +447,22 @@ class NoteSynchronizer:  # noqa: WPS214
         except ValueError:
             return
 
+        # Keep notes that are still available via a single-note share.
+        shared_guids = self.storage.shared_notes.get_shared_note_guids()
+        deleted = self.storage.notes.expunge_notes_by_notebook(
+            notebook.guid,
+            exclude_guids=shared_guids,
+        )
+        self._count_expunged_notes += len(deleted)
+
+        # Re-home surviving shared notes under the synthetic notebook.
+        self.storage.notes.rehome_notes_from_notebook(
+            notebook.guid,
+            SHARED_WITH_ME_NOTEBOOK_GUID,
+            only_guids=shared_guids,
+        )
+
         self.storage.notebooks.expunge_notebooks((notebook.guid,))
-        self.storage.notes.expunge_notes_by_notebook(notebook.guid)
 
     def _download_scheduled_notes(self, notes_to_sync: tuple[NoteForSync, ...]) -> None:
         logger.info(f"Downloading {len(notes_to_sync)} note(s)...")
@@ -439,7 +489,7 @@ class NoteSynchronizer:  # noqa: WPS214
             executor.submit(
                 self.note_worker,
                 n.guid,
-                self.linked_notebooks_auth.get(n.linked_notebook_guid),  # type: ignore
+                self._auth_for_note(n),
             ): n.title
             for n in notes_chunk
         }
@@ -468,6 +518,12 @@ class NoteSynchronizer:  # noqa: WPS214
                         raise f_exc
 
                 note = note_f.result(timeout=120)  # noqa: WPS432
+
+                # Place single-note shares under the synthetic local notebook.
+                if self.storage.shared_notes.is_shared_note(note.guid):
+                    if not self.storage.notes.is_note_in_linked_notebook(note.guid):
+                        note.notebookGuid = SHARED_WITH_ME_NOTEBOOK_GUID
+
                 self.storage.notes.add_note(note)
 
                 self.note_worker.memory_manager.sub_note_size(note)
@@ -484,12 +540,15 @@ class NoteSynchronizer:  # noqa: WPS214
 
             raise
 
-    def _sync_chunks_v2(self) -> None:
+    def _sync_chunks_v2_tasks(self) -> None:
         last_connection_tasks = int(
             self.storage.config.get_config_value("last_connection_tasks")
         )
 
-        chunk_iter = self.note_client.iter_sync_chunks_v2(last_connection_tasks)
+        chunk_iter = self.note_client.iter_sync_chunks_v2(
+            last_connection_tasks,
+            entity_filter=[EvernoteEntityType.TASK, EvernoteEntityType.REMINDER],
+        )
 
         with progressbar(
             chunk_iter, show_pos=True, file=get_progress_output()
@@ -498,6 +557,28 @@ class NoteSynchronizer:  # noqa: WPS214
                 self._process_chunk_v2(chunk)
                 self.storage.config.set_config_value(
                     "last_connection_tasks", str(chunk.last_timestamp + 1)
+                )
+
+    def _sync_chunks_v2_shared_notes(self) -> None:
+        self.storage.notebooks.ensure_shared_with_me_notebook()
+
+        last_connection = int(
+            self.storage.config.get_config_value("last_connection_shared_notes")
+        )
+
+        chunk_iter = self.note_client.iter_sync_chunks_v2(
+            last_connection,
+            entity_filter=[EvernoteEntityType.NOTE],
+        )
+
+        with progressbar(
+            chunk_iter, show_pos=True, file=get_progress_output()
+        ) as chunks_bar:
+            for chunk in chunks_bar:
+                self._process_shared_notes_chunk_v2(chunk)
+                self.storage.config.set_config_value(
+                    "last_connection_shared_notes",
+                    str(chunk.last_timestamp + 1),
                 )
 
     def _process_chunk_v2(self, chunk: SyncChunkV2) -> None:
@@ -515,3 +596,66 @@ class NoteSynchronizer:  # noqa: WPS214
             self.storage.reminders.add_reminders(chunk.reminders)
 
             self._count_updated_reminders += len(chunk.reminders)
+
+    def _process_shared_notes_chunk_v2(self, chunk: SyncChunkV2) -> None:
+        # New / updated EXPLICIT single-note memberships.
+        for membership in chunk.shared_note_memberships:
+            self.storage.shared_notes.add_shared_note(
+                note_guid=membership.note_guid,
+                shard_id=membership.shard_id,
+                owner_id=membership.owner_id,
+            )
+
+            notebook_guid = SHARED_WITH_ME_NOTEBOOK_GUID
+
+            # If the note already lives in a linked notebook, keep that placement.
+            if self.storage.notes.is_note_in_linked_notebook(membership.note_guid):
+                existing_nb = self.storage.notes.get_note_notebook_guid(
+                    membership.note_guid
+                )
+                if existing_nb:
+                    notebook_guid = existing_nb
+
+            if not self.storage.notes.note_exists(membership.note_guid):
+                # Title is a placeholder until getNote fills in the real metadata.
+                self.storage.notes.add_notes_for_sync(
+                    [
+                        Note(
+                            guid=membership.note_guid,
+                            title="(Shared note)",
+                            notebookGuid=notebook_guid,
+                        )
+                    ]
+                )
+
+            self._count_updated_shared_notes += 1
+
+        # NOTE entity updates: redownload only notes we track as shared.
+        known_shared = self.storage.shared_notes.get_shared_note_guids()
+        to_redownload = [guid for guid in chunk.notes_to_sync if guid in known_shared]
+        if to_redownload:
+            self.storage.notes.mark_notes_for_redownload(to_redownload)
+
+        # NOTE entity expunges for tracked shared notes.
+        expunged_notes = [g for g in chunk.expunged_notes if g in known_shared]
+        if expunged_notes:
+            self.storage.notes.expunge_notes(expunged_notes)
+            self.storage.shared_notes.remove_shared_notes(expunged_notes)
+            self._count_expunged_notes += len(expunged_notes)
+            self._count_expunged_shared_notes += len(expunged_notes)
+
+        # Membership removals: drop share tracking; expunge only if no linked path.
+        for note_guid in chunk.expunged_shared_note_memberships:
+            self.storage.shared_notes.remove_shared_notes([note_guid])
+
+            if self.storage.notes.is_note_in_linked_notebook(note_guid):
+                logger.debug(
+                    f"Shared note [{note_guid}] unshared but still in linked notebook,"
+                    " keeping local copy"
+                )
+                continue
+
+            if self.storage.notes.note_exists(note_guid):
+                self.storage.notes.expunge_notes([note_guid])
+                self._count_expunged_notes += 1
+                self._count_expunged_shared_notes += 1

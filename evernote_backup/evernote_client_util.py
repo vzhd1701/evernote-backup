@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import NamedTuple, Union
 
 from evernote.edam.error.ttypes import (
@@ -9,9 +10,18 @@ from evernote.edam.error.ttypes import (
 from evernote_backup.errors import EvernoteAuthError
 
 
+class NoteStoreAccess(Enum):
+    """How this NoteStore client is being used for downloads."""
+
+    OWN = "own"  # home account: listTags for names
+    LINKED_NOTEBOOK = "linked"  # shared notebook: listTagsByNotebook
+    SINGLE_NOTE_SHARE = "single_share"  # single shared note: no tag API access
+
+
 class NotebookAuth(NamedTuple):
     token: str
     shard: str
+    access: NoteStoreAccess = NoteStoreAccess.OWN
 
 
 def raise_auth_error(exception: Union[EDAMSystemException, EDAMUserException]) -> None:

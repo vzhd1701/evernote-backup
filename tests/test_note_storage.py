@@ -4,6 +4,11 @@ from pathlib import Path
 import pytest
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
+from evernote_backup.config import (
+    CURRENT_DB_VERSION,
+    SHARED_WITH_ME_NOTEBOOK_GUID,
+    SHARED_WITH_ME_NOTEBOOK_NAME,
+)
 from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.note_storage import NoteForSync, SqliteStorage, initialize_db
 
@@ -666,14 +671,164 @@ def test_note_deleted_by_notebook(fake_storage):
     for note in test_notes:
         fake_storage.notes.add_note(note)
 
-    fake_storage.notes.expunge_notes_by_notebook("notebook1")
+    deleted = fake_storage.notes.expunge_notes_by_notebook("notebook1")
 
     result1 = list(fake_storage.notes.iter_notes("notebook1"))
     result2 = list(fake_storage.notes.iter_notes("notebook2"))
 
+    assert set(deleted) == {"id1", "id2"}
     assert len(result1) == 0
     assert len(result2) == 1
     assert result2[0].guid == "id3"
+
+
+def test_expunge_notes_by_notebook_exclude(fake_storage):
+    for guid in ("keep", "drop"):
+        fake_storage.notes.add_note(
+            Note(
+                guid=guid,
+                title=guid,
+                content="x",
+                notebookGuid="nb1",
+                active=True,
+            )
+        )
+
+    deleted = fake_storage.notes.expunge_notes_by_notebook(
+        "nb1", exclude_guids=["keep"]
+    )
+
+    assert deleted == ["drop"]
+    assert fake_storage.notes.note_exists("keep")
+    assert not fake_storage.notes.note_exists("drop")
+
+
+def test_shared_notes_storage_crud(fake_storage):
+    fake_storage.shared_notes.add_shared_note("n1", "s532", owner_id=99)
+    fake_storage.shared_notes.add_shared_note("n2", "s100", owner_id=100)
+
+    assert fake_storage.shared_notes.is_shared_note("n1")
+    assert fake_storage.shared_notes.get_shard_id("n1") == "s532"
+    assert fake_storage.shared_notes.get_shard_id("missing") is None
+    assert fake_storage.shared_notes.get_shared_note_guids() == {"n1", "n2"}
+
+    fake_storage.shared_notes.remove_shared_notes(["n1"])
+    assert not fake_storage.shared_notes.is_shared_note("n1")
+    assert fake_storage.shared_notes.is_shared_note("n2")
+
+
+def test_get_notes_for_sync_includes_shard_id(fake_storage):
+    fake_storage.notes.add_notes_for_sync(
+        [Note(guid="shared1", title="s", notebookGuid="nb")]
+    )
+    fake_storage.shared_notes.add_shared_note("shared1", "s532", owner_id=1)
+
+    result = fake_storage.notes.get_notes_for_sync()
+
+    assert len(result) == 1
+    assert result[0].guid == "shared1"
+    assert result[0].shard_id == "s532"
+    assert result[0].linked_notebook_guid is None
+
+
+def test_is_note_in_linked_notebook(fake_storage):
+    nb = Notebook(guid="nb-linked", name="LN")
+    fake_storage.notebooks.add_notebooks([nb])
+    fake_storage.notebooks.add_linked_notebook(LinkedNotebook(guid="ln1"), nb)
+    fake_storage.notes.add_note(
+        Note(guid="n1", title="t", content="c", notebookGuid="nb-linked", active=True)
+    )
+    fake_storage.notes.add_note(
+        Note(
+            guid="n2",
+            title="t2",
+            content="c",
+            notebookGuid=SHARED_WITH_ME_NOTEBOOK_GUID,
+            active=True,
+        )
+    )
+
+    assert fake_storage.notes.is_note_in_linked_notebook("n1") is True
+    assert fake_storage.notes.is_note_in_linked_notebook("n2") is False
+    assert fake_storage.notes.is_note_in_linked_notebook("missing") is False
+
+
+def test_rehome_notes_from_notebook(fake_storage):
+    for guid in ("a", "b", "c"):
+        fake_storage.notes.add_note(
+            Note(
+                guid=guid,
+                title=guid,
+                content="x",
+                notebookGuid="from-nb",
+                active=True,
+            )
+        )
+
+    moved = fake_storage.notes.rehome_notes_from_notebook(
+        "from-nb", "to-nb", only_guids=["a", "c"]
+    )
+
+    assert set(moved) == {"a", "c"}
+    assert fake_storage.notes.get_note_notebook_guid("a") == "to-nb"
+    assert fake_storage.notes.get_note_notebook_guid("b") == "from-nb"
+    assert fake_storage.notes.get_note_notebook_guid("c") == "to-nb"
+
+
+def test_mark_notes_for_redownload(fake_storage):
+    note = Note(
+        guid="id1",
+        title="t",
+        content="body",
+        notebookGuid="nb",
+        active=True,
+    )
+    fake_storage.notes.add_note(note)
+    assert fake_storage.notes.get_notes_for_sync() == ()
+
+    fake_storage.notes.mark_notes_for_redownload(["id1"])
+
+    pending = fake_storage.notes.get_notes_for_sync()
+    assert len(pending) == 1
+    assert pending[0].guid == "id1"
+
+
+def test_note_exists_and_get_notebook_guid(fake_storage):
+    assert fake_storage.notes.note_exists("x") is False
+    assert fake_storage.notes.get_note_notebook_guid("x") is None
+
+    fake_storage.notes.add_note(
+        Note(guid="x", title="t", content="c", notebookGuid="nb", active=True)
+    )
+
+    assert fake_storage.notes.note_exists("x") is True
+    assert fake_storage.notes.get_note_notebook_guid("x") == "nb"
+
+
+def test_ensure_shared_with_me_notebook(fake_storage):
+    fake_storage.notebooks.ensure_shared_with_me_notebook()
+
+    names = {nb.guid: nb.name for nb in fake_storage.notebooks.iter_notebooks()}
+    assert names[SHARED_WITH_ME_NOTEBOOK_GUID] == SHARED_WITH_ME_NOTEBOOK_NAME
+
+
+def test_upgrade_db_v6_to_v7_shared_notes(fake_storage):
+    """Upgrade path creates shared_notes table and bootstrap cursor."""
+    with fake_storage.db as con:
+        con.execute("DROP TABLE IF EXISTS shared_notes")
+    fake_storage.config.set_config_value("DB_VERSION", "6")
+
+    fake_storage.check_version()
+
+    assert fake_storage.config.get_config_value("DB_VERSION") == str(CURRENT_DB_VERSION)
+    assert fake_storage.config.get_config_value("last_connection_shared_notes") == "0"
+
+    # Table usable
+    fake_storage.shared_notes.add_shared_note("n1", "s1")
+    assert fake_storage.shared_notes.is_shared_note("n1")
+
+    names = {nb.name for nb in fake_storage.notebooks.iter_notebooks()}
+    assert SHARED_WITH_ME_NOTEBOOK_NAME in names
 
 
 def test_note_count(fake_storage):

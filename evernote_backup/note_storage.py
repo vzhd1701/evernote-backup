@@ -8,7 +8,11 @@ from typing import NamedTuple, Optional, Union
 
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
-from evernote_backup.config import CURRENT_DB_VERSION
+from evernote_backup.config import (
+    CURRENT_DB_VERSION,
+    SHARED_WITH_ME_NOTEBOOK_GUID,
+    SHARED_WITH_ME_NOTEBOOK_NAME,
+)
 from evernote_backup.errors import DatabaseResyncRequiredError
 from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.log_util import log_format_note, log_format_notebook
@@ -21,6 +25,7 @@ class NoteForSync(NamedTuple):
     title: str
     notebook_guid: Optional[str]
     linked_notebook_guid: Optional[str]
+    shard_id: Optional[str] = None
 
 
 DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
@@ -49,6 +54,11 @@ DB_SCHEMA = """CREATE TABLE IF NOT EXISTS notebooks(
                         guid TEXT PRIMARY KEY,
                         task_guid TEXT,
                         raw_reminder BLOB
+                    );
+                    CREATE TABLE IF NOT EXISTS shared_notes(
+                        guid TEXT PRIMARY KEY,
+                        shard_id TEXT NOT NULL,
+                        owner_id INT
                     );
                     CREATE TABLE IF NOT EXISTS config(
                         name TEXT PRIMARY KEY,
@@ -111,6 +121,10 @@ class SqliteStorage:
     @property
     def reminders(self) -> "RemindersStorage":
         return RemindersStorage(self.db)
+
+    @property
+    def shared_notes(self) -> "SharedNotesStorage":
+        return SharedNotesStorage(self.db)
 
     def integrity_check(self) -> str:
         with self.db as con:
@@ -197,6 +211,21 @@ class SqliteStorage:
                     """
                 )
 
+        if db_version < 7:
+            self.config.set_config_value("last_connection_shared_notes", "0")
+
+            with self.db as con6:
+                con6.executescript(
+                    """
+                    CREATE TABLE IF NOT EXISTS shared_notes(
+                        guid TEXT PRIMARY KEY,
+                        shard_id TEXT NOT NULL,
+                        owner_id INT
+                    );
+                    """
+                )
+            self.notebooks.ensure_shared_with_me_notebook()
+
         self.config.set_config_value("DB_VERSION", str(CURRENT_DB_VERSION))
 
         if need_resync:
@@ -215,6 +244,14 @@ class NoteBookStorage(SqliteStorage):  # noqa: WPS214
             con.executemany(
                 "replace into notebooks(guid, name, stack) values (?, ?, ?)",
                 ((nb.guid, nb.name, nb.stack) for nb in notebooks),  # noqa: WPS441
+            )
+
+    def ensure_shared_with_me_notebook(self) -> None:
+        """Ensure the synthetic notebook used for single-note shares exists."""
+        with self.db as con:
+            con.execute(
+                "replace into notebooks(guid, name, stack) values (?, ?, ?)",
+                (SHARED_WITH_ME_NOTEBOOK_GUID, SHARED_WITH_ME_NOTEBOOK_NAME, None),
             )
 
     def iter_notebooks(self) -> Iterator[Notebook]:
@@ -415,10 +452,13 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
         with self.db as con:
             cur = con.execute(
                 "select notes.guid, title, notes.notebook_guid,"
-                " notebooks_linked.guid as l_notebook"
+                " notebooks_linked.guid as l_notebook,"
+                " shared_notes.shard_id as shard_id"
                 " from notes"
                 " left join notebooks_linked"
                 " using (notebook_guid)"
+                " left join shared_notes"
+                " on shared_notes.guid = notes.guid"
                 " where raw_note is NULL"
             )
 
@@ -428,6 +468,7 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                     title=row["title"],
                     notebook_guid=row["notebook_guid"],
                     linked_notebook_guid=row["l_notebook"],
+                    shard_id=row["shard_id"],
                 )
                 for row in cur.fetchall()
             )
@@ -438,9 +479,94 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
         with self.db as con:
             con.executemany("delete from notes where guid=?", ((g,) for g in guids))
 
-    def expunge_notes_by_notebook(self, notebook_guid: str) -> None:
+    def expunge_notes_by_notebook(
+        self,
+        notebook_guid: str,
+        exclude_guids: Optional[Iterable[str]] = None,
+    ) -> list[str]:
+        """Delete notes in a notebook. Returns guids that were deleted.
+
+        Notes whose guids are in exclude_guids are left intact (e.g. still
+        reachable via a single-note share).
+        """
+        exclude = set(exclude_guids or ())
+
         with self.db as con:
-            con.execute("delete from notes where notebook_guid=?", (notebook_guid,))
+            cur = con.execute(
+                "select guid from notes where notebook_guid=?",
+                (notebook_guid,),
+            )
+            all_guids = [row[0] for row in cur.fetchall()]
+            to_delete = [g for g in all_guids if g not in exclude]
+
+            if to_delete:
+                con.executemany(
+                    "delete from notes where guid=?",
+                    ((g,) for g in to_delete),
+                )
+
+            return to_delete
+
+    def note_exists(self, guid: str) -> bool:
+        with self.db as con:
+            cur = con.execute("select 1 from notes where guid=?", (guid,))
+            return cur.fetchone() is not None
+
+    def get_note_notebook_guid(self, note_guid: str) -> Optional[str]:
+        with self.db as con:
+            cur = con.execute(
+                "select notebook_guid from notes where guid=?",
+                (note_guid,),
+            )
+            row = cur.fetchone()
+            return row[0] if row else None
+
+    def is_note_in_linked_notebook(self, note_guid: str) -> bool:
+        """True if the note is stored under a notebook tracked as linked."""
+        with self.db as con:
+            cur = con.execute(
+                "select 1 from notes"
+                " join notebooks_linked"
+                " on notebooks_linked.notebook_guid = notes.notebook_guid"
+                " where notes.guid=?",
+                (note_guid,),
+            )
+            return cur.fetchone() is not None
+
+    def rehome_notes_from_notebook(
+        self,
+        from_notebook_guid: str,
+        to_notebook_guid: str,
+        only_guids: Optional[Iterable[str]] = None,
+    ) -> list[str]:
+        """Move notes from one notebook to another. Returns moved guids.
+
+        If only_guids is set, only those notes are considered.
+        """
+        only = set(only_guids) if only_guids is not None else None
+
+        with self.db as con:
+            cur = con.execute(
+                "select guid from notes where notebook_guid=?",
+                (from_notebook_guid,),
+            )
+            candidates = [row[0] for row in cur.fetchall()]
+            to_move = [g for g in candidates if only is None or g in only]
+
+            if to_move:
+                con.executemany(
+                    "update notes set notebook_guid=? where guid=?",
+                    ((to_notebook_guid, g) for g in to_move),
+                )
+
+            return to_move
+
+    def mark_notes_for_redownload(self, guids: Iterable[str]) -> None:
+        with self.db as con:
+            con.executemany(
+                "update notes set raw_note=NULL, is_active=NULL where guid=?",
+                ((g,) for g in guids),
+            )
 
     def get_notes_count(self, is_active: bool = True) -> int:
         with self.db as con:
@@ -494,6 +620,51 @@ class NoteStorage(SqliteStorage):  # noqa: WPS214
                 "update notes set raw_note=NULL, is_active=NULL where guid=?",
                 (note_guid,),
             )
+
+
+class SharedNotesStorage(SqliteStorage):
+    def add_shared_note(
+        self,
+        note_guid: str,
+        shard_id: str,
+        owner_id: Optional[int] = None,
+    ) -> None:
+        logger.debug(f"Adding/updating shared note [{note_guid}] shard [{shard_id}]")
+
+        with self.db as con:
+            con.execute(
+                "replace into shared_notes(guid, shard_id, owner_id) values (?, ?, ?)",
+                (note_guid, shard_id, owner_id),
+            )
+
+    def remove_shared_notes(self, guids: Iterable[str]) -> None:
+        with self.db as con:
+            con.executemany(
+                "delete from shared_notes where guid=?",
+                ((g,) for g in guids),
+            )
+
+    def is_shared_note(self, note_guid: str) -> bool:
+        with self.db as con:
+            cur = con.execute(
+                "select 1 from shared_notes where guid=?",
+                (note_guid,),
+            )
+            return cur.fetchone() is not None
+
+    def get_shared_note_guids(self) -> set[str]:
+        with self.db as con:
+            cur = con.execute("select guid from shared_notes")
+            return {row[0] for row in cur.fetchall()}
+
+    def get_shard_id(self, note_guid: str) -> Optional[str]:
+        with self.db as con:
+            cur = con.execute(
+                "select shard_id from shared_notes where guid=?",
+                (note_guid,),
+            )
+            row = cur.fetchone()
+            return row[0] if row else None
 
 
 class TasksStorage(SqliteStorage):  # noqa: WPS214

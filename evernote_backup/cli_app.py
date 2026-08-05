@@ -89,6 +89,8 @@ def init_db(
     storage.config.set_config_value("user", new_user)
     storage.config.set_config_value("backend", backend)
     storage.config.set_config_value("last_connection_tasks", "0")
+    storage.config.set_config_value("last_connection_shared_notes", "0")
+    storage.notebooks.ensure_shared_with_me_notebook()
 
     logger.info(f"Successfully initialized database for {new_user}!")
 
@@ -175,12 +177,13 @@ def sync(
         storage.config.set_config_value("auth_token", auth_resolved.auth_for_storage)
         logger.info("Stored refreshed OAuth2 token bundle in the database.")
 
-    # Tasks/reminders use the new sync API and require an OAuth2 JWT access token.
-    include_tasks = auth_resolved.jwt_token is not None
-    if backend == "evernote" and not include_tasks:
+    # Tasks/reminders and single-note shares use the new sync API (JWT required).
+    is_v2_api_enabled = auth_resolved.jwt_token is not None
+    if backend == "evernote" and not is_v2_api_enabled:
         logger.warning(
-            "Tasks and reminders will not be synced because this database has no"
-            " OAuth2 credentials. Run 'evernote-backup reauth' to enable tasks and reminders sync."
+            "Tasks, reminders, and single-note shares will not be synced because this"
+            " database has no OAuth2 credentials. Run 'evernote-backup reauth'"
+            " to enable tasks, reminders, and single-note shares sync."
         )
 
     note_client = get_sync_client(
@@ -197,7 +200,7 @@ def sync(
         storage,
         max_download_workers,
         download_cache_memory_limit,
-        include_tasks,
+        is_v2_api_enabled,
     )
 
     try:

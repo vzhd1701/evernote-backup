@@ -48,6 +48,7 @@ def test_init_db_new_file(tmp_path, cli_invoker, mock_evernote_client, fake_toke
     assert storage.config.get_config_value("auth_token") == fake_token
     assert storage.config.get_config_value("user") == "user1"
     assert storage.config.get_config_value("backend") == "evernote"
+    assert storage.config.get_config_value("last_connection_shared_notes") == "0"
 
 
 @pytest.mark.parametrize(

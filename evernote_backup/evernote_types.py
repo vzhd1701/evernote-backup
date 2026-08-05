@@ -90,12 +90,24 @@ class Task:
 
 
 @dataclass
+class SharedNoteMembership:
+    note_guid: str
+    shard_id: str
+    owner_id: int
+
+
+@dataclass
 class SyncChunkV2:
     last_timestamp: int
     tasks: list[Task] = field(default_factory=list)
     reminders: list[Reminder] = field(default_factory=list)
     expunged_tasks: list[str] = field(default_factory=list)
     expunged_reminders: list[str] = field(default_factory=list)
+    # Single-note shares (v2 membership + NOTE entity events)
+    shared_note_memberships: list[SharedNoteMembership] = field(default_factory=list)
+    expunged_shared_note_memberships: list[str] = field(default_factory=list)
+    notes_to_sync: list[str] = field(default_factory=list)
+    expunged_notes: list[str] = field(default_factory=list)
 
 
 # @evernote/data-model/dist/sync-types/SyncDocuments.js
@@ -109,6 +121,12 @@ class EvernoteSyncOperationType(IntEnum):
     WITH_ENTITY_CREATE = 6
     FORCE_FANOUT = 7
     NOTIFY = 8
+
+
+EVERNOTE_DEL_OPERATIONS = {
+    EvernoteSyncOperationType.DELETE,
+    EvernoteSyncOperationType.EXPUNGE,
+}
 
 
 # @evernote/data-model/dist/sync-types/SyncInstances.js
@@ -126,6 +144,12 @@ class EvernoteAgentType(IntEnum):
     USER = 2
     BUSINESS = 3
     PROFILE = 4
+
+
+# @evernote/data-model/dist/sync-types/CommonTypes.js
+class EvernoteMembershipType(IntEnum):
+    INVITATION = 0
+    SHARE = 1
 
 
 # @evernote/data-model/dist/EntityTypes.js

@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import json
 import platform
 import uuid
@@ -108,6 +109,12 @@ class EvernoteClient(EvernoteClientBase):
             self._user = self.user_store.getUser().username
         return self._user
 
+    @property
+    def user_id(self) -> int:
+        if self.token is None:
+            raise EvernoteAuthError("Accessed user_id before providing token")
+        return self.token.user_id
+
     def get_note_store(
         self,
         shard: Optional[str] = None,
@@ -124,7 +131,11 @@ class EvernoteClient(EvernoteClientBase):
             cafile=self.cafile,
         )
 
-    def iter_sync_events(self, last_connection: int) -> Iterator[MessageEvent]:
+    def iter_sync_events(
+        self,
+        last_connection: int,
+        entity_filter: Sequence[EvernoteEntityType],
+    ) -> Iterator[MessageEvent]:
         headers = {
             "User-Agent": self.user_agent,
             "x-feature-version": "4",
@@ -134,7 +145,6 @@ class EvernoteClient(EvernoteClientBase):
 
         connection_id = uuid.uuid4()
 
-        entity_filter = [EvernoteEntityType.TASK, EvernoteEntityType.REMINDER]
         entity_filter_arg = json.dumps(entity_filter, separators=(",", ":"))
 
         url = f"{EVERNOTE_API_SYNC_DOWNLOAD_URL}?lastConnection={last_connection}&connectionId={connection_id}&entityFilter={entity_filter_arg}"
