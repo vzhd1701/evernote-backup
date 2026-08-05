@@ -30,13 +30,3 @@ jobs:
         env:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: uv publish
-
-  publish_tap:
-    needs: [ publish_pypi ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update Homebrew formula
-        uses: dawidd6/action-homebrew-bump-formula@v8
-        with:
-          token: ${{ secrets.BREW_BUMP_TOKEN }}
-          formula: ${{ env.PACKAGE_NAME }}
