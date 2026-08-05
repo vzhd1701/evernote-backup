@@ -412,8 +412,9 @@ def test_get_os_key_unexpected_prefix_raises(monkeypatch):
     monkeypatch.setattr("sys.platform", "darwin")
     monkeypatch.setattr(
         "keyring.get_password",
-        lambda service, account: "wrong-prefix"
-        + base64.b64encode(b"\x11" * 32).decode(),
+        lambda service, account: (
+            "wrong-prefix" + base64.b64encode(b"\x11" * 32).decode()
+        ),
     )
     with pytest.raises(ProgramTerminatedError, match="unexpected prefix"):
         _get_os_key("151636")

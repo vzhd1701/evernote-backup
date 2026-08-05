@@ -38,7 +38,7 @@ class THttpClientHotfix(THttpClient):
 
     def open(self) -> None:  # pragma: no cover
         # Name-mangled attrs from thrift THttpClient; not visible to type checkers.
-        timeout = getattr(self, "_THttpClient__timeout")
+        timeout = getattr(self, "_THttpClient__timeout")  # noqa: B009
         if self.scheme == "http":
             http = http_client.HTTPConnection(
                 self.host,

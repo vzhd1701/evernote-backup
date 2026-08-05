@@ -40,3 +40,19 @@ repos:
         entry: uv run --frozen pytest
         types: [ python ]
         pass_filenames: false
+
+      - id: ty
+        name: ty
+        stages: [ pre-commit ]
+        language: system
+        entry: uv run --frozen ty check
+        types: [ python ]
+        pass_filenames: false
+
+      - id: ruff-check
+        name: ruff-check
+        stages: [ pre-commit ]
+        language: system
+        entry: uv run --frozen ruff check
+        types: [ python ]
+        pass_filenames: false
