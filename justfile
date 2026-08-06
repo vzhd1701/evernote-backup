@@ -13,5 +13,11 @@ changelog:
 changelog-all:
     conventional-changelog -u -i /dev/null --stdout
 
+release:
+    commit-and-tag-version
+
+release-dry:
+    commit-and-tag-version --dry-run
+
 update-actions:
     actions-up --style preserve -y
