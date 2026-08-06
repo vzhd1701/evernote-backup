@@ -12,8 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 - Add OAuth2 support, by default mimicking as desktop client ([8b09514](https://github.com/vzhd1701/evernote-backup/commit/8b095142da5c40b1a09173851e73d640c30a8185))
 - Add blacklist for skipping broken notes during sync ([2a8000a](https://github.com/vzhd1701/evernote-backup/commit/2a8000a32f21d9e125ba138ddf6affbdde01bab2))
-- Add `--oauth-method import` option to import session from desktop client ([#166](https://github.com/vzhd1701/evernote-backup/issues/166)) ([079f96c](https://github.com/vzhd1701/evernote-backup/commit/079f96c199807ccb4ecacf5a8632c9093aaa1148)) * let user manually paste callback URL during MCP OAuth ([b74e407](https://github.com/vzhd1701/evernote-backup/commit/b74e407c14104a5da44f80db4f3fea45ebfad023))
+- Add `--oauth-method import` option to import session from desktop client ([#166](https://github.com/vzhd1701/evernote-backup/issues/166)) ([079f96c](https://github.com/vzhd1701/evernote-backup/commit/079f96c199807ccb4ecacf5a8632c9093aaa1148))
 - Add `--oauth-method mcp` option to start session using MCP API ([aae882d](https://github.com/vzhd1701/evernote-backup/commit/aae882d3c2b70f74df54f388d25c368028a38b74))
+- Add ability to manually paste callback URL during auth ([b74e407](https://github.com/vzhd1701/evernote-backup/commit/b74e407c14104a5da44f80db4f3fea45ebfad023))
 
 ### Fixed
 
