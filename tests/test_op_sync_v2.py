@@ -30,7 +30,7 @@ def test_bad_sync_data_unknown_operation_type(cli_invoker, mock_evernote_client)
     result = cli_invoker("-v", "sync", "--database", "fake_db")
 
     assert result.exit_code == 0
-    assert "Sync data inconsistency - unknown operation type" in result.stdout
+    assert "Sync data inconsistency - unknown operation type" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_jwt")
@@ -56,7 +56,7 @@ def test_bad_sync_data_unknown_instance_type(cli_invoker, mock_evernote_client):
     result = cli_invoker("-v", "sync", "--database", "fake_db")
 
     assert result.exit_code == 0
-    assert "Sync data inconsistency - unknown instance type" in result.stdout
+    assert "Sync data inconsistency - unknown instance type" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_jwt")
@@ -82,7 +82,7 @@ def test_bad_sync_data_unknown_entity_type(cli_invoker, mock_evernote_client):
     result = cli_invoker("-v", "sync", "--database", "fake_db")
 
     assert result.exit_code == 0
-    assert "Sync data inconsistency - unknown entity type" in result.stdout
+    assert "Sync data inconsistency - unknown entity type" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_jwt")
@@ -106,7 +106,7 @@ def test_bad_sync_data_entity_without_parent(cli_invoker, mock_evernote_client):
     result = cli_invoker("-v", "sync", "--database", "fake_db")
 
     assert result.exit_code == 0
-    assert "Sync data inconsistency - entity without parent" in result.stdout
+    assert "Sync data inconsistency - entity without parent" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_jwt")
@@ -130,7 +130,7 @@ def test_bad_sync_data_task_outside_note(cli_invoker, mock_evernote_client):
     result = cli_invoker("-v", "sync", "--database", "fake_db")
 
     assert result.exit_code == 0
-    assert "Sync data inconsistency - task outside of note" in result.stdout
+    assert "Sync data inconsistency - task outside of note" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_jwt")
@@ -154,7 +154,7 @@ def test_bad_sync_data_reminder_outside_task(cli_invoker, mock_evernote_client):
     result = cli_invoker("-v", "sync", "--database", "fake_db")
 
     assert result.exit_code == 0
-    assert "Sync data inconsistency - reminder outside of task" in result.stdout
+    assert "Sync data inconsistency - reminder outside of task" in result.output
 
 
 @pytest.mark.usefixtures("fake_init_db_jwt")

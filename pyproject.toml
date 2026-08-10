@@ -37,13 +37,13 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "xmltodict==0.13.0",
-    "click==8.1.8",
-    "click-option-group==0.5.7",
+    "xmltodict==1.0.4",
+    "click==8.4.2",
+    "click-option-group==0.5.9",
     "requests-oauthlib==2.0.0",
     "thrift==0.21.0",
     "evernote-plus==1.28.1.dev2",
-    "requests-sse==0.5.1",
+    "requests-sse==0.5.3",
     "pyjwt==2.13.0",
     "pycryptodome==3.23.0 ; sys_platform == 'darwin' or sys_platform == 'win32'",
     "keyring==25.7.0 ; sys_platform == 'darwin' or sys_platform == 'win32'",
@@ -63,17 +63,17 @@ module-root = ""
 
 [dependency-groups]
 test = [
-    "pytest>=8.3.5,<9",
-    "pytest-cov>=6.1.1,<7",
-    "pytest-mock>=3.14.0,<4",
-    "requests-mock>=1.12.1",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "requests-mock",
 ]
 dev = [
     "keepachangelog==2.0.0",
-    "pre-commit>=4.2.0,<5",
-    "ruff>=0.11.5",
-    "rumdl>=0.2.49",
-    "ty>=0.0.66",
+    "pre-commit",
+    "ruff",
+    "rumdl",
+    "ty",
 ]
 
 [tool.ruff.format]

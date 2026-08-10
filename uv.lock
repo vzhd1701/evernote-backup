@@ -118,26 +118,26 @@ wheels = [
 
 [[package]]
 name = "click"
-version = "8.1.8"
+version = "8.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/2e/0090cbf739cee7d23781ad4b89a9894a41538e4fcf4c31dcdd705b78eb8b/click-8.1.8.tar.gz", hash = "sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a", size = 226593, upload-time = "2024-12-21T18:38:44.339Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/76/d4/81420972a676e8ffea40450d8c8c92943e7218a78fe9b64359836cc9876b/click-8.4.2.tar.gz", hash = "sha256:9a6cea6e60b17ebe0a44c5cc636d94f09bd66142c1cd7d8b4cd731c4917a15f6", size = 338000, upload-time = "2026-06-24T17:45:15.148Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/d4/7ebdbd03970677812aac39c869717059dbb71a4cfc033ca6e5221787892c/click-8.1.8-py3-none-any.whl", hash = "sha256:63c132bbbed01578a06712a2d1f497bb62d9c1c0d329b7903a866228027263b2", size = 98188, upload-time = "2024-12-21T18:38:41.666Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/e2/79c688af8b210d232694e31e59da9f6ec747bae31c3f5946e4e9b98860d5/click-8.4.2-py3-none-any.whl", hash = "sha256:e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76", size = 119243, upload-time = "2026-06-24T17:45:13.73Z" },
 ]
 
 [[package]]
 name = "click-option-group"
-version = "0.5.7"
+version = "0.5.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/9f/1f917934da4e07ae7715a982347e3c2179556d8a58d1108c5da3e8f09c76/click_option_group-0.5.7.tar.gz", hash = "sha256:8dc780be038712fc12c9fecb3db4fe49e0d0723f9c171d7cda85c20369be693c", size = 22110, upload-time = "2025-03-24T13:24:55.897Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ef/ff/d291d66595b30b83d1cb9e314b2c9be7cfc7327d4a0d40a15da2416ea97b/click_option_group-0.5.9.tar.gz", hash = "sha256:f94ed2bc4cf69052e0f29592bd1e771a1789bd7bfc482dd0bc482134aff95823", size = 22222, upload-time = "2025-10-09T09:38:01.474Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/27/bf74dc1494625c3b14dbcdb93740defd7b8c58dae3736be8d264f2a643fb/click_option_group-0.5.7-py3-none-any.whl", hash = "sha256:96b9f52f397ef4d916f81929bd6c1f85e89046c7a401a64e72a61ae74ad35c24", size = 11483, upload-time = "2025-03-24T13:24:54.611Z" },
+    { url = "https://files.pythonhosted.org/packages/75/45/54bb2d8d4138964a94bef6e9afe48b0be4705ba66ac442ae7d8a8dc4ffef/click_option_group-0.5.9-py3-none-any.whl", hash = "sha256:ad2599248bd373e2e19bec5407967c3eec1d0d4fc4a5e77b08a0481e75991080", size = 11553, upload-time = "2025-10-09T09:38:00.066Z" },
 ]
 
 [[package]]
@@ -295,31 +295,31 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click", specifier = "==8.1.8" },
-    { name = "click-option-group", specifier = "==0.5.7" },
+    { name = "click", specifier = "==8.4.2" },
+    { name = "click-option-group", specifier = "==0.5.9" },
     { name = "evernote-plus", specifier = "==1.28.1.dev2" },
     { name = "keyring", marker = "sys_platform == 'darwin' or sys_platform == 'win32'", specifier = "==25.7.0" },
     { name = "pycryptodome", marker = "sys_platform == 'darwin' or sys_platform == 'win32'", specifier = "==3.23.0" },
     { name = "pyjwt", specifier = "==2.13.0" },
     { name = "requests-oauthlib", specifier = "==2.0.0" },
-    { name = "requests-sse", specifier = "==0.5.1" },
+    { name = "requests-sse", specifier = "==0.5.3" },
     { name = "thrift", specifier = "==0.21.0" },
-    { name = "xmltodict", specifier = "==0.13.0" },
+    { name = "xmltodict", specifier = "==1.0.4" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "keepachangelog", specifier = "==2.0.0" },
-    { name = "pre-commit", specifier = ">=4.2.0,<5" },
-    { name = "ruff", specifier = ">=0.11.5" },
-    { name = "rumdl", specifier = ">=0.2.49" },
-    { name = "ty", specifier = ">=0.0.66" },
+    { name = "pre-commit" },
+    { name = "ruff" },
+    { name = "rumdl" },
+    { name = "ty" },
 ]
 test = [
-    { name = "pytest", specifier = ">=8.3.5,<9" },
-    { name = "pytest-cov", specifier = ">=6.1.1,<7" },
-    { name = "pytest-mock", specifier = ">=3.14.0,<4" },
-    { name = "requests-mock", specifier = ">=1.12.1" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "requests-mock" },
 ]
 
 [[package]]
@@ -738,14 +738,14 @@ wheels = [
 
 [[package]]
 name = "requests-sse"
-version = "0.5.1"
+version = "0.5.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a1/57/91c3be234a531164786622f74aed74610125cfa1a9e3b707df417479673e/requests_sse-0.5.1.tar.gz", hash = "sha256:42df8ad8b8428a44b3f27d2501b68d3f2dd6eaa8cf4cc82e9e53cc3d18eea9cd", size = 9235, upload-time = "2025-04-06T09:34:07.605Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/13/94/f0f29584c3ca24c29a72e19a28136f73ed08adddc93fb8a0c998577c9085/requests_sse-0.5.3.tar.gz", hash = "sha256:107c63afb2a2292b422ab2504849f3adb54b4c884700646ebe9f6e4178ba375c", size = 9057, upload-time = "2026-03-11T15:35:49.303Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/98/3af56b760a81649034996ec11e9c59500f1e775d6f3296bfd992112dc08f/requests_sse-0.5.1-py3-none-any.whl", hash = "sha256:29165526fc138698f6fa4e88a8613ca8e1bd9b4b82f5d3220c60724cec60da96", size = 9911, upload-time = "2025-04-06T09:34:05.448Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/87/3704da8cc1cb91cc0ccee8fb03d8ed11217afcd028352f3b1242fee2f4f1/requests_sse-0.5.3-py3-none-any.whl", hash = "sha256:dc3e053e22fdcf002ca1fbd1794967d42b82b24539f5b7fe0e807301dd4ef4ec", size = 10198, upload-time = "2026-03-11T15:35:47.872Z" },
 ]
 
 [[package]]
@@ -921,11 +921,11 @@ wheels = [
 
 [[package]]
 name = "xmltodict"
-version = "0.13.0"
+version = "1.0.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/39/0d/40df5be1e684bbaecdb9d1e0e40d5d482465de6b00cbb92b84ee5d243c7f/xmltodict-0.13.0.tar.gz", hash = "sha256:341595a488e3e01a85a9d8911d8912fd922ede5fecc4dce437eb4b6c8d037e56", size = 33813, upload-time = "2022-05-08T07:00:04.916Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/70/80f3b7c10d2630aa66414bf23d210386700aa390547278c789afa994fd7e/xmltodict-1.0.4.tar.gz", hash = "sha256:6d94c9f834dd9e44514162799d344d815a3a4faec913717a9ecbfa5be1bb8e61", size = 26124, upload-time = "2026-02-22T02:21:22.074Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/94/db/fd0326e331726f07ff7f40675cd86aa804bfd2e5016c727fa761c934990e/xmltodict-0.13.0-py2.py3-none-any.whl", hash = "sha256:aa89e8fd76320154a40d19a0df04a4695fb9dc5ba977cbb68ab3e4eb225e7852", size = 9971, upload-time = "2022-05-08T07:00:02.898Z" },
+    { url = "https://files.pythonhosted.org/packages/38/34/98a2f52245f4d47be93b580dae5f9861ef58977d73a79eb47c58f1ad1f3a/xmltodict-1.0.4-py3-none-any.whl", hash = "sha256:a4a00d300b0e1c59fc2bfccb53d7b2e88c32f200df138a0dd2229f842497026a", size = 13580, upload-time = "2026-02-22T02:21:21.039Z" },
 ]
 
 [[package]]
