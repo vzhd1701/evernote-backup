@@ -1,3 +1,5 @@
+import xml.etree.ElementTree as ET
+
 from evernote.edam.type.ttypes import (
     Data,
     Note,
@@ -166,6 +168,19 @@ def test_formatter_xml_note():
     formatted_note = formatter.format_note(test_xml_note, "", [])
 
     assert formatted_note == expected_xml_note
+
+
+def test_formatter_note_content_with_cdata_end_sequence():
+    """Content holding ']]>' must not terminate the CDATA section early."""
+    formatter = NoteFormatter()
+
+    test_note = Note(content="<div>before]]>after</div>")
+
+    formatted_note = formatter.format_note(test_note, "", [])
+
+    parsed_content = ET.fromstring(formatted_note).findtext("content")
+
+    assert "before]]>after" in parsed_content
 
 
 def test_note_from_future(mocker):

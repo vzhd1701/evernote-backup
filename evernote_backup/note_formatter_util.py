@@ -44,6 +44,12 @@ def fmt_content(content_body: str | None) -> str | None:
         content_start = body.find(">") + 1
         body = body[content_start:].strip()
 
+    # A CDATA section cannot be escaped from within, so a literal "]]>" in the
+    # body has to be split across two sections, or it would terminate the
+    # section early and spill the rest of the note out as markup.
+    # https://www.w3.org/TR/xml/#sec-cdata-sect
+    body = body.replace("]]>", "]]]]><![CDATA[>")
+
     return (
         f"\n      "
         f"<![CDATA["
