@@ -59,7 +59,7 @@ This project uses [uv](https://docs.astral.sh/uv/) for dependency management and
 ```shell
 $ git clone https://github.com/vzhd1701/evernote-backup.git
 $ cd evernote-backup/
-$ uv sync
+$ uv sync --all-groups
 $ uv run evernote-backup
 ```
 
