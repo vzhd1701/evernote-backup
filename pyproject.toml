@@ -161,30 +161,5 @@ exclude_lines = [
 [tool.coverage.run]
 omit = ["*/tests/*", "evernote_backup/evernote_client_api_tokenized.py"]
 
-[tool.mypy]
-files = "evernote_backup"
-
-disallow_untyped_defs = true
-#disallow_untyped_calls = true
-disallow_incomplete_defs = true
-disallow_untyped_decorators = true
-
-warn_unused_configs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_return_any = true
-warn_unreachable = true
-
-check_untyped_defs = true
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "evernote_backup.evernote_client_api_tokenized"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "evernote_backup.cli"
-disable_error_code = ["misc"]
-
 [tool.rumdl]
 disable = ["MD013", "MD014"]
