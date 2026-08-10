@@ -60,7 +60,6 @@ evernote-backup = "evernote_backup.cli:main"
 
 [tool.uv.build-backend]
 module-root = ""
-source-include = ["CHANGELOG.md"]
 
 [dependency-groups]
 test = [
