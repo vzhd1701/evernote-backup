@@ -208,12 +208,11 @@ class NoteExporter:
 
                 note_tasks = self._get_note_tasks(require(note.guid))
 
-                f.write(
-                    note_formatter.format_note(
-                        note,
-                        notebook_name,
-                        note_tasks,
-                    )
-                )
+                for note_chunk in note_formatter.iter_note(
+                    note,
+                    notebook_name,
+                    note_tasks,
+                ):
+                    f.write(note_chunk)
 
             f.write(ENEX_TAIL)

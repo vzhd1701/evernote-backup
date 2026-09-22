@@ -1,6 +1,13 @@
 import base64
 import sys
+from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
+
+BINARY_LINE_WIDTH = 120
+
+# 120 base64 characters encode exactly 90 source bytes, so a chunk boundary
+# always lands on a line boundary and chunks can be emitted independently.
+BINARY_CHUNK_SIZE = 90 * 4096
 
 
 def fmt_utcfromtimestamp(timestamp: int) -> datetime:
@@ -24,13 +31,29 @@ def fmt_time(timestamp: int | None) -> str | None:
     return date.strftime(f"{date.year:04}%m%dT%H%M%SZ")
 
 
+def iter_binary(binary_data: bytes) -> Iterator[str]:
+    """Emit the base64 body chunk by chunk.
+
+    Encoding a resource in one go costs several times its size in intermediate
+    strings, which is the dominant memory peak of an export.
+    """
+    yield "\n"
+
+    for offset in range(0, len(binary_data), BINARY_CHUNK_SIZE):
+        if offset:
+            yield "\n"
+
+        encoded = base64.b64encode(
+            binary_data[offset : offset + BINARY_CHUNK_SIZE]
+        ).decode()
+
+        yield _slice_str(encoded, BINARY_LINE_WIDTH)
+
+    yield "\n      "
+
+
 def fmt_binary(binary_data: bytes) -> str:
-    slice_width = 120
-    return (
-        "\n"
-        + _slice_str(base64.b64encode(binary_data).decode(), slice_width)
-        + "\n      "
-    )
+    return "".join(iter_binary(binary_data))
 
 
 def fmt_content(content_body: str | None) -> str | None:

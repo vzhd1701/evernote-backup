@@ -1,24 +1,70 @@
 import json
 import re
 import uuid
+from collections.abc import Iterator
 
 import xmltodict
 from evernote.edam.type.ttypes import Note, Resource
 
 from evernote_backup.evernote_client_util import require
 from evernote_backup.evernote_types import Reminder, Task
-from evernote_backup.note_formatter_util import fmt_binary, fmt_content, fmt_time
+from evernote_backup.note_formatter_util import fmt_content, fmt_time, iter_binary
+
+# Placeholder standing in for a raw element while the note goes through
+# xmltodict, which would otherwise escape it. Distinctive enough that note
+# content cannot collide with it by accident.
+RAW_ELEMENT_PREFIX = "enbackup-raw-"
+RAW_ELEMENT_PATTERN = re.compile(f"{RAW_ELEMENT_PREFIX}[0-9a-f]{{32}}")
 
 
 class NoteFormatter:
     """https://xml.evernote.com/pub/evernote-export3.dtd"""
 
     def __init__(self, add_guid: bool = False, add_metadata: bool = False) -> None:
-        self._raw_elements: dict = {}
+        self._raw_elements: dict[str, str | bytes] = {}
         self.add_guid = add_guid
         self.add_metadata = add_metadata
 
     def format_note(
+        self,
+        note: Note,
+        notebook_name: str,
+        note_tasks: list[Task],
+    ) -> str:
+        return "".join(self.iter_note(note, notebook_name, note_tasks))
+
+    def iter_note(
+        self,
+        note: Note,
+        notebook_name: str,
+        note_tasks: list[Task],
+    ) -> Iterator[str]:
+        """Emit the note in pieces, expanding raw elements as they come up.
+
+        Resource bodies are kept as raw bytes until this point, so a note never
+        has to exist in memory as one string.
+        """
+        note_template = self._build_note_template(note, notebook_name, note_tasks)
+
+        last_end = 0
+
+        for placeholder in RAW_ELEMENT_PATTERN.finditer(note_template):
+            raw_body = self._raw_elements.get(placeholder.group())
+
+            if raw_body is None:
+                continue
+
+            yield note_template[last_end : placeholder.start()]
+            last_end = placeholder.end()
+
+            if isinstance(raw_body, bytes):
+                yield from iter_binary(raw_body)
+            else:
+                yield raw_body
+
+        yield note_template[last_end:]
+
+    def _build_note_template(
         self,
         note: Note,
         notebook_name: str,
@@ -81,9 +127,6 @@ class NoteFormatter:
         # Remove empty tags
         note_template = re.sub(r"^\s+<.*?/>\n", "", note_template, flags=re.M)
 
-        for r_uuid, r_body in self._raw_elements.items():
-            note_template = note_template.replace(r_uuid, r_body)
-
         return str(note_template)
 
     def _fmt_resource(self, resource: Resource) -> dict:
@@ -93,7 +136,8 @@ class NoteFormatter:
         return {
             "data": {
                 "@encoding": "base64",
-                "#text": self._fmt_raw(fmt_binary(body)),
+                # kept raw; base64 is produced while the note is written out
+                "#text": self._fmt_raw(body),
             },
             "mime": resource.mime,
             "width": resource.width,
@@ -113,12 +157,12 @@ class NoteFormatter:
             },
         }
 
-    def _fmt_raw(self, body: str | None) -> str | None:
+    def _fmt_raw(self, body: str | bytes | None) -> str | None:
         if body is None:
-            return body
-        content_uuid = str(uuid.uuid4())
-        self._raw_elements[content_uuid] = body
-        return content_uuid
+            return None
+        placeholder = f"{RAW_ELEMENT_PREFIX}{uuid.uuid4().hex}"
+        self._raw_elements[placeholder] = body
+        return placeholder
 
     # <!ELEMENT task
     #  (title, created, updated, taskStatus, inNote, taskFlag, sortWeight,
