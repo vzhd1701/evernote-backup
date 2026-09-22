@@ -15,6 +15,9 @@ jobs:
 
       - uses: actions-ecosystem/action-get-latest-tag@v1
         id: get-latest-tag
+        with:
+          # Skip the moving "continuous" pre-release tag
+          semver_only: true
 
       - name: Update Homebrew formula
         uses: dawidd6/action-homebrew-bump-formula@v8
