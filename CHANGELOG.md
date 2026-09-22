@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+- Cut export memory use from ~7x the size of the largest note to ~1x, so that notebooks with large attachments no longer exhaust memory ([8743341](https://github.com/vzhd1701/evernote-backup/commit/8743341051b1b0186e063c2e27181f7ff89efb5e), [f41c161](https://github.com/vzhd1701/evernote-backup/commit/f41c16187a00c8d725580eba89638fb061adea52))
+
+### Removed
+
+- Drop support for Python 3.10, which is past end of life ([3a1ddbf](https://github.com/vzhd1701/evernote-backup/commit/3a1ddbf550dcd320258770e7a8b8315323a609ab))
+
 ## [1.14.0] - 2026-08-05
 
 ### Added
