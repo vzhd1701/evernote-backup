@@ -1,0 +1,27 @@
+name: release_winget
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version. Uses GitHub release tag {version} for installers.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Publish to WinGet
+        uses: vedantmgoyal9/winget-releaser@main
+        with:
+          identifier: vzhd1701.EvernoteBackup
+          installers-regex: 'bin_evernote_backup_.*_win_(arm64|x64)\.zip$'
+          token: ${{ secrets.BREW_BUMP_TOKEN }}
+          version: ${{ inputs.version }}
+          release-tag: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.version }}
