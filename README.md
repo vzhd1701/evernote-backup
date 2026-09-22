@@ -19,16 +19,34 @@ Backup your notes & notebooks from Evernote locally and export them at any time!
 
 [**Download the latest release**](https://github.com/vzhd1701/evernote-backup/releases/latest) for your OS.
 
-### With [Homebrew](https://brew.sh/) (Recommended for macOS)
-
-```bash
-$ brew install evernote-backup
-```
-
 ### With [uv](https://docs.astral.sh/uv/) (Recommended for Linux & Windows)
 
-```bash
-$ uv tool install evernote-backup
+```console
+uv tool install evernote-backup
+```
+
+### With [Homebrew](https://brew.sh/) (Recommended for macOS)
+
+```console
+brew install evernote-backup
+```
+
+### With [scoop](https://scoop.sh/) (Windows)
+
+```cmd
+scoop install main/evernote-backup
+```
+
+### With [chocolatey](https://community.chocolatey.org/) (Windows)
+
+```cmd
+choco install evernote-backup
+```
+
+### With [winget](https://github.com/microsoft/winget-cli) (Windows)
+
+```cmd
+winget install -e --id vzhd1701.EvernoteBackup
 ```
 
 ### With [**Docker**](https://docs.docker.com/)
@@ -36,20 +54,20 @@ $ uv tool install evernote-backup
 [![Docker Image Size (amd64)](<https://img.shields.io/docker/image-size/vzhd1701/evernote-backup?arch=amd64&label=image%20size%20(amd64)>)](https://hub.docker.com/r/vzhd1701/evernote-backup)
 [![Docker Image Size (arm64)](<https://img.shields.io/docker/image-size/vzhd1701/evernote-backup?arch=arm64&label=image%20size%20(arm64)>)](https://hub.docker.com/r/vzhd1701/evernote-backup)
 
-```bash
-$ docker run --rm -t -v "$PWD":/tmp vzhd1701/evernote-backup:latest
+```console
+docker run --rm -t -v "$PWD":/tmp vzhd1701/evernote-backup:latest
 ```
 
 To log in to Evernote using OAuth with Docker, you'll have to forward port 10500 for a callback:
 
-```bash
-$ docker run --rm -t -v "$PWD":/tmp -p 10500:10500 vzhd1701/evernote-backup:latest init-db
+```console
+docker run --rm -t -v "$PWD":/tmp -p 10500:10500 vzhd1701/evernote-backup:latest init-db
 ```
 
 ### From source (with [uv](https://docs.astral.sh/uv/))
 
 ```shell
-$ uv tool install https://github.com/vzhd1701/evernote-backup.git
+uv tool install https://github.com/vzhd1701/evernote-backup.git
 ```
 
 ### From source (for local development)
@@ -57,10 +75,10 @@ $ uv tool install https://github.com/vzhd1701/evernote-backup.git
 This project uses [uv](https://docs.astral.sh/uv/) for dependency management and packaging. You will have to install it first. See [uv official documentation](https://docs.astral.sh/uv/getting-started/installation/) for instructions.
 
 ```shell
-$ git clone https://github.com/vzhd1701/evernote-backup.git
-$ cd evernote-backup/
-$ uv sync --all-groups
-$ uv run evernote-backup
+git clone https://github.com/vzhd1701/evernote-backup.git
+cd evernote-backup/
+uv sync --all-groups
+uv run evernote-backup
 ```
 
 ## Usage
@@ -94,7 +112,7 @@ If you log in to **Evernote**, OAuth is used. You can select the login method wi
 Example:
 
 ```console
-$ evernote-backup init-db --oauth-method import
+evernote-backup init-db --oauth-method import
 ```
 
 To connect to **Yinxiang** instead of Evernote, use the `--backend china` option. It will prompt you to enter your account credentials. You can provide them beforehand with `--user` and `--password`. OAuth is not supported for **Yinxiang**.
@@ -145,9 +163,9 @@ Exporting is performed wholly offline, and does not require access to the Everno
 That's it! So to export all your Evernote data, you will have to run three commands:
 
 ```console
-$ evernote-backup init-db
-$ evernote-backup sync
-$ evernote-backup export output_dir/
+evernote-backup init-db
+evernote-backup sync
+evernote-backup export output_dir/
 ```
 
 After first initialization, you can schedule `evernote-backup sync` command to keep your local database always up-to-date. However, `evernote-backup export` will always re-export all notebooks to the specified output directory.
@@ -157,7 +175,7 @@ After first initialization, you can schedule `evernote-backup sync` command to k
 If during `sync` you see a warning that tasks, reminders and single-note shares will not be synced, your database has a legacy auth token. To fix it, run:
 
 ```console
-$ evernote-backup reauth
+evernote-backup reauth
 ```
 
 (or `reauth --oauth-method import` to reuse a logged-in Desktop Client session, see Step 1 for explanation) and then run `sync` again.
@@ -170,20 +188,20 @@ GUIDs must be full Evernote UUIDs, for example `01234567-89ab-cdef-0123-456789ab
 
 ```console
 # List current blacklist
-$ evernote-backup manage blacklist
+evernote-backup manage blacklist
 
 # Skip a broken note
-$ evernote-backup manage blacklist --add-note-id 01234567-89ab-cdef-0123-456789abcdef
+evernote-backup manage blacklist --add-note-id 01234567-89ab-cdef-0123-456789abcdef
 
 # Skip all notes from a broken notebook
-$ evernote-backup manage blacklist --add-notebook-id 11234567-89ab-cdef-0123-456789abcdef
+evernote-backup manage blacklist --add-notebook-id 11234567-89ab-cdef-0123-456789abcdef
 
 # Remove from blacklist (will be retried on next sync)
-$ evernote-backup manage blacklist --del-note-id 01234567-89ab-cdef-0123-456789abcdef
+evernote-backup manage blacklist --del-note-id 01234567-89ab-cdef-0123-456789abcdef
 
 # Clear all blacklisted notes or notebooks
-$ evernote-backup manage blacklist --reset-notes
-$ evernote-backup manage blacklist --reset-notebooks
+evernote-backup manage blacklist --reset-notes
+evernote-backup manage blacklist --reset-notebooks
 ```
 
 Each `--add-*` / `--del-*` option can be repeated to pass multiple GUIDs. Notes stay scheduled in the database; only the download step is skipped. Removing a GUID from the blacklist lets the next `sync` try downloading it again.

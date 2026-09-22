@@ -162,4 +162,4 @@ exclude_lines = [
 omit = ["*/tests/*", "evernote_backup/evernote_client_api_tokenized.py"]
 
 [tool.rumdl]
-disable = ["MD013", "MD014"]
+disable = ["MD013"]
