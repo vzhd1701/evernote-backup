@@ -76,6 +76,12 @@ dev = [
     "ty",
 ]
 
+[tool.pytest.ini_options]
+markers = [
+    "slow: memory and throughput benchmarks; deselected by default, run with `just bench`",
+]
+addopts = "-m 'not slow'"
+
 [tool.ruff.format]
 line-ending = "lf"
 

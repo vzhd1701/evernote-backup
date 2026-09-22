@@ -4,6 +4,9 @@ default:
 build:
     uv build
 
+bench:
+    uv run pytest -m slow -s tests/test_memory_benchmark.py
+
 build-requirements:
     uv pip compile pyproject.toml -q --universal --no-annotate --no-header -o build/requirements.txt
 
