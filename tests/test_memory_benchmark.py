@@ -301,9 +301,30 @@ def test_export_peak_scales_with_largest_note(tmp_path):
 
     report("export, notebook with one 192 MiB note", peak, payload)
 
-    # Reading a note still materialises its compressed blob, the decompression
-    # buffer and the unpickled Note (~3x). Writing it no longer costs anything.
-    assert peak < 4 * payload
+    # Nothing beyond the note itself: it is read straight out of its blob and
+    # written out in pieces.
+    assert peak < 1.5 * payload
+
+
+@pytest.mark.slow
+@pytest.mark.usefixtures("quiet_progress")
+def test_export_peak_with_adjacent_large_notes(tmp_path):
+    """Consecutive large notes must not be held at the same time."""
+    payload = 96 * MB
+    database_path = tmp_path / "adjacent_notes.db"
+
+    make_database(
+        database_path,
+        notebooks=1,
+        notes_per_notebook=4,
+        resource_sizes=lambda nb, i: [payload] if i < 3 else [MB],
+    )
+
+    peak = measure_peak(lambda: export_to(database_path, tmp_path / "out"))
+
+    report("export, three 96 MiB notes in a row", peak, payload)
+
+    assert peak < 1.5 * payload
 
 
 @pytest.mark.slow
@@ -344,8 +365,37 @@ def test_export_peak_does_not_grow_over_a_long_run(tmp_path):
 
 
 @pytest.mark.slow
+def test_check_peak_scales_with_largest_note(tmp_path):
+    """`manage check` walks every note, so it has the same ceiling as export."""
+    payload = 96 * MB
+    database_path = tmp_path / "check.db"
+
+    make_database(
+        database_path,
+        notebooks=2,
+        notes_per_notebook=4,
+        resource_sizes=lambda nb, i: [payload] if i == 1 else [MB],
+    )
+
+    storage = SqliteStorage(database_path)
+    checked = []
+
+    peak = measure_peak(
+        lambda: checked.extend(
+            note is not None for note in storage.notes.check_notes(mark_corrupt=False)
+        )
+    )
+
+    report("manage check, two 96 MiB notes", peak, payload)
+
+    assert all(checked)
+    assert len(checked) == 8
+    assert peak < 1.5 * payload
+
+
+@pytest.mark.slow
 def test_store_note_peak(tmp_path):
-    """The sync side still pays ~3x; recorded here so a fix can be measured."""
+    """The sync side still pays ~2.5x; recorded here so a fix can be measured."""
     payload = 64 * MB
     note = make_note([payload])
     database_path = tmp_path / "store.db"
