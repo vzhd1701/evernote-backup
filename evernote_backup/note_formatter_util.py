@@ -1,7 +1,7 @@
 import base64
 import sys
 from collections.abc import Iterator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 BINARY_LINE_WIDTH = 120
 
@@ -11,7 +11,7 @@ BINARY_CHUNK_SIZE = 90 * 4096
 
 
 def fmt_utcfromtimestamp(timestamp: int) -> datetime:
-    return datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    return datetime.fromtimestamp(timestamp, tz=UTC)
 
 
 def fmt_time(timestamp: int | None) -> str | None:
@@ -103,7 +103,7 @@ def _get_max_timestamp() -> int:  # pragma: no cover
                 59,
                 59,
                 999999,
-                tzinfo=timezone.utc,
+                tzinfo=UTC,
             ).timestamp()
             if is_64bits
             else datetime(
@@ -114,7 +114,7 @@ def _get_max_timestamp() -> int:  # pragma: no cover
                 59,
                 59,
                 999999,
-                tzinfo=timezone.utc,
+                tzinfo=UTC,
             ).timestamp()
         )
 
@@ -143,7 +143,7 @@ def _date_from_future(timestamp: int) -> datetime:
             hour=day_time.hour,
             minute=day_time.minute,
             second=day_time.second,
-            tzinfo=timezone.utc,
+            tzinfo=UTC,
         )
     except (OverflowError, ValueError, OSError):
         return datetime.max

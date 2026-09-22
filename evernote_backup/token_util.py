@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import jwt
@@ -50,7 +50,7 @@ class EvernoteToken:
 def _format_datetime_with_difference(dt: datetime) -> str:
     formatted_date = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     diff = dt - now
 
     if diff.total_seconds() < 0:
@@ -96,8 +96,8 @@ def _parse_evernote_token(token: str) -> EvernoteToken:
     exp_ms = int(token_parts["E"], 16)
     creation_ms = int(token_parts["C"], 16)
 
-    expiration_dt = datetime.fromtimestamp(exp_ms / 1000, tz=timezone.utc)
-    creation_dt = datetime.fromtimestamp(creation_ms / 1000, tz=timezone.utc)
+    expiration_dt = datetime.fromtimestamp(exp_ms / 1000, tz=UTC)
+    creation_dt = datetime.fromtimestamp(creation_ms / 1000, tz=UTC)
 
     return EvernoteToken(
         shard=token_parts["S"],
@@ -161,7 +161,7 @@ class OAuth2TokenBundle:
     @property
     def access_expiration(self) -> datetime:
         exp = int(decode_jwt(self.access_token)["exp"])
-        return datetime.fromtimestamp(exp, tz=timezone.utc)
+        return datetime.fromtimestamp(exp, tz=UTC)
 
     @property
     def monolith_expiration(self) -> datetime:
@@ -170,13 +170,13 @@ class OAuth2TokenBundle:
     @property
     def refresh_expiration(self) -> datetime:
         exp = int(decode_jwt(self.refresh_token)["exp"])
-        return datetime.fromtimestamp(exp, tz=timezone.utc)
+        return datetime.fromtimestamp(exp, tz=UTC)
 
     @property
     def auth_time(self) -> datetime:
         """When the login session was initiated (authTime claim on refresh token)."""
         auth_time = int(decode_jwt(self.refresh_token)["authTime"])
-        return datetime.fromtimestamp(auth_time, tz=timezone.utc)
+        return datetime.fromtimestamp(auth_time, tz=UTC)
 
     @property
     def auth_time_human(self) -> str:
@@ -184,7 +184,7 @@ class OAuth2TokenBundle:
 
     @property
     def needs_refresh(self) -> bool:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return (
             self.access_expiration - now <= TOKEN_REFRESH_SKEW
             or self.monolith_expiration - now <= TOKEN_REFRESH_SKEW
@@ -192,9 +192,7 @@ class OAuth2TokenBundle:
 
     @property
     def is_refresh_expired(self) -> bool:
-        return (
-            self.refresh_expiration - datetime.now(timezone.utc) <= TOKEN_REFRESH_SKEW
-        )
+        return self.refresh_expiration - datetime.now(UTC) <= TOKEN_REFRESH_SKEW
 
 
 @dataclass

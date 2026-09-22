@@ -1,5 +1,5 @@
 import base64
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import click
 import pytest
@@ -137,8 +137,8 @@ def test_evernote_token_parser():
     expected_token = EvernoteToken(
         shard="s200",
         user_id=255,
-        creation=datetime(1970, 1, 1, 4, 39, 37, 147000, tzinfo=timezone.utc),
-        expiration=datetime(1970, 1, 1, 4, 39, 37, 130000, tzinfo=timezone.utc),
+        creation=datetime(1970, 1, 1, 4, 39, 37, 147000, tzinfo=UTC),
+        expiration=datetime(1970, 1, 1, 4, 39, 37, 130000, tzinfo=UTC),
         agent="test222",
         shard_id=200,
         raw=test_token_str,
@@ -164,8 +164,8 @@ def test_evernote_token_parser_extra_fields():
     expected_token = EvernoteToken(
         shard="s31",
         user_id=11189196,
-        creation=datetime(2025, 4, 21, 11, 57, 51, 316000, tzinfo=timezone.utc),
-        expiration=datetime(2025, 4, 21, 12, 57, 51, 316000, tzinfo=timezone.utc),
+        creation=datetime(2025, 4, 21, 11, 57, 51, 316000, tzinfo=UTC),
+        expiration=datetime(2025, 4, 21, 12, 57, 51, 316000, tzinfo=UTC),
         agent="yx-w32-xauth-new",
         shard_id=31,
         raw=test_token_str,
@@ -191,7 +191,7 @@ def test_evernote_token_parser_extra_fields():
     ],
 )
 def test_evernote_token_parser_expiration_human(time_set, time_expected, mocker):
-    FAKE_TIME = datetime.fromtimestamp(int("ffffffff", 16) / 1000, tz=timezone.utc)
+    FAKE_TIME = datetime.fromtimestamp(int("ffffffff", 16) / 1000, tz=UTC)
 
     class fakedatetime(datetime):
         @classmethod

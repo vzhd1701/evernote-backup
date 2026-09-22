@@ -7,7 +7,7 @@ name = "evernote-backup"
 version = "1.14.0"
 description = "Backup & export all Evernote notes and notebooks."
 authors = [{ name = "vzhd1701", email = "vzhd1701@gmail.com" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 readme = "README.md"
 license = "MIT"
 keywords = [
@@ -19,7 +19,6 @@ keywords = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",

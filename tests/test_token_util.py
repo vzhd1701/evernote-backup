@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -60,7 +60,7 @@ def test_resolve_auth_token_users_me_failure(mock_oauth_client):
 
 def test_oauth2_token_bundle_auth_time(mock_oauth_client):
     bundle = mock_oauth_client.token_bundle
-    expected = datetime.fromtimestamp(mock_oauth_client.auth_time, tz=timezone.utc)
+    expected = datetime.fromtimestamp(mock_oauth_client.auth_time, tz=UTC)
 
     assert bundle.auth_time == expected
     assert bundle.auth_time_human.startswith(expected.strftime("%Y-%m-%d %H:%M:%S"))
