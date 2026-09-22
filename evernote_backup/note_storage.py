@@ -2,9 +2,10 @@ import logging
 import lzma
 import pickle
 import sqlite3
+import tempfile
 from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, cast
 
 from evernote.edam.type.ttypes import LinkedNotebook, Note, Notebook
 
@@ -18,6 +19,13 @@ from evernote_backup.evernote_types import Reminder, Task
 from evernote_backup.log_util import log_format_note, log_format_notebook
 
 logger = logging.getLogger(__name__)
+
+NOTE_READ_CHUNK_SIZE = 256 * 1024
+
+# Decompressed notes larger than this are spooled to a temporary file instead
+# of being held in memory. Ordinary notes stay well below it and never reach
+# the disk; the ones that do are exactly the ones worth not keeping in memory.
+NOTE_SPOOL_THRESHOLD = 16 * 1024 * 1024
 
 
 class NoteForSync(NamedTuple):
@@ -389,7 +397,7 @@ class NoteStorage(SqliteStorage):
         for note_guid in self._get_notes_by_notebook(notebook_guid):
             with self.db as con:
                 cur = con.execute(
-                    "select title, guid, raw_note"
+                    "select rowid, title, guid"
                     " from notes"
                     " where guid=? and raw_note is not NULL",
                     (note_guid,),
@@ -397,56 +405,58 @@ class NoteStorage(SqliteStorage):
 
                 row = cur.fetchone()
 
-                raw_note = self._get_raw_note(
-                    row["title"],
-                    row["guid"],
-                    row["raw_note"],
-                )
+            note = self._load_note(row["rowid"], row["title"], row["guid"])
 
-                if raw_note:
-                    yield raw_note
+            if note:
+                yield note
+
+            # Dropped before the next note is read, so that two large notes
+            # are never held at the same time.
+            del note
 
     def iter_notes_trash(self) -> Iterator[Note]:
         with self.db as con:
             cur = con.execute(
-                "select title, guid, raw_note"
+                "select rowid, title, guid"
                 " from notes"
                 " where is_active=0 and raw_note is not NULL"
                 " order by title COLLATE NOCASE",
             )
 
-            for row in cur:
-                raw_note = self._get_raw_note(
-                    row["title"],
-                    row["guid"],
-                    row["raw_note"],
-                )
+            # Rows are collected up front so that no cursor stays open while
+            # notes are read out of their blobs and handed to the caller.
+            trashed_notes = cur.fetchall()
 
-                if raw_note:
-                    yield raw_note
+        for row in trashed_notes:
+            note = self._load_note(row["rowid"], row["title"], row["guid"])
+
+            if note:
+                yield note
+
+            del note
 
     def check_notes(self, mark_corrupt: bool) -> Iterator[Note | None]:
         with self.db as con:
             cur = con.execute(
-                "select title, guid, raw_note from notes where raw_note is not NULL",
+                "select rowid, title, guid from notes where raw_note is not NULL",
             )
 
-            for row in cur:
-                raw_note = self._get_raw_note(
-                    row["title"],
-                    row["guid"],
-                    row["raw_note"],
-                )
+            all_notes = cur.fetchall()
 
-                if raw_note:
-                    yield raw_note
-                else:
-                    if mark_corrupt:
-                        logger.info(
-                            f"Marking '{row['title']}' [{row['guid']}] note for re-download"
-                        )
-                        self._mark_note_for_redownload(row["guid"])
-                    yield None
+        for row in all_notes:
+            note = self._load_note(row["rowid"], row["title"], row["guid"])
+
+            if note:
+                yield note
+            else:
+                if mark_corrupt:
+                    logger.info(
+                        f"Marking '{row['title']}' [{row['guid']}] note for re-download"
+                    )
+                    self._mark_note_for_redownload(row["guid"])
+                yield None
+
+            del note
 
     def get_notes_for_sync(self) -> tuple[NoteForSync, ...]:
         with self.db as con:
@@ -598,14 +608,39 @@ class NoteStorage(SqliteStorage):
 
             return [r["guid"] for r in sorted_notes]
 
-    def _get_raw_note(
+    def _load_note(
         self,
+        note_rowid: int,
         note_title: str,
         note_guid: str,
-        raw_note: bytes,
     ) -> Note | None:
+        """Unpickle a note straight out of its BLOB.
+
+        Selecting the column would materialise the compressed note, and
+        decompressing it would materialise the whole pickle stream on top of
+        that, before the note object itself exists. Reading the blob in chunks
+        and spooling the result leaves only the note in memory.
+        """
         try:
-            return pickle.loads(lzma.decompress(raw_note))
+            with tempfile.SpooledTemporaryFile(
+                max_size=NOTE_SPOOL_THRESHOLD
+            ) as note_buffer:
+                decompressor = lzma.LZMADecompressor()
+
+                with self.db.blobopen(
+                    "notes", "raw_note", note_rowid, readonly=True
+                ) as raw_note:
+                    while chunk := raw_note.read(NOTE_READ_CHUNK_SIZE):
+                        note_buffer.write(decompressor.decompress(chunk))
+
+                note_buffer.seek(0)
+
+                return cast(Note, pickle.load(note_buffer))
+        except OSError:
+            # A temporary file that cannot be written is an environment
+            # failure, not a corrupt note. Reporting it as corruption would
+            # mark the whole database for re-download.
+            raise
         except Exception:
             if logger.getEffectiveLevel() == logging.DEBUG:
                 logger.exception(f"Note '{note_title}' [{note_guid}] is corrupt")

@@ -46,23 +46,28 @@ class NoteFormatter:
         """
         note_template = self._build_note_template(note, notebook_name, note_tasks)
 
-        last_end = 0
+        try:
+            last_end = 0
 
-        for placeholder in RAW_ELEMENT_PATTERN.finditer(note_template):
-            raw_body = self._raw_elements.get(placeholder.group())
+            for placeholder in RAW_ELEMENT_PATTERN.finditer(note_template):
+                raw_body = self._raw_elements.get(placeholder.group())
 
-            if raw_body is None:
-                continue
+                if raw_body is None:
+                    continue
 
-            yield note_template[last_end : placeholder.start()]
-            last_end = placeholder.end()
+                yield note_template[last_end : placeholder.start()]
+                last_end = placeholder.end()
 
-            if isinstance(raw_body, bytes):
-                yield from iter_binary(raw_body)
-            else:
-                yield raw_body
+                if isinstance(raw_body, bytes):
+                    yield from iter_binary(raw_body)
+                else:
+                    yield raw_body
 
-        yield note_template[last_end:]
+            yield note_template[last_end:]
+        finally:
+            # Dropped here rather than when the next note starts, so that one
+            # note's resources are never held while the next one is read.
+            self._raw_elements = {}
 
     def _build_note_template(
         self,

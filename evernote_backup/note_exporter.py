@@ -215,4 +215,8 @@ class NoteExporter:
                 ):
                     f.write(note_chunk)
 
+                # Released before the source is resumed, so that two large
+                # notes in a row are never held at the same time.
+                del note
+
             f.write(ENEX_TAIL)
