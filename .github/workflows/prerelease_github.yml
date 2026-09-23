@@ -25,8 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - name: Extract unreleased changes
+        uses: ffurrer2/extract-release-notes@v3
+        with:
+          prerelease: true
+          release_notes_file: unreleased.md
 
       - name: Compose release notes
         env:
@@ -36,49 +39,21 @@ jobs:
           LATEST_URL: ${{ github.server_url }}/${{ github.repository }}/releases/latest
           BUILD_VERSION: ${{ needs.build.outputs.version }}
         run: |
-          uv run --frozen python - <<'PY' > release_notes.md
-          import datetime
-          import os
-
-          import keepachangelog
-
-          changelog = keepachangelog.to_dict("CHANGELOG.md", show_unreleased=True)
-          unreleased = changelog.pop("unreleased", {})
-          last_release = next(iter(changelog), None)
-
-          built_on = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
-          commit_sha = os.environ["COMMIT_SHA"]
-
-          print(
-              f"Built from `{os.environ['REF_NAME']}` at"
-              f" [`{commit_sha[:7]}`]({os.environ['COMMIT_URL']}) on {built_on}."
-              f" Reports version `{os.environ['BUILD_VERSION']}`."
-          )
-          print()
-          print(
-              "> **Development build, not a stable release.** For everyday use grab the"
-              f" [latest release]({os.environ['LATEST_URL']})."
-          )
-          print()
-
-          since = f" since {last_release}" if last_release else ""
-          sections = [
-              (name, items)
-              for name, items in unreleased.items()
-              if name != "metadata" and isinstance(items, list) and items
-          ]
-
-          if not sections:
-              print(f"No changes recorded in the changelog{since}.")
-          else:
-              print(f"## Changes{since}")
-              for name, items in sections:
-                  print()
-                  print(f"### {name.capitalize()}")
-                  print()
-                  for item in items:
-                      print(f"- {item}")
-          PY
+          last_release=$(grep -m1 -oP '^## \[\K[0-9][^]]*' CHANGELOG.md || true)
+          since=${last_release:+ since $last_release}
+          {
+            echo "Built from \`$REF_NAME\` at [\`${COMMIT_SHA::7}\`]($COMMIT_URL) on $(date -u +%F). Reports version \`$BUILD_VERSION\`."
+            echo
+            echo "> **Development build, not a stable release.** For everyday use grab the [latest release]($LATEST_URL)."
+            echo
+            if grep -q '^- ' unreleased.md; then
+              echo "## Changes$since"
+              echo
+              cat unreleased.md
+            else
+              echo "No changes recorded in the changelog$since."
+            fi
+          } > release_notes.md
 
       - name: Load release binaries
         uses: actions/download-artifact@v8
