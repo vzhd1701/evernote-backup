@@ -41,7 +41,8 @@ const postbumpCommands = [
   `NEW_VERSION=$(uv run --frozen python -c 'from evernote_backup.version import __version__; print(__version__)')`,
   'uv run --frozen keepachangelog release "$NEW_VERSION"',
   "uv run --frozen rumdl fmt CHANGELOG.md",
-  "dos2unix CHANGELOG.md",
+  // keepachangelog writes CRLF on Windows; dos2unix ships with Git for Windows
+  'if [ "$OS" = Windows_NT ]; then dos2unix CHANGELOG.md; fi',
   "git add CHANGELOG.md uv.lock",
 ].join(" && ");
 
