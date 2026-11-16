@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-11-16
+
 ### Changed
 
 - Re-prompt instead of exiting when the pasted desktop OAuth redirect URL is invalid or left over from an earlier login attempt, with a hint when an `http(s)` URL is pasted instead of the `evernote://` link ([#172](https://github.com/vzhd1701/evernote-backup/issues/172))
@@ -274,7 +276,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 - Initialize repository ([758dd89](https://github.com/vzhd1701/evernote-backup/commit/758dd898e95e2fe09cbdf80da2ee46c728f6369b))
 
-[Unreleased]: https://github.com/vzhd1701/evernote-backup/compare/1.14.0...HEAD
+[Unreleased]: https://github.com/vzhd1701/evernote-backup/compare/1.15.0...HEAD
+[1.15.0]: https://github.com/vzhd1701/evernote-backup/compare/1.14.0...1.15.0
 [1.14.0]: https://github.com/vzhd1701/evernote-backup/compare/1.13.1...1.14.0
 [1.13.1]: https://github.com/vzhd1701/evernote-backup/compare/1.13.0...1.13.1
 [1.13.0]: https://github.com/vzhd1701/evernote-backup/compare/1.12.0...1.13.0
