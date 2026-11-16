@@ -360,7 +360,9 @@ def mock_evernote_client(mocker):
 @pytest.fixture
 def cli_invoker():
     cli_runner = CliRunner()
-    return lambda *x: cli_runner.invoke(cli, x, catch_exceptions=False)
+    return lambda *x, input=None: cli_runner.invoke(
+        cli, x, input=input, catch_exceptions=False
+    )
 
 
 @pytest.fixture
@@ -570,6 +572,9 @@ def mock_oauth_client(mocker):
         return response
 
     oauth_mock = TokenBundleMock()
+
+    # Deterministic OAuth state, matching the state in fake callback URLs.
+    mocker.patch("requests_oauthlib.oauth2_session.generate_token", return_value="test")
 
     mocker.patch.object(
         evernote_backup.evernote_client_oauth.OAuth2Session,

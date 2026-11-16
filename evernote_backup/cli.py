@@ -181,6 +181,10 @@ def handle_errors(f: Callable) -> Callable:
                 e.message.decode("utf-8") if isinstance(e.message, bytes) else e.message
             )
             logger.exception(f"Thrift exception: {message_txt}")
+        except (click.Abort, click.ClickException, click.exceptions.Exit):
+            # Click control flow (e.g. Ctrl+C / EOF at a prompt); let click
+            # report it and pick the exit code.
+            raise
         except Exception:
             logger.exception("Unknown exception")
 

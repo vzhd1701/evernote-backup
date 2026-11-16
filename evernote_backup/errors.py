@@ -5,6 +5,10 @@ class OAuthDeclinedError(Exception):
         super().__init__(message)
 
 
+class OAuthCallbackURLError(ValueError):
+    """Raise when a pasted OAuth callback/redirect URL is not usable."""
+
+
 class OAuthTokenRefreshError(Exception):
     """Raise when refresh_token grant fails."""
 

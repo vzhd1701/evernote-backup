@@ -461,6 +461,10 @@ def test_oauth_import_missing_refresh_token(cli_invoker, fake_storage, mocker):
     assert "no OAuth refresh token" in result.output
 
 
+DESKTOP_REDIRECT_OK = "evernote://www.evernote.com/auth/redirect?code=test&state=test"
+DESKTOP_PASTE_PROMPT = "Paste (Shift + Insert) the full evernote:// redirect URL"
+
+
 @pytest.mark.usefixtures("mock_output_to_terminal")
 @pytest.mark.usefixtures("fake_init_db")
 def test_oauth_desktop_login(
@@ -469,18 +473,14 @@ def test_oauth_desktop_login(
     mock_evernote_client,
     mock_oauth_client,
     mocker,
-    mock_click_prompt,
 ):
     mocker.patch("evernote_backup.cli_app_util.click.echo")
     mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
 
-    mock_click_prompt.fake_input = (
-        "evernote://www.evernote.com/auth/redirect?code=test&state=test"
-    )
-
-    result = cli_invoker("reauth", "-d", "fake_db")
+    result = cli_invoker("reauth", "-d", "fake_db", input=f"{DESKTOP_REDIRECT_OK}\n")
 
     assert result.exit_code == 0
+    assert result.output.count(DESKTOP_PASTE_PROMPT) == 1
     mock_launch.assert_called_once()
     assert mock_launch.call_args[0][0].startswith(
         "https://accounts.evernote.com/auth/authorize?response_type=code"
@@ -493,84 +493,151 @@ def test_oauth_desktop_login(
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
 @pytest.mark.usefixtures("fake_init_db")
-def test_oauth_desktop_login_bad_input(
+@pytest.mark.parametrize(
+    ("bad_input", "expected_messages"),
+    [
+        ("123", ["Expected an evernote:// redirect URL"]),
+        ("http://[", ["Malformed redirect URL"]),
+        (
+            "evernote://www.evernote.com/auth/redirect?weird=input",
+            ["Redirect URL is missing the authorization code parameter"],
+        ),
+        (
+            "https://www.evernote.com/client/launch?code=test",
+            [
+                "Expected an evernote:// redirect URL",
+                "not the URL from the browser address bar",
+            ],
+        ),
+        (
+            "https://accounts.evernote.com/auth/authorize?response_type=code",
+            [
+                "Expected an evernote:// redirect URL",
+                "This is the authorization URL",
+            ],
+        ),
+        (
+            "evernote://www.evernote.com/auth/redirect?code=old&state=old",
+            ["Redirect URL does not belong to this login attempt"],
+        ),
+    ],
+)
+def test_oauth_desktop_login_bad_input_reprompt(
+    cli_invoker,
+    fake_storage,
+    mock_evernote_client,
+    mock_oauth_client,
+    mocker,
+    bad_input,
+    expected_messages,
+):
+    mocker.patch("evernote_backup.cli_app_util.click.echo")
+    mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
+
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", input=f"{bad_input}\n{DESKTOP_REDIRECT_OK}\n"
+    )
+
+    assert result.exit_code == 0
+    mock_launch.assert_called_once()
+    assert result.output.count(DESKTOP_PASTE_PROMPT) == 2
+    for message in expected_messages:
+        assert message in result.output
+    assert (
+        fake_storage.config.get_config_value("auth_token")
+        == mock_oauth_client.token_bundle.to_json()
+    )
+
+
+@pytest.mark.usefixtures("mock_output_to_terminal")
+@pytest.mark.usefixtures("fake_init_db")
+def test_oauth_desktop_login_bad_input_eof(
     cli_invoker,
     fake_storage,
     fake_token,
     mock_evernote_client,
     mock_oauth_client,
     mocker,
-    mock_click_prompt,
 ):
     mocker.patch("evernote_backup.cli_app_util.click.echo")
-    mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
+    mocker.patch("evernote_backup.cli_app_util.click.launch")
 
-    mock_click_prompt.fake_input = "123"
-
-    result = cli_invoker("reauth", "-d", "fake_db")
+    result = cli_invoker("reauth", "-d", "fake_db", input="123\n")
 
     assert result.exit_code == 1
-    mock_launch.assert_called_once()
-    assert mock_launch.call_args[0][0].startswith(
-        "https://accounts.evernote.com/auth/authorize?response_type=code"
-    )
     assert "Expected an evernote:// redirect URL" in result.output
+    assert "Aborted!" in result.output
     assert fake_storage.config.get_config_value("auth_token") == fake_token
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
 @pytest.mark.usefixtures("fake_init_db")
-def test_oauth_desktop_login_bad_input_malformed(
+@pytest.mark.parametrize(
+    ("redirect_url", "expected_message"),
+    [
+        (
+            "evernote://www.evernote.com/auth/redirect?error=access_denied",
+            "OAuth error: OAuth declined: access_denied",
+        ),
+        (
+            "evernote://www.evernote.com/auth/redirect"
+            "?error=access_denied&error_description=User+denied",
+            "OAuth error: OAuth declined: access_denied (User denied)",
+        ),
+        (
+            "https://accounts.evernote.com/auth/callback?error=access_denied",
+            "OAuth error: OAuth declined: access_denied",
+        ),
+    ],
+)
+def test_oauth_desktop_login_declined(
     cli_invoker,
     fake_storage,
     fake_token,
     mock_evernote_client,
     mock_oauth_client,
     mocker,
-    mock_click_prompt,
+    redirect_url,
+    expected_message,
 ):
     mocker.patch("evernote_backup.cli_app_util.click.echo")
-    mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
+    mocker.patch("evernote_backup.cli_app_util.click.launch")
 
-    mock_click_prompt.fake_input = "http://["
-
-    result = cli_invoker("reauth", "-d", "fake_db")
+    result = cli_invoker(
+        "reauth", "-d", "fake_db", input=f"{redirect_url}\n{DESKTOP_REDIRECT_OK}\n"
+    )
 
     assert result.exit_code == 1
-    mock_launch.assert_called_once()
-    assert mock_launch.call_args[0][0].startswith(
-        "https://accounts.evernote.com/auth/authorize?response_type=code"
-    )
-    assert "Malformed redirect URL" in result.output
+    assert result.output.count(DESKTOP_PASTE_PROMPT) == 1
+    assert expected_message in result.output
     assert fake_storage.config.get_config_value("auth_token") == fake_token
 
 
 @pytest.mark.usefixtures("mock_output_to_terminal")
 @pytest.mark.usefixtures("fake_init_db")
-def test_oauth_desktop_login_bad_input_no_code(
+def test_oauth_desktop_login_token_exchange_error(
     cli_invoker,
     fake_storage,
     fake_token,
     mock_evernote_client,
     mock_oauth_client,
     mocker,
-    mock_click_prompt,
 ):
     mocker.patch("evernote_backup.cli_app_util.click.echo")
-    mock_launch = mocker.patch("evernote_backup.cli_app_util.click.launch")
+    mocker.patch("evernote_backup.cli_app_util.click.launch")
 
-    mock_click_prompt.fake_input = (
-        "evernote://www.evernote.com/auth/redirect?weird=input"
+    mock_oauth_client.fake_bad_fetch_token_response = True
+
+    result = cli_invoker(
+        "reauth",
+        "-d",
+        "fake_db",
+        input=f"{DESKTOP_REDIRECT_OK}\n{DESKTOP_REDIRECT_OK}\n",
     )
-
-    result = cli_invoker("reauth", "-d", "fake_db")
 
     assert result.exit_code == 1
-    mock_launch.assert_called_once()
-    assert mock_launch.call_args[0][0].startswith(
-        "https://accounts.evernote.com/auth/authorize?response_type=code"
-    )
-    assert "Redirect URL is missing the authorization code parameter" in result.output
+    assert result.output.count(DESKTOP_PASTE_PROMPT) == 1
+    assert "OAuth error" in result.output
     assert fake_storage.config.get_config_value("auth_token") == fake_token
 
 

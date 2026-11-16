@@ -1,15 +1,22 @@
 import logging
 import sys
+from functools import partial
 from pathlib import Path
 
 import click
 
+from evernote_backup.config_defaults import EVERNOTE_AUTHORIZE_URL
 from evernote_backup.desktop_session import extract_token
-from evernote_backup.errors import OAuthDeclinedError, ProgramTerminatedError
+from evernote_backup.errors import (
+    OAuthCallbackURLError,
+    OAuthDeclinedError,
+    ProgramTerminatedError,
+)
 from evernote_backup.evernote_client_oauth import (
     EvernoteOAuthCallbackHandler,
     EvernoteOAuthClient,
     EvernoteOAuthDesktopHandler,
+    clean_pasted_url,
 )
 
 logger = logging.getLogger(__name__)
@@ -70,7 +77,7 @@ def evernote_login_oauth_mcp(
 
     try:
         return oauth_handler.wait_for_token()
-    except OAuthDeclinedError as e:
+    except (OAuthDeclinedError, OAuthCallbackURLError) as e:
         raise ProgramTerminatedError(f"OAuth error: {e}") from e
 
 
@@ -96,14 +103,42 @@ def evernote_login_oauth_desktop(backend: str) -> str:
     )
     click.launch(oauth_url)
 
-    redirect_url = str(
-        click.prompt(
-            "Paste (Shift + Insert) the full evernote:// redirect URL",
-            type=str,
-        )
-    )
-
+    # Invalid pastes are re-prompted (click handles BadParameter from value_proc),
+    # so a mistake doesn't force restarting the whole authorization flow.
+    # OAuthDeclinedError (declined in the browser) is not retryable and ends it.
     try:
-        return oauth_handler.exchange_token(redirect_url)
+        callback: str = click.prompt(
+            "Paste (Shift + Insert) the full evernote:// redirect URL",
+            value_proc=partial(_parse_desktop_redirect_url, oauth_handler),
+        )
+        return oauth_handler.exchange_token(callback)
     except OAuthDeclinedError as e:
         raise ProgramTerminatedError(f"OAuth error: {e}") from e
+
+
+def _parse_desktop_redirect_url(
+    oauth_handler: EvernoteOAuthDesktopHandler, raw: str
+) -> str:
+    try:
+        return oauth_handler.parse_redirect_url(raw)
+    except OAuthCallbackURLError as e:
+        raise click.BadParameter(_with_paste_hint(raw, str(e))) from e
+
+
+def _with_paste_hint(raw: str, message: str) -> str:
+    url = clean_pasted_url(raw).lower()
+
+    if url.startswith(EVERNOTE_AUTHORIZE_URL.lower()):
+        hint = (
+            "This is the authorization URL. Open it in your browser, authorize,"
+            ' then paste the address of the "Return to Evernote" link.'
+        )
+    elif url.startswith(("http://", "https://")):
+        hint = (
+            'Copy the address of the "Return to Evernote" link (right click on it),'
+            " not the URL from the browser address bar."
+        )
+    else:
+        return message
+
+    return f"{message}\n{hint}"

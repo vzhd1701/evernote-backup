@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- Re-prompt instead of exiting when the pasted desktop OAuth redirect URL is invalid or left over from an earlier login attempt, with a hint when an `http(s)` URL is pasted instead of the `evernote://` link ([#172](https://github.com/vzhd1701/evernote-backup/issues/172))
+- Report a declined OAuth authorization as such instead of as a missing authorization code
+
 ### Fixed
 
+- Exit with "Aborted!" instead of an "Unknown exception" traceback when an interactive prompt is cancelled (Ctrl+C or end of input)
 - Cut export memory use from ~7x the size of the largest note to ~1x, so that notebooks with large attachments no longer exhaust memory ([8743341](https://github.com/vzhd1701/evernote-backup/commit/8743341051b1b0186e063c2e27181f7ff89efb5e), [f41c161](https://github.com/vzhd1701/evernote-backup/commit/f41c16187a00c8d725580eba89638fb061adea52))
 
 ### Removed

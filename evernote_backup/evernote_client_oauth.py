@@ -5,7 +5,7 @@ from collections.abc import Collection
 from enum import IntEnum
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from oauthlib.oauth2 import OAuth2Error
@@ -21,7 +21,7 @@ from evernote_backup.config_defaults import (
     EVERNOTE_TOKEN_URL,
     OAUTH_SCOPES,
 )
-from evernote_backup.errors import OAuthDeclinedError
+from evernote_backup.errors import OAuthCallbackURLError, OAuthDeclinedError
 from evernote_backup.evernote_client import EvernoteClientBase
 from evernote_backup.token_util import OAuth2TokenBundle
 
@@ -151,12 +151,22 @@ class EvernoteOAuthDesktopHandler:
     def get_oauth_url(self) -> str:
         return self.client.get_authorize_url_desktop()
 
-    def exchange_token(self, redirect_url: str) -> str:
-        """Exchange pasted evernote:// redirect URL for token bundle JSON."""
-        bundle = self.client.get_access_token(
-            normalize_oauth_callback_url(redirect_url, allowed_schemes=("evernote",))
+    def parse_redirect_url(self, redirect_url: str) -> str:
+        """Validate a pasted evernote:// redirect URL and return its /path?query.
+
+        Raises OAuthCallbackURLError for a paste that is wrong but can be retried
+        (bad format, or a URL left over from another authorization attempt), and
+        OAuthDeclinedError if the redirect reports that authorization was declined.
+        """
+        callback = normalize_oauth_callback_url(
+            redirect_url, allowed_schemes=("evernote",)
         )
-        return bundle.to_json()
+        self.client.check_callback_state(callback)
+        return callback
+
+    def exchange_token(self, callback: str) -> str:
+        """Exchange a callback from parse_redirect_url for token bundle JSON."""
+        return self.client.get_access_token(callback).to_json()
 
 
 class EvernoteOAuthClient(EvernoteClientBase):
@@ -164,6 +174,7 @@ class EvernoteOAuthClient(EvernoteClientBase):
         super().__init__(backend=backend)
 
         self._session: OAuth2Session | None = None
+        self._state: str | None = None
 
     def get_authorize_url_mcp(self, callback_url: str) -> str:
         mcp_client = register_mcp_client(callback_url)
@@ -181,11 +192,28 @@ class EvernoteOAuthClient(EvernoteClientBase):
             pkce="S256",
         )
 
-        authorization_url, _state = self._session.authorization_url(
+        authorization_url, state = self._session.authorization_url(
             EVERNOTE_AUTHORIZE_URL
         )
+        self._state = str(state)
 
         return str(authorization_url)
+
+    def check_callback_state(self, callback: str) -> None:
+        """Reject a callback issued for a different authorization attempt.
+
+        oauthlib would reject it too, but only during the token exchange, which
+        callers treat as fatal; checking first lets the user paste again.
+        """
+        if not self._state:
+            raise RuntimeError("Session used before initialization")
+
+        state = parse_qs(urlparse(callback).query).get("state", [""])[0]
+        if state != self._state:
+            raise OAuthCallbackURLError(
+                "Redirect URL does not belong to this login attempt"
+                " (is it left over from an earlier run?)"
+            )
 
     def get_access_token(self, callback_response_raw: str) -> OAuth2TokenBundle:
         if not self._session:
@@ -206,6 +234,11 @@ class EvernoteOAuthClient(EvernoteClientBase):
         return OAuth2TokenBundle.from_dict(token)
 
 
+def clean_pasted_url(raw: str) -> str:
+    """Strip surrounding whitespace and quotes from a pasted URL."""
+    return raw.strip().strip('"').strip("'")
+
+
 def normalize_oauth_callback_url(
     raw: str,
     allowed_schemes: Collection[str],
@@ -215,25 +248,25 @@ def normalize_oauth_callback_url(
     ``allowed_schemes`` restricts accepted URL schemes, e.g. ``("evernote",)`` for
     desktop OAuth or ``("http", "https")`` for MCP callback paste.
     """
-    url = raw.strip().strip('"').strip("'")
+    url = clean_pasted_url(raw)
 
     if not url:
-        raise OAuthDeclinedError("Empty callback URL")
+        raise OAuthCallbackURLError("Empty callback URL")
 
     allowed = {scheme.lower() for scheme in allowed_schemes}
     preview = f"{raw[:120]}{'...' if len(raw) > 120 else ''}"
     schemes_txt = " or ".join(f"{scheme}://" for scheme in sorted(allowed))
     allows_http = "http" in allowed or "https" in allowed
 
-    def bad_scheme_error() -> OAuthDeclinedError:
-        return OAuthDeclinedError(
+    def bad_scheme_error() -> OAuthCallbackURLError:
+        return OAuthCallbackURLError(
             f"Expected an {schemes_txt} redirect URL (got: {preview})"
         )
 
     try:
         parsed = urlparse(url)
     except ValueError as e:
-        raise OAuthDeclinedError(f"Malformed redirect URL: {e}") from e
+        raise OAuthCallbackURLError(f"Malformed redirect URL: {e}") from e
 
     scheme = (parsed.scheme or "").lower()
 
@@ -247,8 +280,15 @@ def normalize_oauth_callback_url(
         try:
             parsed = urlparse(f"http://{url}")
         except ValueError as e:
-            raise OAuthDeclinedError(f"Malformed redirect URL: {e}") from e
+            raise OAuthCallbackURLError(f"Malformed redirect URL: {e}") from e
         scheme = (parsed.scheme or "").lower()
+
+    params = parse_qs(parsed.query, keep_blank_values=True)
+
+    # An OAuth error response means the user declined; retrying cannot help,
+    # whatever URL form it was pasted in.
+    if "error" in params:
+        raise OAuthDeclinedError(_format_oauth_error(params))
 
     if not scheme:
         # Path-only form is only accepted for HTTP-style callbacks (MCP paste).
@@ -262,8 +302,8 @@ def normalize_oauth_callback_url(
         path = parsed.path or ""
         query = parsed.query or ""
 
-    if "code=" not in query:
-        raise OAuthDeclinedError(
+    if not params.get("code", [""])[0]:
+        raise OAuthCallbackURLError(
             "Redirect URL is missing the authorization code parameter"
         )
 
@@ -271,6 +311,12 @@ def normalize_oauth_callback_url(
         path = f"/{path}" if path else "/"
 
     return f"{path}?{query}" if query else path
+
+
+def _format_oauth_error(params: dict[str, list[str]]) -> str:
+    error = params["error"][0] or "unknown error"
+    description = params.get("error_description", [""])[0]
+    return f"{error} ({description})" if description else error
 
 
 def register_mcp_client(redirect_uri: str) -> dict[str, Any]:
