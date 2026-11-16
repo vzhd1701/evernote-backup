@@ -1,0 +1,20 @@
+name: release_choco
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  trigger_update:
+    runs-on: ubuntu-latest
+    steps:
+      # The package's update.ps1 picks up the latest GitHub release by itself.
+      # CHOCO_DISPATCH_TOKEN: fine-grained PAT for vzhd1701/chocolatey-packages
+      # with "Actions: Read and write".
+      - name: Trigger Chocolatey package update
+        env:
+          GH_TOKEN: ${{ secrets.CHOCO_DISPATCH_TOKEN }}
+        run: gh workflow run update.yml --repo vzhd1701/chocolatey-packages --ref master
