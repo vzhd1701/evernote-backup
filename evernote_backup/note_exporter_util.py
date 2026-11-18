@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pathlib import Path
 
 MAX_FILE_NAME_LEN = 255
@@ -14,6 +15,9 @@ class SafePath:
 
     def __init__(self, base_dir: Path, overwrite: bool = False) -> None:
         self.safe_paths: dict[tuple[str, ...], Path] = {}
+        # Files handed out in this run: with overwrite, two notes with the same
+        # title must still get two files
+        self.issued_files: set[Path] = set()
 
         self.main_base_dir = base_dir
         self.overwrite = overwrite
@@ -38,21 +42,32 @@ class SafePath:
 
         this_path = paths[-1]
 
-        safe_path = _get_safe_path(base_dir, this_path, overwrite)
-
         if is_dir:
+            safe_path = _get_safe_path(base_dir, this_path, overwrite)
             safe_path.mkdir(exist_ok=True)
             self.safe_paths[paths] = safe_path
+        else:
+            safe_path = _get_safe_path(
+                base_dir, this_path, overwrite, self.issued_files
+            )
+            self.issued_files.add(safe_path)
 
         return safe_path
 
 
-def _get_safe_path(target_dir: Path, new_name: str, overwrite: bool = False) -> Path:
+def _get_safe_path(
+    target_dir: Path,
+    new_name: str,
+    overwrite: bool = False,
+    issued: set[Path] | None = None,
+) -> Path:
     file_name = _replace_bad_characters(new_name)
     file_name = _trim_name(Path(file_name).stem, Path(file_name).suffix)
 
     if not overwrite:
         file_name = _get_non_existant_name(file_name, target_dir)
+    elif issued:
+        file_name = _get_non_existant_name(file_name, target_dir, issued.__contains__)
 
     return target_dir / file_name
 
@@ -72,11 +87,15 @@ def _replace_bad_characters(string: str) -> str:
     return result_string
 
 
-def _get_non_existant_name(file_name: str, target_dir: Path) -> str:
+def _get_non_existant_name(
+    file_name: str,
+    target_dir: Path,
+    is_taken: Callable[[Path], bool] = Path.exists,
+) -> str:
     i = 0
     orig = Path(file_name)
 
-    while (target_dir / file_name).exists():
+    while is_taken(target_dir / file_name):
         i += 1
 
         suffix = f" ({i}){orig.suffix}"
