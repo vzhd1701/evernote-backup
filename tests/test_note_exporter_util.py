@@ -83,6 +83,17 @@ def test_safe_path_file_existing_overwrite(tmp_path):
     assert result_file_path == existing_file
 
 
+def test_safe_path_file_same_name_overwrite(tmp_path):
+    test_dir = tmp_path / "test"
+
+    safe_path = SafePath(test_dir, overwrite=True)
+    first = safe_path.get_file("Work", "Meeting.enex")
+    second = safe_path.get_file("Work", "Meeting.enex")
+
+    assert first == test_dir / "Work" / "Meeting.enex"
+    assert second == test_dir / "Work" / "Meeting (1).enex"
+
+
 def test_safe_path_bad_names(tmp_path):
     test_dir = tmp_path / "test"
 
